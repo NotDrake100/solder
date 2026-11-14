@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Cpu,
   Box,
@@ -38,7 +38,15 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({
   const [isExploded, setIsExploded] = useState(false);
   const [burstCount, setBurstCount] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [materialTheme, setMaterialTheme] = useState<'pla' | 'acrylic' | 'dark'>('pla');
+  const [materialTheme, setMaterialTheme] = useState<'pla' | 'acrylic' | 'dark'>('acrylic');
+
+  // Auto-trigger signature burst reveal on mount / build change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBurstCount((prev) => prev + 1);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [build.id]);
 
   const totalPartsCost = build.parts.reduce(
     (sum, p) => sum + (p.owned ? 0 : p.priceInr * p.qty),
