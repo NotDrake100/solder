@@ -1,0 +1,49 @@
+{
+  "id": "led_lamp",
+  "aliases": [
+    "led-lamp",
+    "lamp",
+    "led_module",
+    "glow_light"
+  ],
+  "name": "High-Power LED Lamp Module",
+  "category": "actuator",
+  "description": "High-intensity diffused LED lamp breakout module with built-in current limiting resistor.",
+  "dimensions": {
+    "width": 15.0,
+    "length": 25.0,
+    "height": 12.0,
+    "domeDiameter": 10.0,
+    "domeHeight": 8.0,
+    "mountingHoles": [
+      {
+        "x": 2.0,
+        "y": 2.0,
+        "diameter": 2.5
+      }
+    ]
+  },
+  "pins": [
+    {
+      "name": "SIG",
+      "type": "digital",
+      "description": "Digital/PWM Control Signal",
+      "voltage": 5.0
+    },
+    {
+      "name": "VCC",
+      "type": "power",
+      "description": "5V Power Supply",
+      "voltage": 5.0
+    },
+    {
+      "name": "GND",
+      "type": "ground",
+      "description": "Ground Reference",
+      "voltage": 0.0
+    }
+  ],
+  "priceInr": 45,
+  "operatingVoltage": 5.0,
+  "color": "#FFD54F"
+}

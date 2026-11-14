@@ -672,7 +672,7 @@
     ],
     "name": "DHT11 Digital Temperature & Humidity Sensor",
     "category": "sensor",
-    "description": "Composite digital sensor providing calibrated temperature (0-50°C ±2°C) and relative humidity (20-90% RH ±5%).",
+    "description": "Composite digital sensor providing calibrated temperature (0-50\u00b0C \u00b12\u00b0C) and relative humidity (20-90% RH \u00b15%).",
     "dimensions": {
       "width": 12,
       "length": 15.5,
@@ -897,7 +897,7 @@
       {
         "name": "TRIG",
         "type": "digital",
-        "description": "Trigger Input: 10µs TTL pulse to start measurement",
+        "description": "Trigger Input: 10\u00b5s TTL pulse to start measurement",
         "voltage": 5
       },
       {
@@ -916,5 +916,162 @@
     "priceInr": 110,
     "operatingVoltage": 5,
     "color": "#1565C0"
+  },
+  {
+    "id": "pir_motion",
+    "aliases": [
+      "pir-motion",
+      "pir",
+      "motion_sensor",
+      "hcsr501",
+      "am312"
+    ],
+    "name": "PIR Motion Sensor Module",
+    "category": "sensor",
+    "description": "Pyroelectric infrared motion detector module with dome fresnel lens and digital TTL trigger output.",
+    "dimensions": {
+      "width": 24.0,
+      "length": 32.0,
+      "height": 18.0,
+      "domeDiameter": 22.0,
+      "domeHeight": 10.0,
+      "mountingHoles": [
+        {
+          "x": 2.0,
+          "y": 2.0,
+          "diameter": 2.0
+        },
+        {
+          "x": 30.0,
+          "y": 2.0,
+          "diameter": 2.0
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "5V Power supply",
+        "voltage": 5.0
+      },
+      {
+        "name": "OUT",
+        "type": "digital",
+        "description": "Digital Motion Trigger Output (HIGH on motion)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0.0
+      }
+    ],
+    "priceInr": 85,
+    "operatingVoltage": 5.0,
+    "color": "#FFFFFF"
+  },
+  {
+    "id": "led_lamp",
+    "aliases": [
+      "led-lamp",
+      "lamp",
+      "led_module",
+      "glow_light"
+    ],
+    "name": "High-Power LED Lamp Module",
+    "category": "actuator",
+    "description": "High-intensity diffused LED lamp breakout module with built-in current limiting resistor.",
+    "dimensions": {
+      "width": 15.0,
+      "length": 25.0,
+      "height": 12.0,
+      "domeDiameter": 10.0,
+      "domeHeight": 8.0,
+      "mountingHoles": [
+        {
+          "x": 2.0,
+          "y": 2.0,
+          "diameter": 2.5
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "SIG",
+        "type": "digital",
+        "description": "Digital/PWM Control Signal",
+        "voltage": 5.0
+      },
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "5V Power Supply",
+        "voltage": 5.0
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0.0
+      }
+    ],
+    "priceInr": 45,
+    "operatingVoltage": 5.0,
+    "color": "#FFD54F"
+  },
+  {
+    "id": "ldr_sensor",
+    "aliases": [
+      "ldr-sensor",
+      "ldr",
+      "light_sensor",
+      "photoresistor"
+    ],
+    "name": "LDR Light Sensor Module",
+    "category": "sensor",
+    "description": "Cadmium sulfide (CdS) photoresistor sensor module with LM393 comparator providing analog illumination voltage and digital darkness trigger.",
+    "dimensions": {
+      "width": 14.0,
+      "length": 32.0,
+      "height": 8.5,
+      "mountingHoles": [
+        {
+          "x": 16.0,
+          "y": 2.5,
+          "diameter": 3.0
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "3.3V - 5V Power Supply",
+        "voltage": 5.0
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0.0
+      },
+      {
+        "name": "DO",
+        "type": "digital",
+        "description": "Digital Output (Active LOW on dark)",
+        "voltage": 5.0
+      },
+      {
+        "name": "AO",
+        "type": "analog",
+        "description": "Analog Output Voltage proportional to lux",
+        "voltage": 5.0
+      }
+    ],
+    "priceInr": 65,
+    "operatingVoltage": 5.0,
+    "color": "#37474F"
   }
 ]

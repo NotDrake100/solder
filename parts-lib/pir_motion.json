@@ -1,0 +1,55 @@
+{
+  "id": "pir_motion",
+  "aliases": [
+    "pir-motion",
+    "pir",
+    "motion_sensor",
+    "hcsr501",
+    "am312"
+  ],
+  "name": "PIR Motion Sensor Module",
+  "category": "sensor",
+  "description": "Pyroelectric infrared motion detector module with dome fresnel lens and digital TTL trigger output.",
+  "dimensions": {
+    "width": 24.0,
+    "length": 32.0,
+    "height": 18.0,
+    "domeDiameter": 22.0,
+    "domeHeight": 10.0,
+    "mountingHoles": [
+      {
+        "x": 2.0,
+        "y": 2.0,
+        "diameter": 2.0
+      },
+      {
+        "x": 30.0,
+        "y": 2.0,
+        "diameter": 2.0
+      }
+    ]
+  },
+  "pins": [
+    {
+      "name": "VCC",
+      "type": "power",
+      "description": "5V Power supply",
+      "voltage": 5.0
+    },
+    {
+      "name": "OUT",
+      "type": "digital",
+      "description": "Digital Motion Trigger Output (HIGH on motion)",
+      "voltage": 3.3
+    },
+    {
+      "name": "GND",
+      "type": "ground",
+      "description": "Ground Reference",
+      "voltage": 0.0
+    }
+  ],
+  "priceInr": 85,
+  "operatingVoltage": 5.0,
+  "color": "#FFFFFF"
+}

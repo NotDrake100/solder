@@ -1,0 +1,53 @@
+{
+  "id": "ldr_sensor",
+  "aliases": [
+    "ldr-sensor",
+    "ldr",
+    "light_sensor",
+    "photoresistor"
+  ],
+  "name": "LDR Light Sensor Module",
+  "category": "sensor",
+  "description": "Cadmium sulfide (CdS) photoresistor sensor module with LM393 comparator providing analog illumination voltage and digital darkness trigger.",
+  "dimensions": {
+    "width": 14.0,
+    "length": 32.0,
+    "height": 8.5,
+    "mountingHoles": [
+      {
+        "x": 16.0,
+        "y": 2.5,
+        "diameter": 3.0
+      }
+    ]
+  },
+  "pins": [
+    {
+      "name": "VCC",
+      "type": "power",
+      "description": "3.3V - 5V Power Supply",
+      "voltage": 5.0
+    },
+    {
+      "name": "GND",
+      "type": "ground",
+      "description": "Ground Reference",
+      "voltage": 0.0
+    },
+    {
+      "name": "DO",
+      "type": "digital",
+      "description": "Digital Output (Active LOW on dark)",
+      "voltage": 5.0
+    },
+    {
+      "name": "AO",
+      "type": "analog",
+      "description": "Analog Output Voltage proportional to lux",
+      "voltage": 5.0
+    }
+  ],
+  "priceInr": 65,
+  "operatingVoltage": 5.0,
+  "color": "#37474F"
+}

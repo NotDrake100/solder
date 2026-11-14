@@ -16,7 +16,10 @@ const partsList = [
   'mq135',
   'battery_18650',
   'piezo_buzzer',
-  'ultrasonic_hcsr04'
+  'ultrasonic_hcsr04',
+  'ldr_sensor',
+  'led_lamp',
+  'pir_motion'
 ];
 
 export const ALL_PARTS = [];
