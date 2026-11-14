@@ -1,0 +1,67 @@
+version: '3.8'
+
+# ==============================================================================
+# Solder Production Docker Compose
+# Orchestrates Solder application container and Caddy automatic HTTPS proxy
+# ZERO SECONDS / ZERO SECRETS: GEMINI_API_KEY is read from environment only.
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Solder Application Service (Express + Three.js Viewer + arduino-cli)
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: solder-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Injected securely from host environment (.env or shell)
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    expose:
+      - "3000"
+    ports:
+      # Direct port mapping for local testing without reverse proxy
+      - "3000:3000"
+    networks:
+      - solder-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # Caddy Reverse Proxy (Auto Let's Encrypt TLS for custom domain or sslip.io)
+  # ----------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: solder-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # e.g. DOMAIN=solder.159.223.154.151.sslip.io
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - solder-net
+
+networks:
+  solder-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

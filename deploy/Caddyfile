@@ -1,0 +1,40 @@
+# ==============================================================================
+# Caddyfile for Solder
+# Automatic TLS / HTTPS with Let's Encrypt via sslip.io or custom domain
+# ==============================================================================
+
+# Public domain or sslip.io fallback (e.g. solder.159.223.154.151.sslip.io)
+{$DOMAIN:localhost} {
+    # Encode with zstd and gzip for high performance
+    encode zstd gzip
+
+    # Security headers
+    header {
+        # Protect against clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Prevent MIME-type sniffing
+        X-Content-Type-Options "nosniff"
+        # Referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Enable HSTS for HTTPS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+
+    # Proxy all HTTP and SSE streaming traffic to the Solder Express app
+    reverse_proxy app:3000 {
+        # Maintain flush interval for real-time SSE streaming (agent log & compilation)
+        flush_interval -1
+
+        # Preserve client IP and scheme
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Logging
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}
