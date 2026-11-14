@@ -14,6 +14,8 @@ export interface PartLayoutItem {
   description?: string;
 }
 
+export type LayoutItem = PartLayoutItem;
+
 export interface CaseData {
   outerMm: [number, number, number]; // [width, depth, height] in mm
   wallMm: number; // wall thickness, e.g. 2.0 mm
@@ -22,6 +24,8 @@ export interface CaseData {
   scad?: string;
   color?: string;
 }
+
+export type CaseInfo = CaseData;
 
 export interface ViewerProps {
   layout: PartLayoutItem[];
