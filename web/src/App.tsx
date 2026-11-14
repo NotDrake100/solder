@@ -195,6 +195,59 @@ export function App() {
               prev.map((m) => {
                 if (m.id !== asstMsgId) return m;
                 const completed = new Set(m.completedSteps || []);
+                let updatedChecks = m.harnessChecks ? [...m.harnessChecks] : getDefaultHarnessChecks(buildData);
+
+                if (data.step === 'verifier_check') {
+                  updatedChecks = updatedChecks.map((chk) => {
+                    if (chk.id === data.id) {
+                      return {
+                        ...chk,
+                        status: data.status === 'pass' ? 'pass' : 'fail',
+                        evidence: data.evidence || chk.evidence,
+                        durationMs: data.durationMs || chk.durationMs,
+                      };
+                    }
+                    return chk;
+                  });
+                  return {
+                    ...m,
+                    harnessChecks: updatedChecks,
+                  };
+                } else if (data.step === 'fixer_start') {
+                  updatedChecks = updatedChecks.map((chk) => {
+                    if (chk.id === data.checkId) {
+                      return {
+                        ...chk,
+                        status: 'fixing',
+                      };
+                    }
+                    return chk;
+                  });
+                  return {
+                    ...m,
+                    harnessChecks: updatedChecks,
+                  };
+                } else if (data.step === 'fixer_done') {
+                  updatedChecks = updatedChecks.map((chk) => {
+                    if (chk.id === data.checkId) {
+                      return {
+                        ...chk,
+                        status: 'healed',
+                        healInfo: {
+                          round: data.round || 1,
+                          model: data.model || 'Gemini 3.5 Flash-Lite',
+                          patchDiff: data.diff || '',
+                          explanation: data.changelog || 'Self-heal patch applied successfully',
+                        },
+                      };
+                    }
+                    return chk;
+                  });
+                  return {
+                    ...m,
+                    harnessChecks: updatedChecks,
+                  };
+                }
 
                 if (stage === 'reading' || stage === 'generate') {
                   completed.add('reading');
@@ -253,7 +306,7 @@ export function App() {
                     currentStep: 'done',
                     completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
                     buildData: buildData || undefined,
-                    harnessChecks: getDefaultHarnessChecks(buildData),
+                    harnessChecks: updatedChecks,
                     text: `I've synthesized **${buildData?.name || 'Custom Build'}** for your idea! ${buildData?.tagline || ''}\n\nExplore the interactive 3D case, circuit wiring, virtual simulator, and firmware on the right:`,
                   };
                 }
