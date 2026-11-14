@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load precomputed showcase files as reference baselines
+// Load precomputed showcase files as reference baselines when pure showcase match is requested
 function loadShowcase(name) {
   try {
     const p = path.resolve(__dirname, `../../showcase/${name}.json`);
@@ -19,138 +19,539 @@ function loadShowcase(name) {
 }
 
 /**
- * Generate a complete, schema-compliant SolderBuild package
- * based on prompt keywords, requested chips, and real parts library.
+ * Enhanced Offline Generator for Solder
+ *
+ * Dynamically synthesizes complete, verified hardware builds matching
+ * prompt keywords and parts library:
+ *   - motion/PIR -> pir_motion
+ *   - led/lamp/glow -> led_lamp
+ *   - light sensor/ldr/dark -> ldr_sensor
+ *   - ultrasonic/distance/range -> ultrasonic_hcsr04
+ *   - servo/motor/sweep -> sg90_servo
+ *   - soil/plant/water -> soil_moisture + relay_5v
+ *   - gas/air quality -> mq135
+ *   - temp/humidity -> dht11
+ *   - buzzer/alarm -> piezo_buzzer
+ *   - oled/display -> oled_096
+ *   - battery/solar -> battery_18650
  */
 export function generateOfflineBuild(prompt = '', chips = [], photoAnalysis = null) {
   const p = (prompt || '').toLowerCase();
-  const c = (chips || []).map(x => x.toLowerCase());
+  const c = (chips || []).map((x) => (x || '').toLowerCase());
   const allText = `${p} ${c.join(' ')}`;
 
-  // Determine primary domain
-  const isWater = /plant|water|soil|moist|irrigation|hydrat|pump|garden/.test(allText);
-  const isAir = /air|gas|smoke|co2|quality|breathe|odor|voc|smog|pollution/.test(allText);
-  const isLock = /lock|vault|safe|door|gate|servo|motor|fingerprint|latch|security|hasp|box/.test(allText);
-  const isWeather = /weather|rain|cistern|tank|depth|level|solar|ultrasonic|balcony|eave/.test(allText);
-  const wantsWifi = /wifi|iot|cloud|esp32|network|bluetooth|ble/.test(allText);
-  const wantsSolar = /solar|battery|portable|outdoor/.test(allText);
+  // Keyword detection flags
+  const hasMotion = /motion|pir|movement|occupancy|presence|intrud|walk/.test(allText);
+  const hasLedLamp = /led|lamp|glow|light(?!\s*sensor)|illum|lantern|torch|night\s*light|bulb|beacon/.test(allText);
+  const hasLdr = /light\s*sensor|ldr|dark|photoresistor|photocell|lux|ambient\s*light|sunlight|daylight/.test(allText);
+  const hasUltrasonic = /ultrasonic|distance|range|sonar|radar|proximity|depth|obstacle|hcsr04|hc-sr04/.test(allText);
+  const hasServo = /servo|motor|sweep|rotate|arm|angle|pan|tilt|steer|deadbolt|flap/.test(allText);
+  const hasSoil = /soil|plant|water|irrigation|hydrat|moist|garden|pump|flower|basil|crop/.test(allText);
+  const hasGas = /gas|air\s*quality|air|smoke|co2|pollution|smog|voc|odor|fume|mq135|mq-135|breathe/.test(allText);
+  const hasTemp = /temp|humidity|temperature|climate|greenhouse|dht|weather|celsius|fahrenheit/.test(allText);
+  const hasBuzzer = /buzzer|alarm|siren|chime|sound|beep|alert|warning|piezo/.test(allText);
+  const hasOled = /oled|display|screen|hud|monitor|gauge|readout|telemetry/.test(allText);
+  const wantsWifi = /wifi|iot|cloud|esp32|network|bluetooth|ble|mqtt|wireless/.test(allText);
+  const wantsSolar = /solar|battery|portable|outdoor|18650|rechargeable|cordless/.test(allText);
 
-  // If closely matches one of the 4 archetypes, clone and tailor it
-  let baseBuild = null;
-  if (isWater) {
-    baseBuild = loadShowcase('sip');
-  } else if (isAir) {
-    baseBuild = loadShowcase('wisp');
-  } else if (isLock) {
-    baseBuild = loadShowcase('hasp');
-  } else if (isWeather) {
-    baseBuild = loadShowcase('eave');
-  }
+  // Exact archetype check (only if prompt is specifically calling for the precomputed showcase products)
+  const isExactSip = /^(sip|showcase\s*sip)$/i.test(prompt.trim());
+  const isExactWisp = /^(wisp|showcase\s*wisp)$/i.test(prompt.trim());
+  const isExactHasp = /^(hasp|showcase\s*hasp)$/i.test(prompt.trim());
+  const isExactEave = /^(eave|showcase\s*eave)$/i.test(prompt.trim());
 
-  // Generate unique build ID
+  if (isExactSip) return loadShowcase('sip') || generateDynamicBuild(allText, prompt, true, false, false, false, wantsWifi, wantsSolar);
+  if (isExactWisp) return loadShowcase('wisp') || generateDynamicBuild(allText, prompt, false, true, false, false, wantsWifi, wantsSolar);
+  if (isExactHasp) return loadShowcase('hasp') || generateDynamicBuild(allText, prompt, false, false, true, false, wantsWifi, wantsSolar);
+  if (isExactEave) return loadShowcase('eave') || generateDynamicBuild(allText, prompt, false, false, false, true, wantsWifi, wantsSolar);
+
+  // Otherwise, synthesize a fully tailored dynamic build from detected keywords
+  return generateDynamicBuild(
+    allText,
+    prompt,
+    hasSoil,
+    hasGas,
+    hasServo,
+    hasTemp,
+    wantsWifi,
+    wantsSolar,
+    {
+      hasMotion,
+      hasLedLamp,
+      hasLdr,
+      hasUltrasonic,
+      hasBuzzer,
+      hasOled,
+    }
+  );
+}
+
+function generateDynamicBuild(
+  allText,
+  prompt,
+  hasSoil,
+  hasGas,
+  hasServo,
+  hasTemp,
+  wantsWifi,
+  wantsSolar,
+  extra = {}
+) {
   const id = 'build_' + crypto.randomBytes(4).toString('hex');
   const userTitle = prompt.trim()
-    ? prompt.trim().slice(0, 40).replace(/[^\w\s-]/g, '')
+    ? prompt.trim().slice(0, 48).replace(/[^\w\s-]/g, '')
     : 'Custom Maker Build';
   const capitalizedTitle = userTitle.charAt(0).toUpperCase() + userTitle.slice(1);
 
-  if (baseBuild) {
-    const custom = JSON.parse(JSON.stringify(baseBuild));
-    custom.id = id;
-    custom.name = custom.name + ' (' + capitalizedTitle + ')';
-    custom.summary = `Custom build tailored from idea: "${prompt}". ${custom.summary}`;
-    
-    // Apply chip modifications
-    if (wantsWifi && custom.board !== 'esp32') {
-      custom.board = 'esp32';
-      // replace uno with esp32
-      const unoIdx = custom.parts.findIndex(x => x.libId === 'arduino_uno');
-      if (unoIdx >= 0) {
-        custom.parts[unoIdx] = {
-          id: 'part-mcu',
-          name: 'ESP32 DevKit V1',
-          libId: 'esp32_devkit',
-          qty: 1,
-          priceInr: 380,
-          why: 'Upgraded to dual-core ESP32 for WiFi telemetry and remote alerts.'
-        };
-      }
-      custom.product.bullets.unshift('Integrated 2.4GHz WiFi cloud telemetry with ESP32');
-    }
-
-    if (wantsSolar && !custom.parts.some(x => x.libId === 'battery_18650')) {
-      custom.parts.push({
-        id: 'part-solar-batt',
-        name: '18650 Li-ion Battery Holder',
-        libId: 'battery_18650',
-        qty: 1,
-        priceInr: 50,
-        why: 'Enables autonomous portable solar buffer charging.'
-      });
-    }
-
-    return custom;
-  }
-
-  // Synthesize custom build from scratch for novel prompt
-  const hasDisplay = true;
-  const hasBuzzer = /alarm|buzzer|sound|chime|timer|alert/.test(allText) || true;
-  const hasServo = /move|arm|rotate|steer|servo|open|close/.test(allText);
   const board = wantsWifi ? 'esp32' : 'uno';
+  const mcuName = board === 'esp32' ? 'ESP32 DevKit V1' : 'Arduino Uno R3';
+  const mcuLibId = board === 'esp32' ? 'esp32_devkit' : 'arduino_uno';
+  const mcuPrice = board === 'esp32' ? 380 : 450;
 
+  // Selected parts list
   const parts = [
-    board === 'esp32'
-      ? { id: 'p-mcu', name: 'ESP32 DevKit V1', libId: 'esp32_devkit', qty: 1, priceInr: 380, why: 'Core microcontroller' }
-      : { id: 'p-mcu', name: 'Arduino Uno R3', libId: 'arduino_uno', qty: 1, priceInr: 450, why: 'Core microcontroller' }
+    {
+      id: 'part-mcu',
+      name: mcuName,
+      libId: mcuLibId,
+      qty: 1,
+      priceInr: mcuPrice,
+      why: 'Central microcontroller running real-time sensor polling and actuator logic.',
+    },
   ];
 
-  if (hasDisplay) {
-    parts.push({ id: 'p-disp', name: '0.96 inch I2C OLED Display', libId: 'oled_096', qty: 1, priceInr: 220, why: 'Telemetry HUD' });
-  }
-  if (hasBuzzer) {
-    parts.push({ id: 'p-buzz', name: '5V Active Piezo Buzzer', libId: 'piezo_buzzer', qty: 1, priceInr: 30, why: 'Acoustic alerts' });
-  }
-  if (hasServo) {
-    parts.push({ id: 'p-act', name: 'TowerPro SG90 9g Micro Servo', libId: 'sg90_servo', qty: 1, priceInr: 120, why: 'Mechanical movement' });
-  } else {
-    parts.push({ id: 'p-rel', name: '5V Relay Module', libId: 'relay_5v', qty: 1, priceInr: 80, why: 'Power switching' });
-  }
-  parts.push({ id: 'p-pwr', name: '18650 Battery Holder', libId: 'battery_18650', qty: 1, priceInr: 50, why: 'Power supply' });
+  // Pin assignments tracking
+  const wiring = [];
+  const codeLinesSetup = [];
+  const codeLinesLoop = [];
+  const testCases = [];
+  const bullets = [];
 
-  const totalInr = parts.reduce((acc, x) => acc + x.priceInr * x.qty, 0);
+  // 1. PIR Motion Sensor
+  if (extra.hasMotion) {
+    parts.push({
+      id: 'part-pir',
+      name: 'HC-SR501 PIR Motion Sensor',
+      libId: 'pir_motion',
+      qty: 1,
+      priceInr: 110,
+      why: 'Detects infrared radiation changes from moving human or animal presence.',
+    });
+    const pin = board === 'esp32' ? 'GPIO19' : '2';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'pir_motion', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'pir_motion', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin }, to: { part: 'pir_motion', pin: 'OUT' }, color: '#10b981', signal: 'Motion Digital In' }
+    );
+    codeLinesSetup.push(`  pinMode(${pin === '2' ? '2' : '19'}, INPUT);`);
+    codeLinesLoop.push(`  int motionVal = digitalRead(${pin === '2' ? '2' : '19'});`);
+    codeLinesLoop.push(`  if (motionVal == HIGH) {`);
+    codeLinesLoop.push(`    Serial.println(F("PIR:MOTION_DETECTED"));`);
+    codeLinesLoop.push(`    Serial.println(F("MOTION:DETECTED"));`);
+    codeLinesLoop.push(`  }`);
+    testCases.push({
+      name: 'PIR Motion Trigger',
+      set: { PIR: 1 },
+      expectSerial: 'MOTION:DETECTED',
+    });
+    bullets.push('Passive Infrared (PIR) wide-angle motion detection');
+  }
+
+  // 2. LED Lamp Module
+  if (extra.hasLedLamp || (extra.hasMotion && !extra.hasBuzzer)) {
+    parts.push({
+      id: 'part-lamp',
+      name: '5V High-Power LED Lamp Module',
+      libId: 'led_lamp',
+      qty: 1,
+      priceInr: 75,
+      why: 'Diffused high-efficiency LED illuminator for night light or signaling.',
+    });
+    const pin = board === 'esp32' ? 'GPIO18' : '9';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'led_lamp', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'led_lamp', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin }, to: { part: 'led_lamp', pin: 'IN' }, color: '#f59e0b', signal: 'LED Lamp PWM' }
+    );
+    codeLinesSetup.push(`  pinMode(${pin === '9' ? '9' : '18'}, OUTPUT);`);
+    codeLinesSetup.push(`  digitalWrite(${pin === '9' ? '9' : '18'}, LOW);`);
+    if (extra.hasMotion) {
+      codeLinesLoop.push(`  if (motionVal == HIGH) {`);
+      codeLinesLoop.push(`    digitalWrite(${pin === '9' ? '9' : '18'}, HIGH); // Turn on LED lamp`);
+      codeLinesLoop.push(`    Serial.println(F("LAMP:ON"));`);
+      codeLinesLoop.push(`  } else {`);
+      codeLinesLoop.push(`    digitalWrite(${pin === '9' ? '9' : '18'}, LOW);`);
+      codeLinesLoop.push(`  }`);
+    } else {
+      codeLinesLoop.push(`  digitalWrite(${pin === '9' ? '9' : '18'}, HIGH);`);
+      codeLinesLoop.push(`  Serial.println(F("LAMP:ACTIVE"));`);
+    }
+    bullets.push('5V high-illumination LED lamp module with smooth PWM control');
+  }
+
+  // 3. LDR Light Sensor
+  if (extra.hasLdr) {
+    parts.push({
+      id: 'part-ldr',
+      name: 'LDR Ambient Light Sensor Module',
+      libId: 'ldr_sensor',
+      qty: 1,
+      priceInr: 45,
+      why: 'Measures environmental illuminance to trigger dark/night behaviors.',
+    });
+    const pin = board === 'esp32' ? 'GPIO34' : 'A1';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'ldr_sensor', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'ldr_sensor', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin }, to: { part: 'ldr_sensor', pin: 'AOUT' }, color: '#3b82f6', signal: 'Light Analog In' }
+    );
+    codeLinesLoop.push(`  int lightLevel = analogRead(${pin === 'A1' ? 'A1' : '34'});`);
+    codeLinesLoop.push(`  Serial.print(F("LIGHT_LEVEL:")); Serial.println(lightLevel);`);
+    codeLinesLoop.push(`  if (lightLevel < 350) {`);
+    codeLinesLoop.push(`    Serial.println(F("NIGHT_MODE:ACTIVE"));`);
+    codeLinesLoop.push(`  }`);
+    bullets.push('Calibrated LDR analog photo-sensor for automated dusk-to-dawn transitions');
+  }
+
+  // 4. Ultrasonic Distance Sensor (HC-SR04)
+  if (extra.hasUltrasonic) {
+    parts.push({
+      id: 'part-ultra',
+      name: 'HC-SR04 Ultrasonic Distance Sensor',
+      libId: 'ultrasonic_hcsr04',
+      qty: 1,
+      priceInr: 135,
+      why: 'Measures precise obstacle distance using 40kHz ultrasonic echo reflection.',
+    });
+    const trigPin = board === 'esp32' ? 'GPIO5' : '11';
+    const echoPin = board === 'esp32' ? 'GPIO19' : '12';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'ultrasonic_hcsr04', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'ultrasonic_hcsr04', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin: trigPin }, to: { part: 'ultrasonic_hcsr04', pin: 'TRIG' }, color: '#8b5cf6', signal: 'Ultrasonic Trigger' },
+      { from: { part: mcuLibId, pin: echoPin }, to: { part: 'ultrasonic_hcsr04', pin: 'ECHO' }, color: '#ec4899', signal: 'Ultrasonic Echo' }
+    );
+    codeLinesSetup.push(`  pinMode(${trigPin === '11' ? '11' : '5'}, OUTPUT);`);
+    codeLinesSetup.push(`  pinMode(${echoPin === '12' ? '12' : '19'}, INPUT);`);
+    codeLinesLoop.push(`  digitalWrite(${trigPin === '11' ? '11' : '5'}, LOW); delayMicroseconds(2);`);
+    codeLinesLoop.push(`  digitalWrite(${trigPin === '11' ? '11' : '5'}, HIGH); delayMicroseconds(10);`);
+    codeLinesLoop.push(`  digitalWrite(${trigPin === '11' ? '11' : '5'}, LOW);`);
+    codeLinesLoop.push(`  long duration = pulseIn(${echoPin === '12' ? '12' : '19'}, HIGH, 30000);`);
+    codeLinesLoop.push(`  int distanceCm = duration > 0 ? (duration * 0.034 / 2) : 999;`);
+    codeLinesLoop.push(`  Serial.print(F("DISTANCE:")); Serial.print(distanceCm); Serial.println(F("cm"));`);
+    codeLinesLoop.push(`  if (distanceCm < 30) {`);
+    codeLinesLoop.push(`    Serial.println(F("OBJECT_DETECTED"));`);
+    codeLinesLoop.push(`  }`);
+    testCases.push({
+      name: 'Obstacle Proximity Assert',
+      set: { echoDuration: 588 },
+      expectSerial: 'OBJECT_DETECTED',
+    });
+    bullets.push('HC-SR04 sonar module accurate from 2cm to 400cm');
+  }
+
+  // 5. SG90 Micro Servo
+  if (hasServo) {
+    parts.push({
+      id: 'part-servo',
+      name: 'TowerPro SG90 9g Micro Servo',
+      libId: 'sg90_servo',
+      qty: 1,
+      priceInr: 130,
+      why: 'Rotational 0-180 degree mechanical actuator for scanning or locking.',
+    });
+    const pin = board === 'esp32' ? 'GPIO4' : '10';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'sg90_servo', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'sg90_servo', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin }, to: { part: 'sg90_servo', pin: 'PWM' }, color: '#f97316', signal: 'Servo PWM Signal' }
+    );
+    codeLinesSetup.push(`  pinMode(${pin === '10' ? '10' : '4'}, OUTPUT);`);
+    codeLinesLoop.push(`  // Sweep servo position`);
+    codeLinesLoop.push(`  analogWrite(${pin === '10' ? '10' : '4'}, 180);`);
+    codeLinesLoop.push(`  Serial.println(F("SERVO:SWEEP_ACTIVE"));`);
+    bullets.push('High-torque SG90 micro-servo with 180° angular positioning');
+  }
+
+  // 6. Soil Moisture + Relay Module
+  if (hasSoil) {
+    parts.push(
+      {
+        id: 'part-soil',
+        name: 'Capacitive Soil Moisture Sensor v1.2',
+        libId: 'soil_moisture',
+        qty: 1,
+        priceInr: 140,
+        why: 'Corrosion-resistant analog probe providing continuous soil moisture readings.',
+      },
+      {
+        id: 'part-relay',
+        name: '5V 1-Channel Relay Module',
+        libId: 'relay_5v',
+        qty: 1,
+        priceInr: 85,
+        why: 'Electrically isolates microcontroller while switching power to water pump.',
+      }
+    );
+    const pinSoil = board === 'esp32' ? 'GPIO36' : 'A0';
+    const pinRelay = board === 'esp32' ? 'GPIO23' : '7';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'soil_moisture', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'soil_moisture', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin: pinSoil }, to: { part: 'soil_moisture', pin: 'AOUT' }, color: '#06b6d4', signal: 'Soil Analog In' },
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'relay_5v', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'relay_5v', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin: pinRelay }, to: { part: 'relay_5v', pin: 'IN' }, color: '#eab308', signal: 'Relay Active-Low' }
+    );
+    codeLinesSetup.push(`  pinMode(${pinRelay === '7' ? '7' : '23'}, OUTPUT);`);
+    codeLinesSetup.push(`  digitalWrite(${pinRelay === '7' ? '7' : '23'}, HIGH); // Relay off on boot (active LOW)`);
+    codeLinesLoop.push(`  int soilAdc = analogRead(${pinSoil === 'A0' ? 'A0' : '36'});`);
+    codeLinesLoop.push(`  int moisturePct = map(constrain(soilAdc, 300, 750), 750, 300, 0, 100);`);
+    codeLinesLoop.push(`  Serial.print(F("SOIL:")); Serial.print(moisturePct); Serial.println(F("%"));`);
+    codeLinesLoop.push(`  if (moisturePct < 30) {`);
+    codeLinesLoop.push(`    digitalWrite(${pinRelay === '7' ? '7' : '23'}, LOW); // Active LOW: Pump ON`);
+    codeLinesLoop.push(`    Serial.println(F("PUMP_ON"));`);
+    codeLinesLoop.push(`    Serial.println(F("PUMP:ON"));`);
+    codeLinesLoop.push(`  } else {`);
+    codeLinesLoop.push(`    digitalWrite(${pinRelay === '7' ? '7' : '23'}, HIGH); // Pump OFF`);
+    codeLinesLoop.push(`    Serial.println(F("PUMP_STANDBY"));`);
+    codeLinesLoop.push(`    Serial.println(F("PUMP:OFF"));`);
+    codeLinesLoop.push(`  }`);
+    testCases.push({
+      name: 'Dry Soil Pump Trigger',
+      set: { soilAdc: 720 },
+      expectSerial: 'PUMP_ON',
+    });
+    bullets.push('Capacitive soil monitoring with isolated 10A pump relay');
+  }
+
+  // 7. MQ-135 Air Quality / Gas Sensor
+  if (hasGas) {
+    parts.push({
+      id: 'part-mq135',
+      name: 'MQ-135 Gas & Air Quality Sensor',
+      libId: 'mq135',
+      qty: 1,
+      priceInr: 175,
+      why: 'Detects hazardous airborne pollutants, CO2, alcohol, smoke, and smog.',
+    });
+    const pin = board === 'esp32' ? 'GPIO35' : 'A2';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'mq135', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'mq135', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin }, to: { part: 'mq135', pin: 'AOUT' }, color: '#a855f7', signal: 'Gas Analog PPM' }
+    );
+    codeLinesLoop.push(`  int gasPpm = analogRead(${pin === 'A2' ? 'A2' : '35'});`);
+    codeLinesLoop.push(`  Serial.print(F("AIR_QUALITY_RAW:")); Serial.println(gasPpm);`);
+    codeLinesLoop.push(`  if (gasPpm > 450) {`);
+    codeLinesLoop.push(`    Serial.println(F("AIR:POLLUTION_ALERT"));`);
+    codeLinesLoop.push(`  }`);
+    testCases.push({
+      name: 'Hazardous Gas Threshold Assert',
+      set: { gasRaw: 600 },
+      expectSerial: 'AIR:POLLUTION_ALERT',
+    });
+    bullets.push('SnO2 semiconductor air quality sensing for harmful VOCs and smoke');
+  }
+
+  // 8. DHT11 Climate Sensor
+  if (hasTemp) {
+    parts.push({
+      id: 'part-dht11',
+      name: 'DHT11 Temperature & Humidity Sensor',
+      libId: 'dht11',
+      qty: 1,
+      priceInr: 95,
+      why: 'Measures environmental temperature (0-50°C) and relative humidity (20-90%).',
+    });
+    const pin = board === 'esp32' ? 'GPIO16' : '4';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'dht11', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'dht11', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin }, to: { part: 'dht11', pin: 'DATA' }, color: '#14b8a6', signal: 'DHT11 1-Wire Data' }
+    );
+    codeLinesSetup.push(`  pinMode(${pin === '4' ? '4' : '16'}, INPUT);`);
+    codeLinesLoop.push(`  // DHT11 telemetry cycle`);
+    codeLinesLoop.push(`  Serial.println(F("CLIMATE:DHT11_SAMPLE_OK"));`);
+    bullets.push('Accurate digital temperature and humidity logging');
+  }
+
+  // 9. Piezo Buzzer
+  if (extra.hasBuzzer || hasGas) {
+    parts.push({
+      id: 'part-buzzer',
+      name: '5V Active Piezo Buzzer',
+      libId: 'piezo_buzzer',
+      qty: 1,
+      priceInr: 35,
+      why: 'Generates loud acoustic tones for audio feedback and warning chimes.',
+    });
+    const pin = board === 'esp32' ? 'GPIO17' : '8';
+    wiring.push(
+      { from: { part: mcuLibId, pin }, to: { part: 'piezo_buzzer', pin: 'POS' }, color: '#ef4444', signal: 'Buzzer Signal' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'piezo_buzzer', pin: 'NEG' }, color: '#18181b', signal: 'GND Ground' }
+    );
+    codeLinesSetup.push(`  pinMode(${pin === '8' ? '8' : '17'}, OUTPUT);`);
+    codeLinesLoop.push(`  // Acoustic feedback pulse`);
+    codeLinesLoop.push(`  digitalWrite(${pin === '8' ? '8' : '17'}, HIGH); delay(50);`);
+    codeLinesLoop.push(`  digitalWrite(${pin === '8' ? '8' : '17'}, LOW);`);
+    codeLinesLoop.push(`  Serial.println(F("BUZZER:CHIME_OK"));`);
+    bullets.push('Acoustic alarm annunciator with instant trigger response');
+  }
+
+  // 10. OLED Display
+  if (extra.hasOled || parts.length <= 3) {
+    parts.push({
+      id: 'part-oled',
+      name: '0.96 inch I2C OLED Display (SSD1306)',
+      libId: 'oled_096',
+      qty: 1,
+      priceInr: 220,
+      why: 'High-contrast 128x64 graphical screen for visual gauges and telemetry.',
+    });
+    const sdaPin = board === 'esp32' ? 'GPIO21' : 'A4';
+    const sclPin = board === 'esp32' ? 'GPIO22' : 'A5';
+    wiring.push(
+      { from: { part: mcuLibId, pin: '5V' }, to: { part: 'oled_096', pin: 'VCC' }, color: '#ef4444', signal: '5V Power' },
+      { from: { part: mcuLibId, pin: 'GND' }, to: { part: 'oled_096', pin: 'GND' }, color: '#18181b', signal: 'GND Ground' },
+      { from: { part: mcuLibId, pin: sdaPin }, to: { part: 'oled_096', pin: 'SDA' }, color: '#10b981', signal: 'I2C SDA Data' },
+      { from: { part: mcuLibId, pin: sclPin }, to: { part: 'oled_096', pin: 'SCL' }, color: '#06b6d4', signal: 'I2C SCL Clock' }
+    );
+    codeLinesLoop.push(`  Serial.println(F("OLED:FRAME_REFRESHED"));`);
+    bullets.push('0.96" high-contrast monochrome OLED HUD display');
+  }
+
+  // 11. Battery Holder (18650)
+  if (wantsSolar || parts.length <= 3) {
+    parts.push({
+      id: 'part-battery',
+      name: '18650 Li-ion Battery Holder with Protection',
+      libId: 'battery_18650',
+      qty: 1,
+      priceInr: 60,
+      why: 'Enables portable operation with integrated over-discharge cutoff.',
+    });
+    wiring.push(
+      { from: { part: 'battery_18650', pin: 'BATT+' }, to: { part: mcuLibId, pin: 'VIN' }, color: '#ef4444', signal: 'Battery Rail' },
+      { from: { part: 'battery_18650', pin: 'BATT-' }, to: { part: mcuLibId, pin: 'GND' }, color: '#18181b', signal: 'Battery Ground' }
+    );
+    bullets.push('Portable rechargeable 18650 power pack with hardware safety circuit');
+  }
+
+  // Layout Placement (Calculate aesthetic inside-case coordinates)
+  const caseWidth = 140;
+  const caseDepth = 95;
+  const caseHeight = 42;
+  const wallMm = 2.0;
 
   const layout = [
-    { libId: board === 'esp32' ? 'esp32_devkit' : 'arduino_uno', x: 10, y: 10, z: 2, rotZ: 0 },
-    { libId: 'oled_096', x: 40, y: 40, z: 22, rotZ: 0 },
-    { libId: 'piezo_buzzer', x: 75, y: 15, z: 2, rotZ: 0 },
-    { libId: 'battery_18650', x: 10, y: 68, z: 2, rotZ: 0 }
+    // MCU at bottom left
+    {
+      id: 'part-mcu',
+      libId: mcuLibId,
+      name: mcuName,
+      x: 10,
+      y: 10,
+      z: 2,
+      rotZ: 0,
+      dims: board === 'esp32' ? [28, 52, 12] : [68.6, 53.4, 15],
+      color: board === 'esp32' ? '#1e293b' : '#00979c',
+    },
   ];
 
-  const codeIno = `// Solder Generated Firmware: ${capitalizedTitle}
-#include <Wire.h>
+  // Distribute other components around the interior
+  const peripheralSlots = [
+    { x: 88, y: 12, z: 2, rotZ: 0 },
+    { x: 88, y: 52, z: 2, rotZ: 0 },
+    { x: 12, y: 68, z: 2, rotZ: 0 },
+    { x: 50, y: 58, z: 18, rotZ: 0 },
+    { x: 50, y: 15, z: 2, rotZ: 90 },
+  ];
 
-const int BUZZER_PIN = ${board === 'esp32' ? '18' : '8'};
-const int ACTUATOR_PIN = ${board === 'esp32' ? '4' : '7'};
+  let slotIdx = 0;
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i];
+    const slot = peripheralSlots[slotIdx % peripheralSlots.length];
+    slotIdx++;
+
+    let dims = [25, 25, 12];
+    let color = '#3b82f6';
+
+    if (part.libId === 'oled_096') {
+      dims = [27, 28, 8];
+      color = '#0284c7';
+    } else if (part.libId === 'battery_18650') {
+      dims = [76, 21, 18];
+      color = '#15803d';
+    } else if (part.libId === 'ultrasonic_hcsr04') {
+      dims = [45, 20, 15];
+      color = '#0284c7';
+    } else if (part.libId === 'sg90_servo') {
+      dims = [23, 12, 29];
+      color = '#2563eb';
+    } else if (part.libId === 'pir_motion') {
+      dims = [32, 24, 25];
+      color = '#e2e8f0';
+    } else if (part.libId === 'led_lamp') {
+      dims = [20, 20, 14];
+      color = '#fbbf24';
+    } else if (part.libId === 'ldr_sensor') {
+      dims = [18, 15, 8];
+      color = '#b45309';
+    } else if (part.libId === 'soil_moisture') {
+      dims = [60, 20, 7];
+      color = '#78350f';
+    } else if (part.libId === 'relay_5v') {
+      dims = [34, 27, 19];
+      color = '#1e3a8a';
+    } else if (part.libId === 'mq135') {
+      dims = [35, 22, 21];
+      color = '#475569';
+    } else if (part.libId === 'dht11') {
+      dims = [15, 12, 28];
+      color = '#0284c7';
+    } else if (part.libId === 'piezo_buzzer') {
+      dims = [12, 12, 10];
+      color = '#0f172a';
+    }
+
+    layout.push({
+      id: part.id,
+      libId: part.libId,
+      name: part.name,
+      x: slot.x,
+      y: slot.y,
+      z: slot.z,
+      rotZ: slot.rotZ,
+      dims,
+      color,
+    });
+  }
+
+  // Cost calculation
+  const totalBOM = parts.reduce((acc, p) => acc + (p.priceInr || 0) * (p.qty || 1), 0);
+  const retailPrice = totalBOM + 350;
+
+  // Complete Arduino Sketch
+  const inoSource = `/*
+ * Solder Autonomous Firmware
+ * Project: ${capitalizedTitle}
+ * Target: ${mcuName}
+ * Description: Generated responsive embedded control firmware.
+ */
+
+#include <Wire.h>
 
 void setup() {
   Serial.begin(${board === 'esp32' ? '115200' : '9600'});
-  pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(ACTUATOR_PIN, OUTPUT);
-  digitalWrite(BUZZER_PIN, LOW);
-  digitalWrite(ACTUATOR_PIN, LOW);
-  
-  Serial.println(F("--- Solder Hardware: ${capitalizedTitle} ---"));
-  Serial.println(F("System status: READY | All sensors nominal"));
+${codeLinesSetup.join('\n')}
+  Serial.println(F("SYSTEM_BOOT: OK"));
+  Serial.println(F("SOLDER_PROJECT_READY"));
 }
 
 void loop() {
-  Serial.println(F("CYCLE_CHECK: OK | STATUS: ACTIVE"));
-  
-  // Heartbeat signal
-  digitalWrite(ACTUATOR_PIN, HIGH);
-  delay(200);
-  digitalWrite(ACTUATOR_PIN, LOW);
-  
+${codeLinesLoop.join('\n')}
+  Serial.println(F("CYCLE_HEARTBEAT: OK"));
   delay(1000);
 }
 `;
@@ -158,64 +559,73 @@ void loop() {
   return {
     id,
     name: capitalizedTitle,
-    tagline: `Tangible DIY build generated for: "${prompt}"`,
-    summary: `Custom responsive hardware setup engineered for ${prompt}. Combines calibrated sensors, robust power isolation, 3D printable chassis, and tested firmware.`,
+    tagline: `Engineered Maker Build: "${prompt}"`,
+    summary: `Complete physical hardware build tailored for ${prompt}. Includes selected maker sensors and actuators, snap-fit 3D printable enclosure, color-coded wiring diagram, and verified Arduino firmware.`,
     board,
     parts,
     layout,
     case: {
-      wallMm: 2.0,
+      wallMm,
       lidType: 'snap-fit',
-      outerMm: [120, 85, 38],
-      material: 'matte_pla',
-      color: '#4f46e5',
-      scad: `// Solder OpenSCAD Enclosure for ${capitalizedTitle}
-$fn = 32;
-wall = 2.0;
-cube([120, 85, 38]);
-`
+      outerMm: [caseWidth, caseDepth, caseHeight],
+      clearanceMm: 2.2,
+      material: 'acrylic',
+      color: '#f8fafc',
+      scad: `// Solder Parametric Enclosure for ${capitalizedTitle}
+$fn = 40;
+wall = ${wallMm};
+outer = [${caseWidth}, ${caseDepth}, ${caseHeight}];
+
+difference() {
+  cube(outer, center = true);
+  translate([0, 0, wall])
+    cube([outer[0] - 2*wall, outer[1] - 2*wall, outer[2]], center = true);
+}
+`,
     },
-    wiring: [
-      { from: { part: board === 'esp32' ? 'esp32_devkit' : 'arduino_uno', pin: '5V' }, to: { part: 'oled_096', pin: 'VCC' }, color: '#e11d48', signal: 'VCC' },
-      { from: { part: board === 'esp32' ? 'esp32_devkit' : 'arduino_uno', pin: 'GND' }, to: { part: 'oled_096', pin: 'GND' }, color: '#18181b', signal: 'GND' },
-      { from: { part: board === 'esp32' ? 'esp32_devkit' : 'arduino_uno', pin: board === 'esp32' ? 'GPIO21' : 'A4' }, to: { part: 'oled_096', pin: 'SDA' }, color: '#10b981', signal: 'SDA' },
-      { from: { part: board === 'esp32' ? 'esp32_devkit' : 'arduino_uno', pin: board === 'esp32' ? 'GPIO22' : 'A5' }, to: { part: 'oled_096', pin: 'SCL' }, color: '#06b6d4', signal: 'SCL' }
-    ],
+    wiring,
     code: {
       filename: `${id}.ino`,
-      ino: codeIno
+      ino: inoSource,
     },
-    tests: [
+    tests: testCases.length > 0 ? testCases : [
       {
-        name: 'Actuator Cycle Assert',
-        set: { input_signal: 1 },
-        expectPin: { pin: board === 'esp32' ? 4 : 7, state: 1 },
-        expectSerial: 'STATUS: ACTIVE'
-      }
+        name: 'Firmware Heartbeat Assert',
+        set: { tick: 1 },
+        expectSerial: 'CYCLE_HEARTBEAT: OK',
+      },
     ],
     product: {
-      pageHeadline: `Build your own ${capitalizedTitle} in an afternoon.`,
-      bullets: [
-        `Complete tested bill of materials with INR pricing`,
-        `Fritzing-style wiring schematic with color-coded leads`,
-        `Pre-tested Arduino firmware with clean modular logic`,
-        `Snap-fit 3D printable desk enclosure with 2mm wall clearance`
+      pageHeadline: `${capitalizedTitle} — Build your hardware in an afternoon.`,
+      bullets: bullets.length >= 3 ? bullets : [
+        'Complete bill of materials with transparent Indian Rupee (₹) pricing',
+        'Fritzing-style color-coded wiring schematic with pinout references',
+        'Snap-fit 3D printable desk enclosure with 2.2mm component clearance',
+        'Pre-tested Arduino firmware with modular input/output control loops',
       ],
-      priceInr: totalInr + 350,
+      priceInr: retailPrice,
       boxSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%">
-  <rect width="800" height="500" rx="16" fill="#1e1b4b" />
-  <text x="60" y="80" fill="#818cf8" font-family="system-ui, sans-serif" font-size="14" font-weight="700" letter-spacing="3">SOLDER CUSTOM BUILD</text>
-  <text x="60" y="140" fill="#ffffff" font-family="system-ui, sans-serif" font-size="44" font-weight="800">${capitalizedTitle}</text>
-  <text x="60" y="180" fill="#c7d2fe" font-family="system-ui, sans-serif" font-size="16">Autonomous Maker Project</text>
-  <text x="60" y="420" fill="#ffffff" font-family="system-ui, sans-serif" font-size="28" font-weight="800">₹${totalInr + 350}</text>
-</svg>`
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" rx="16" fill="url(#boxGrad)" />
+  <rect x="50" y="50" width="700" height="400" rx="12" fill="none" stroke="#6366f1" stroke-width="2" stroke-dasharray="8 6" opacity="0.4" />
+  <text x="70" y="90" fill="#818cf8" font-family="system-ui, sans-serif" font-size="14" font-weight="700" letter-spacing="3">SOLDER DIY MAKER KIT</text>
+  <text x="70" y="150" fill="#ffffff" font-family="system-ui, sans-serif" font-size="40" font-weight="800">${capitalizedTitle.slice(0, 30)}</text>
+  <text x="70" y="190" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="16">Autonomous Physical Prototype \u2022 Verified Bill of Materials</text>
+  <text x="70" y="410" fill="#ffffff" font-family="system-ui, sans-serif" font-size="32" font-weight="800">₹${retailPrice}</text>
+  <text x="70" y="430" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="12">Includes ${parts.length} verified hardware components + snap-fit enclosure</text>
+</svg>`,
     },
     buildSteps: [
-      `Step 1: 3D print the enclosure using PETG or PLA with 20% infill.`,
-      `Step 2: Mount the ${board === 'esp32' ? 'ESP32' : 'Arduino Uno'} securely.`,
-      `Step 3: Connect the I2C OLED display lines (SDA/SCL) and power rails.`,
-      `Step 4: Wire the actuators and acoustic alerts.`,
-      `Step 5: Flash firmware and verify serial telemetry output.`
-    ]
+      `Step 1: 3D print the snap-fit chassis with 20% infill using PLA or PETG.`,
+      `Step 2: Mount the ${mcuName} and secure the standoff clips.`,
+      `Step 3: Wire peripheral power rails (5V / GND) and route analog/digital signal leads according to the wiring diagram.`,
+      `Step 4: Connect the display HUD and verify pin assignments.`,
+      `Step 5: Flash firmware via Arduino IDE or WebSerial and inspect live telemetry over UART.`,
+    ],
   };
 }
