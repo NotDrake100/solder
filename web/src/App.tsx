@@ -435,6 +435,8 @@ export function App() {
           isLoading={isLoading}
           onOpenScrapMode={() => setIsScrapOpen(true)}
           onOpenOrder={() => setIsOrderOpen(true)}
+          onOpenShip={() => setIsShipOpen(true)}
+          onOpenAr={() => setIsArOpen(true)}
           onSelectShowcase={(id) => handleSelectBuild(id)}
         />
       </div>

@@ -6,11 +6,11 @@ import {
   Play,
   Code2,
   Sparkles,
-  Layers,
   Copy,
   Check,
-  Download,
   ShoppingBag,
+  Truck,
+  Eye,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { CaseViewer } from '../viewer';
@@ -20,19 +20,24 @@ import { Simulator } from '../../../sim/Simulator';
 interface AssistantResultCardProps {
   build: SolderBuild;
   onOpenOrder?: () => void;
+  onOpenShip?: () => void;
+  onOpenAr?: () => void;
 }
 
 export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
   build,
   onOpenOrder,
+  onOpenShip,
+  onOpenAr,
 }) => {
-  const [activeTab, setActiveTab] = useState<'case' | 'parts' | 'wiring' | 'simulate' | 'code'>('case');
+  // Tabs: Parts, 3D Case, Wiring, Simulate, Firmware
+  const [activeTab, setActiveTab] = useState<'parts' | 'case' | 'wiring' | 'simulate' | 'firmware'>('case');
   const [isExploded, setIsExploded] = useState(false);
   const [burstCount, setBurstCount] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
 
   const totalCost = build.parts?.reduce(
-    (sum, p) => sum + (p.owned ? 0 : p.priceInr * p.qty),
+    (sum, p) => sum + (p.owned ? 0 : (p.priceInr || 0) * (p.qty || 1)),
     0
   );
 
@@ -45,16 +50,32 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
   };
 
   return (
-    <div className="w-full rounded-2xl bg-zinc-950 border border-zinc-800/90 shadow-2xl overflow-hidden my-3 animate-in fade-in duration-200">
-      {/* Result Tabs Navigation */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2 bg-zinc-900/90 border-b border-zinc-800/80 overflow-x-auto text-xs">
-        <div className="flex items-center gap-1 shrink-0">
+    <div className="w-full rounded-[16px] bg-[#262626] border border-[#3a3a3a] overflow-hidden my-3 select-none">
+      {/* Panel Header: Segmented Tabs & Action Buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-[#212121]/90 border-b border-[#3a3a3a]">
+        {/* Segmented Tabs (scrollable on mobile) */}
+        <div className="flex items-center gap-1 overflow-x-auto py-0.5 scrollbar-none">
+          <button
+            onClick={() => setActiveTab('parts')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              activeTab === 'parts'
+                ? 'bg-[#333333] text-white shadow-xs'
+                : 'text-[#8e8e8e] hover:text-[#ececec] hover:bg-[#2a2a2a]'
+            }`}
+          >
+            <Cpu className="w-3.5 h-3.5 text-sky-400" />
+            <span>Parts</span>
+            <span className="text-[10px] font-mono text-[#8e8e8e]">
+              ({build.parts?.length || 0})
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveTab('case')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === 'case'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/80'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
+                ? 'bg-[#333333] text-white shadow-xs'
+                : 'text-[#8e8e8e] hover:text-[#ececec] hover:bg-[#2a2a2a]'
             }`}
           >
             <Box className="w-3.5 h-3.5 text-emerald-400" />
@@ -62,26 +83,11 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('parts')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
-              activeTab === 'parts'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/80'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
-            }`}
-          >
-            <Cpu className="w-3.5 h-3.5 text-sky-400" />
-            <span>Parts</span>
-            <span className="text-[10px] font-mono text-zinc-400">
-              ({build.parts?.length || 0})
-            </span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('wiring')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === 'wiring'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/80'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
+                ? 'bg-[#333333] text-white shadow-xs'
+                : 'text-[#8e8e8e] hover:text-[#ececec] hover:bg-[#2a2a2a]'
             }`}
           >
             <Zap className="w-3.5 h-3.5 text-amber-400" />
@@ -90,10 +96,10 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
 
           <button
             onClick={() => setActiveTab('simulate')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
               activeTab === 'simulate'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/80'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
+                ? 'bg-[#333333] text-white shadow-xs'
+                : 'text-[#8e8e8e] hover:text-[#ececec] hover:bg-[#2a2a2a]'
             }`}
           >
             <Play className="w-3.5 h-3.5 text-rose-400" />
@@ -101,11 +107,11 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('code')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold transition ${
-              activeTab === 'code'
-                ? 'bg-zinc-800 text-white shadow-xs border border-zinc-700/80'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850'
+            onClick={() => setActiveTab('firmware')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+              activeTab === 'firmware'
+                ? 'bg-[#333333] text-white shadow-xs'
+                : 'text-[#8e8e8e] hover:text-[#ececec] hover:bg-[#2a2a2a]'
             }`}
           >
             <Code2 className="w-3.5 h-3.5 text-violet-400" />
@@ -113,41 +119,65 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
           </button>
         </div>
 
-        {/* Total Price & Order Action */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs font-mono font-bold text-emerald-400">
-            ₹{totalCost} INR
+        {/* Small Header Buttons: Order It, Ship It, AR */}
+        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          <span className="text-xs font-mono font-semibold text-emerald-400 mr-1">
+            ₹{totalCost}
           </span>
+
           {onOpenOrder && (
             <button
               onClick={onOpenOrder}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition shadow-xs"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-zinc-100 text-black text-xs font-medium transition"
+              title="Order hardware kit"
             >
-              <ShoppingBag className="w-3 h-3" />
-              <span>Order Kit</span>
+              <ShoppingBag className="w-3 h-3 text-black" />
+              <span>Order It</span>
+            </button>
+          )}
+
+          {onOpenShip && (
+            <button
+              onClick={onOpenShip}
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#333333] hover:bg-[#3d3d3d] text-[#ececec] text-xs font-medium transition"
+              title="Ship finished unit"
+            >
+              <Truck className="w-3 h-3 text-[#8e8e8e]" />
+              <span className="hidden sm:inline">Ship It</span>
+            </button>
+          )}
+
+          {onOpenAr && (
+            <button
+              onClick={onOpenAr}
+              className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#333333] hover:bg-[#3d3d3d] text-[#ececec] text-xs font-medium transition"
+              title="View in AR"
+            >
+              <Eye className="w-3 h-3 text-[#8e8e8e]" />
+              <span className="hidden sm:inline">AR</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Tab 1: 3D Case Viewer */}
+      {/* Tab Content: 3D Case */}
       {activeTab === 'case' && (
         <div className="relative">
-          {/* Controls sub-bar */}
-          <div className="flex items-center justify-between p-2 bg-zinc-900/60 border-b border-zinc-850 text-xs">
+          {/* Controls Sub-Bar */}
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[#212121]/50 border-b border-[#333333] text-xs">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setIsExploded(false)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
-                  !isExploded ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition ${
+                  !isExploded ? 'bg-[#333] text-white' : 'text-[#8e8e8e] hover:text-white'
                 }`}
               >
                 Assembled
               </button>
               <button
                 onClick={() => setIsExploded(true)}
-                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition ${
-                  isExploded ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
+                className={`px-2.5 py-1 rounded text-[11px] font-medium transition ${
+                  isExploded ? 'bg-[#333] text-white' : 'text-[#8e8e8e] hover:text-white'
                 }`}
               >
                 Exploded View
@@ -155,15 +185,16 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
             </div>
 
             <button
-              onClick={() => setBurstCount((prev) => prev + 1)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[11px] font-semibold hover:bg-emerald-900/80 transition"
+              onClick={() => setBurstCount((c) => c + 1)}
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[11px] font-medium hover:bg-emerald-900/80 transition"
             >
               <Sparkles className="w-3 h-3 text-emerald-400" />
               <span>Burst Reveal</span>
             </button>
           </div>
 
-          <div className="h-[360px] sm:h-[420px] w-full bg-zinc-950">
+          {/* 3D Viewer Container: 420px desktop, 300px mobile */}
+          <div className="h-[300px] sm:h-[420px] w-full bg-[#1b1b1b]">
             <CaseViewer
               layout={build.layout}
               caseSpec={build.case}
@@ -178,11 +209,11 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
         </div>
       )}
 
-      {/* Tab 2: Parts List (BOM) */}
+      {/* Tab Content: Parts */}
       {activeTab === 'parts' && (
-        <div className="p-3 bg-zinc-950 max-h-[380px] overflow-y-auto">
+        <div className="p-3 bg-[#212121] max-h-[380px] overflow-y-auto">
           <table className="w-full text-left text-xs">
-            <thead className="text-zinc-500 border-b border-zinc-800 text-[11px]">
+            <thead className="text-[#8e8e8e] border-b border-[#333] text-[11px]">
               <tr>
                 <th className="pb-2 font-medium">Part Name</th>
                 <th className="pb-2 font-medium">Role</th>
@@ -190,23 +221,23 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
                 <th className="pb-2 font-medium text-right">Price</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-900">
+            <tbody className="divide-y divide-[#2a2a2a]">
               {build.parts?.map((p) => (
-                <tr key={p.id} className="text-zinc-300 hover:bg-zinc-900/50">
-                  <td className="py-2 font-medium text-zinc-100 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <tr key={p.id} className="text-[#d1d1d1] hover:bg-[#282828]">
+                  <td className="py-2.5 font-medium text-white flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                     <span>{p.name}</span>
                     {p.owned && (
-                      <span className="text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.2 rounded-full">
+                      <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.2 rounded">
                         In Drawer
                       </span>
                     )}
                   </td>
-                  <td className="py-2 text-zinc-400 text-[11px] max-w-xs">{p.why}</td>
-                  <td className="py-2 text-center font-mono text-zinc-300">{p.qty}</td>
-                  <td className="py-2 text-right font-mono text-zinc-100 font-semibold">
+                  <td className="py-2.5 text-[#8e8e8e] text-[11px] max-w-xs">{p.why}</td>
+                  <td className="py-2.5 text-center font-mono text-[#d1d1d1]">{p.qty}</td>
+                  <td className="py-2.5 text-right font-mono text-white font-medium">
                     {p.owned ? (
-                      <span className="line-through text-zinc-500">₹{p.priceInr * p.qty}</span>
+                      <span className="line-through text-[#666]">₹{p.priceInr * p.qty}</span>
                     ) : (
                       `₹${p.priceInr * p.qty}`
                     )}
@@ -218,37 +249,41 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
         </div>
       )}
 
-      {/* Tab 3: Interactive Wiring */}
+      {/* Tab Content: Wiring */}
       {activeTab === 'wiring' && (
-        <div className="p-3 bg-zinc-950 max-h-[420px] overflow-y-auto">
+        <div className="p-3 bg-[#212121] max-h-[420px] overflow-y-auto">
           <WiringDiagram build={build} />
         </div>
       )}
 
-      {/* Tab 4: Virtual ATmega328P Simulator */}
+      {/* Tab Content: Simulate */}
       {activeTab === 'simulate' && (
-        <div className="p-3 bg-zinc-950">
+        <div className="p-3 bg-[#212121]">
           <Simulator hex={build.hex} ino={build.code?.ino} className="w-full" />
         </div>
       )}
 
-      {/* Tab 5: Arduino C++ Firmware */}
-      {activeTab === 'code' && (
-        <div className="bg-zinc-950 max-h-[380px] flex flex-col">
-          <div className="flex items-center justify-between px-3 py-2 bg-zinc-900/80 border-b border-zinc-800 text-xs">
-            <span className="font-mono text-zinc-300 text-[11px]">
+      {/* Tab Content: Firmware */}
+      {activeTab === 'firmware' && (
+        <div className="bg-[#212121] max-h-[380px] flex flex-col">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[#1e1e1e] border-b border-[#333] text-xs">
+            <span className="font-mono text-[#8e8e8e] text-[11px]">
               {build.code?.filename || `${build.id}.ino`}
             </span>
             <button
               onClick={handleCopyCode}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] font-semibold transition"
+              className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#2e2e2e] hover:bg-[#383838] text-white text-[11px] font-medium transition"
             >
-              {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+              {copiedCode ? (
+                <Check className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <Copy className="w-3 h-3 text-[#8e8e8e]" />
+              )}
               <span>{copiedCode ? 'Copied' : 'Copy code'}</span>
             </button>
           </div>
-          <pre className="flex-1 p-3 text-xs font-mono text-zinc-300 overflow-x-auto bg-zinc-950 leading-relaxed selection:bg-zinc-800">
-            <code>{build.code?.ino || '// No firmware available'}</code>
+          <pre className="flex-1 p-3 text-xs font-mono text-[#d1d1d1] overflow-x-auto bg-[#1b1b1b] leading-relaxed select-text">
+            <code>{build.code?.ino || '// No firmware sketch'}</code>
           </pre>
         </div>
       )}

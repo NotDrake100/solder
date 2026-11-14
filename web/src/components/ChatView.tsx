@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
   ArrowUp,
-  Camera,
-  Copy,
+  Plus,
   RotateCcw,
+  Copy,
   Check,
-  Share2,
-  Loader2,
+  ThumbsUp,
+  ThumbsDown,
   CheckCircle2,
-  Cpu,
-  Box,
+  Circle,
+  Loader2,
   Zap,
-  Code2,
-  Layers,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { AssistantResultCard } from './AssistantResultCard';
@@ -32,60 +29,58 @@ export interface ChatMessage {
 
 interface ChatViewProps {
   messages: ChatMessage[];
-  onSendMessage: (text: string) => void;
+  onSendMessage: (prompt: string) => void;
   isLoading: boolean;
   onOpenScrapMode: () => void;
-  onOpenOrder?: () => void;
+  onOpenOrder: () => void;
+  onOpenShip?: () => void;
+  onOpenAr?: () => void;
   onSelectShowcase: (id: string) => void;
 }
 
-const CYCLING_EXAMPLES = [
-  'A desk plant waterer with moisture telemetry and 5V pump',
-  'A motion-activated night lamp with PIR sensor and warm LED',
-  'An ultrasonic radar with SG90 servo sweep and OLED screen',
-  'An air quality alarm with MQ-135 gas sensor and buzzer',
-  'A solar-powered garden light with LDR and 18650 battery',
-  'A smart distance vault with servo latch and OLED display',
-];
-
-const SUGGESTION_CARDS = [
+const SUGGESTIONS = [
   {
-    title: 'Plant Hydration System',
-    desc: 'Automatic water pump with soil moisture sensor & OLED telemetry',
-    prompt: 'Automatic plant waterer with capacitive soil probe, 5V relay and submersible pump',
-    icon: '🌱',
+    title: 'Plant waterer',
+    desc: 'Soil moisture sensor + pump relay',
+    prompt: 'Automatic plant waterer using Arduino, soil moisture sensor, and a 5V water pump relay with status LED',
   },
   {
-    title: 'Motion Night Light',
-    desc: 'PIR motion sensor turns on warm LED lamp in the dark',
-    prompt: 'Motion-activated night light with PIR motion sensor and warm LED lamp',
-    icon: '💡',
+    title: 'Motion night light',
+    desc: 'PIR motion sensor + warm LED lamp',
+    prompt: 'Motion-activated bedside night light with PIR sensor, smooth PWM dimming LED, and light-dependent resistor (LDR)',
   },
   {
-    title: 'Ultrasonic Radar',
-    desc: 'SG90 servo sweeps distance with 0.96" OLED radar display',
-    prompt: 'Ultrasonic distance radar with SG90 servo sweep and 0.96 inch OLED display',
-    icon: '📡',
+    title: 'Desk fan that turns on when hot',
+    desc: 'Temp sensor + relay fan switch',
+    prompt: 'Smart desk fan that turns on automatically when ambient temperature exceeds 28°C with buzzer alert',
   },
   {
-    title: 'Air Quality Alarm',
-    desc: 'MQ-135 gas and temperature monitor with piezo buzzer warning',
-    prompt: 'Indoor air quality alarm with MQ-135 gas sensor and piezo buzzer',
-    icon: '🌤️',
+    title: 'Distance radar',
+    desc: 'Ultrasonic sensor sweeping on SG90 servo',
+    prompt: 'Mini ultrasonic distance radar on SG90 micro servo with 0.96 inch I2C OLED display',
   },
 ];
 
-const PROGRESS_STAGES = [
-  { key: 'reading', label: 'Reading your idea', icon: Sparkles },
-  { key: 'parts', label: 'Picking parts', icon: Layers },
-  { key: 'wiring', label: 'Wiring', icon: Zap },
-  { key: 'firmware', label: 'Writing firmware', icon: Code2 },
-  { key: 'case', label: 'Designing the case', icon: Box },
-  { key: 'done', label: 'Done', icon: CheckCircle2 },
+const EXAMPLE_PLACEHOLDERS = [
+  'Ask Solder: Plant waterer with soil sensor...',
+  'Ask Solder: Motion-activated night light...',
+  'Ask Solder: Desk fan that triggers when hot...',
+  'Ask Solder: Distance radar with servo and OLED...',
+  'Ask Solder: Smart deadbolt lock with RFID...',
+  'Ask Solder: Rain-sensing balcony window closer...',
+];
+
+const PROGRESS_STEPS = [
+  { key: 'reading', label: 'Reading your idea' },
+  { key: 'parts', label: 'Picking parts' },
+  { key: 'wiring', label: 'Wiring' },
+  { key: 'firmware', label: 'Writing firmware' },
+  { key: 'case', label: 'Designing the case' },
+  { key: 'done', label: 'Done' },
 ];
 
 /**
- * Clean markdown parser that replaces raw markdown (**bold**, `code`, *italic*, bullet lists) with styled JSX
+ * Clean markdown parser for assistant text
  */
 function FormattedMarkdown({ content }: { content: string }) {
   if (!content) return null;
@@ -109,19 +104,22 @@ function FormattedMarkdown({ content }: { content: string }) {
       const token = match[0];
       if (token.startsWith('**') && token.endsWith('**')) {
         parts.push(
-          <strong key={match.index} className="font-semibold text-zinc-950 dark:text-zinc-100">
+          <strong key={match.index} className="font-semibold text-white">
             {token.slice(2, -2)}
           </strong>
         );
       } else if (token.startsWith('`') && token.endsWith('`')) {
         parts.push(
-          <code key={match.index} className="px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
+          <code
+            key={match.index}
+            className="px-1.5 py-0.5 rounded bg-[#2e2e2e] text-emerald-400 font-mono text-[13px]"
+          >
             {token.slice(1, -1)}
           </code>
         );
       } else if (token.startsWith('*') && token.endsWith('*')) {
         parts.push(
-          <em key={match.index} className="italic text-zinc-800 dark:text-zinc-200">
+          <em key={match.index} className="italic text-[#d1d1d1]">
             {token.slice(1, -1)}
           </em>
         );
@@ -141,7 +139,10 @@ function FormattedMarkdown({ content }: { content: string }) {
     if (line.trim().startsWith('```')) {
       if (inCodeBlock) {
         elements.push(
-          <pre key={`code-${i}`} className="my-2 p-3 rounded-xl bg-zinc-950 border border-zinc-800 text-emerald-400 font-mono text-xs overflow-x-auto">
+          <pre
+            key={`code-${i}`}
+            className="my-2 p-3 rounded-xl bg-[#1b1b1b] border border-[#333] text-emerald-400 font-mono text-xs overflow-x-auto"
+          >
             <code>{codeBlockLines.join('\n')}</code>
           </pre>
         );
@@ -162,32 +163,36 @@ function FormattedMarkdown({ content }: { content: string }) {
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
       const itemText = line.trim().slice(2);
       currentList.push(
-        <li key={`li-${i}`} className="ml-4 list-disc text-xs sm:text-sm text-zinc-700 dark:text-zinc-300">
+        <li key={`li-${i}`} className="ml-4 list-disc text-[15px] text-[#ececec]">
           {parseInline(itemText)}
         </li>
       );
       continue;
     } else if (currentList.length > 0) {
-      elements.push(<ul key={`ul-${i}`} className="space-y-1 my-1.5">{currentList}</ul>);
+      elements.push(
+        <ul key={`ul-${i}`} className="my-2 space-y-1">
+          {currentList}
+        </ul>
+      );
       currentList = [];
     }
 
-    // Headers
-    if (line.startsWith('### ')) {
+    // Header 3 or 2
+    if (line.trim().startsWith('### ') || line.trim().startsWith('## ')) {
+      const hText = line.trim().replace(/^#{2,3}\s+/, '');
       elements.push(
-        <h4 key={`h-${i}`} className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mt-2 mb-1">
-          {parseInline(line.slice(4))}
-        </h4>
+        <h3 key={`h-${i}`} className="text-base font-semibold text-white mt-3 mb-1">
+          {parseInline(hText)}
+        </h3>
       );
       continue;
     }
 
-    // Regular line / paragraphs
-    if (!line.trim()) {
-      elements.push(<div key={`sp-${i}`} className="h-1.5" />);
+    if (line.trim() === '') {
+      elements.push(<div key={`br-${i}`} className="h-2" />);
     } else {
       elements.push(
-        <p key={`p-${i}`} className="text-xs sm:text-sm leading-relaxed text-zinc-800 dark:text-zinc-200">
+        <p key={`p-${i}`} className="text-[15px] leading-relaxed text-[#ececec]">
           {parseInline(line)}
         </p>
       );
@@ -195,10 +200,14 @@ function FormattedMarkdown({ content }: { content: string }) {
   }
 
   if (currentList.length > 0) {
-    elements.push(<ul key="ul-end" className="space-y-1 my-1.5">{currentList}</ul>);
+    elements.push(
+      <ul key="ul-end" className="my-2 space-y-1">
+        {currentList}
+      </ul>
+    );
   }
 
-  return <div className="space-y-1">{elements}</div>;
+  return <div className="space-y-1 select-text">{elements}</div>;
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({
@@ -207,63 +216,58 @@ export const ChatView: React.FC<ChatViewProps> = ({
   isLoading,
   onOpenScrapMode,
   onOpenOrder,
-  onSelectShowcase,
+  onOpenShip,
+  onOpenAr,
 }) => {
-  const [inputText, setInputText] = useState('');
+  const [input, setInput] = useState('');
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
-
-  // Typewriter cycling placeholder state
-  const [placeholderText, setPlaceholderText] = useState('');
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-
+  const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const isConversationEmpty = messages.length === 0;
+  // Cycling Typewriter Placeholder
+  const [placeholderText, setPlaceholderText] = useState(EXAMPLE_PLACEHOLDERS[0]);
 
-  // Auto-scroll to bottom as messages/tokens arrive
   useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      index = (index + 1) % EXAMPLE_PLACEHOLDERS.length;
+      setPlaceholderText(EXAMPLE_PLACEHOLDERS[index]);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto scroll to bottom
+  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages, isLoading]);
 
-  // Real typing cycling placeholder
-  useEffect(() => {
-    const currentExample = CYCLING_EXAMPLES[placeholderIndex];
-    let timeout: ReturnType<typeof setTimeout>;
-
-    if (!isDeleting) {
-      if (charIndex < currentExample.length) {
-        timeout = setTimeout(() => {
-          setPlaceholderText(currentExample.slice(0, charIndex + 1));
-          setCharIndex((prev) => prev + 1);
-        }, 30);
-      } else {
-        timeout = setTimeout(() => {
-          setIsDeleting(true);
-        }, 2200);
-      }
-    } else {
-      if (charIndex > 0) {
-        timeout = setTimeout(() => {
-          setPlaceholderText(currentExample.slice(0, charIndex - 1));
-          setCharIndex((prev) => prev - 1);
-        }, 15);
-      } else {
-        setIsDeleting(false);
-        setPlaceholderIndex((prev) => (prev + 1) % CYCLING_EXAMPLES.length);
-      }
+  // Adjust textarea height dynamically
+  const adjustHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const newHeight = Math.min(textareaRef.current.scrollHeight, 160);
+      textareaRef.current.style.height = `${Math.max(28, newHeight)}px`;
     }
+  };
 
-    return () => clearTimeout(timeout);
-  }, [charIndex, isDeleting, placeholderIndex]);
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    adjustHeight();
+  };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const trimmed = inputText.trim();
+    const trimmed = input.trim();
     if (!trimmed || isLoading) return;
-    setInputText('');
+    setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     onSendMessage(trimmed);
   };
 
@@ -274,175 +278,185 @@ export const ChatView: React.FC<ChatViewProps> = ({
     }
   };
 
-  const handleCopyMessage = (msgId: string, text: string) => {
+  const handleCopyMessage = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedMsgId(msgId);
+    setCopiedMsgId(id);
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
+  const handleRate = (id: string, type: 'up' | 'down') => {
+    setRatings((prev) => ({
+      ...prev,
+      [id]: prev[id] === type ? undefined : type,
+    }));
+  };
+
+  const isConversationEmpty = messages.length === 0;
+
+  // Render the composer pill component (used in empty state & pinned at bottom)
+  const renderComposer = (isCentered: boolean = false) => {
+    const hasText = input.trim().length > 0;
+
+    return (
+      <div className={`w-full max-w-[768px] mx-auto px-4 ${isCentered ? '' : 'pt-2 pb-3'}`}>
+        <form
+          onSubmit={handleSubmit}
+          className="relative flex items-center bg-[#303030] rounded-[26px] min-h-[52px] px-3 sm:px-4 py-2 transition-all shadow-lg"
+        >
+          {/* + Button for Scrap Mode attachment */}
+          <button
+            type="button"
+            onClick={onOpenScrapMode}
+            className="p-1.5 rounded-full text-[#8e8e8e] hover:text-white hover:bg-[#3d3d3d] transition shrink-0 mr-1.5"
+            title="Attach photo for Scrap Mode"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+
+          {/* Auto-growing Textarea */}
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholderText}
+            disabled={isLoading}
+            className="flex-1 bg-transparent border-0 outline-none resize-none text-[15px] text-[#ececec] placeholder-[#8e8e8e] leading-relaxed max-h-[160px] py-1 selection:bg-[#404040]"
+          />
+
+          {/* Round 36px Send button: white bg with black up-arrow; disabled = #676767 */}
+          <button
+            type="submit"
+            disabled={!hasText || isLoading}
+            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ml-1.5 transition-all ${
+              hasText && !isLoading
+                ? 'bg-white text-black hover:bg-zinc-200 cursor-pointer shadow'
+                : 'bg-[#676767] text-[#212121] cursor-not-allowed opacity-70'
+            }`}
+            title="Send message"
+          >
+            <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+          </button>
+        </form>
+
+        {/* Grey disclaimer */}
+        <div className="text-center text-[12px] text-[#8e8e8e] pt-2 select-none">
+          Solder can make mistakes. Check wiring before powering on.
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full">
-      {/* 1. EMPTY STATE (Centered greeting + composer + 4 suggestion cards) */}
-      {isConversationEmpty && (
-        <div className="m-auto flex flex-col items-center max-w-[768px] w-full px-4 py-6 sm:py-10 shrink-0">
-          {/* Big Centered Greeting */}
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-              What do you want to build?
-            </h1>
-            <p className="mt-2 text-xs sm:text-sm text-zinc-500 max-w-md mx-auto">
-              Hardware schematics, 3D printable enclosures, verified Arduino firmware, and bill of materials.
-            </p>
+    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full bg-[#212121]">
+      {/* 1. EMPTY STATE (when no messages yet) */}
+      {isConversationEmpty ? (
+        <div className="m-auto flex flex-col items-center max-w-[768px] w-full px-4 py-8">
+          {/* Large centered greeting */}
+          <h1 className="text-[28px] font-semibold text-white tracking-tight text-center mb-6">
+            What do you want to build?
+          </h1>
+
+          {/* Composer directly under heading */}
+          <div className="w-full mb-8">
+            {renderComposer(true)}
           </div>
 
-          {/* Centered Composer */}
-          <form
-            onSubmit={handleSubmit}
-            className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-750 rounded-3xl shadow-lg focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500/80 p-2 sm:p-3 transition-all"
-          >
-            <textarea
-              ref={textareaRef}
-              rows={2}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-              placeholder={placeholderText ? `e.g. ${placeholderText}` : 'Type any physical hardware idea...'}
-              className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 resize-none px-3 py-1 focus:outline-hidden"
-            />
-
-            <div className="flex items-center justify-between pt-1 px-1">
-              {/* Attach / Scrap photo button */}
+          {/* 4 suggestion cards in a 2x2 grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+            {SUGGESTIONS.map((item, idx) => (
               <button
-                type="button"
-                onClick={onOpenScrapMode}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition"
-                title="Scan spare parts drawer with camera"
+                key={idx}
+                onClick={() => onSendMessage(item.prompt)}
+                className="p-3.5 rounded-xl bg-[#2a2a2a] hover:bg-[#303030] border border-[#333333] text-left transition group"
               >
-                <Camera className="w-4 h-4 text-emerald-500" />
-                <span className="hidden sm:inline">Attach drawer photo</span>
-              </button>
-
-              {/* Round send arrow button */}
-              <button
-                type="submit"
-                disabled={isLoading || !inputText.trim()}
-                className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center transition shadow-xs disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shrink-0"
-                title="Send idea"
-              >
-                <ArrowUp className="w-4 h-4 stroke-[2.5]" />
-              </button>
-            </div>
-          </form>
-
-          {/* 4 Suggestion Cards in 2x2 Grid */}
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5 sm:mt-6">
-            {SUGGESTION_CARDS.map((card) => (
-              <button
-                key={card.title}
-                type="button"
-                onClick={() => onSendMessage(card.prompt)}
-                className="p-3.5 rounded-2xl bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-850 border border-zinc-200/90 dark:border-zinc-800 text-left transition-all shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 group active:scale-[0.99]"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{card.icon}</span>
-                  <div className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
-                    {card.title}
-                  </div>
+                <div className="text-sm font-medium text-white group-hover:text-emerald-400 transition-colors">
+                  {item.title}
                 </div>
-                <div className="text-[11px] text-zinc-500 mt-1 leading-snug line-clamp-2">
-                  {card.desc}
+                <div className="text-xs text-[#8e8e8e] mt-1 line-clamp-1">
+                  {item.desc}
                 </div>
               </button>
             ))}
           </div>
         </div>
-      )}
-
-      {/* 2. ACTIVE CONVERSATION (Max ~768px centered column) */}
-      {!isConversationEmpty && (
-        <div className="max-w-[768px] mx-auto w-full px-3 sm:px-4 pt-4 pb-6 space-y-6 flex-1">
+      ) : (
+        /* 2. CONVERSATION MESSAGES LIST */
+        <div className="max-w-[768px] mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1">
           {messages.map((msg) => {
             const isUser = msg.sender === 'user';
 
             if (isUser) {
-              // User Message: Right-aligned soft grey bubble
               return (
-                <div key={msg.id} className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-150">
-                  <div className="bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 rounded-3xl rounded-tr-md px-4 sm:px-5 py-2.5 sm:py-3 max-w-[85%] sm:max-w-[70%] text-sm leading-relaxed shadow-xs">
+                <div key={msg.id} className="flex justify-end w-full">
+                  <div className="bg-[#303030] text-[#ececec] rounded-[22px] px-4 py-2.5 max-w-[70%] text-[15px] leading-relaxed shadow-sm break-words select-text">
                     {msg.text}
                   </div>
                 </div>
               );
             }
 
-            // Assistant Message: No bubble, avatar + formatted markdown text
+            // Assistant message: No bubble, full column width, Solder avatar on left
             return (
-              <div key={msg.id} className="flex items-start gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom-2 duration-150">
-                {/* Solder Avatar */}
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-500 to-sky-500 text-zinc-950 flex items-center justify-center shrink-0 shadow-xs mt-1">
-                  <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+              <div key={msg.id} className="flex gap-3 sm:gap-4 items-start w-full">
+                {/* Round Solder Avatar */}
+                <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 mt-0.5 text-emerald-400">
+                  <Zap className="w-3.5 h-3.5 fill-emerald-400/20" />
                 </div>
 
-                {/* Message Column */}
+                {/* Assistant Content Column */}
                 <div className="flex-1 min-w-0 space-y-3">
-                  {/* Assistant Markdown Text */}
+                  {/* Typing Indicator (3 pulsing dots) */}
+                  {msg.isTyping && (
+                    <div className="flex items-center gap-1.5 py-1 text-emerald-400">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse [animation-delay:150ms]"></span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse [animation-delay:300ms]"></span>
+                    </div>
+                  )}
+
+                  {/* Markdown Formatted Text & Blinking Caret */}
                   {msg.text && (
-                    <div className="text-xs sm:text-sm leading-relaxed text-zinc-800 dark:text-zinc-200 font-normal">
+                    <div className="text-[15px] leading-relaxed text-[#ececec]">
                       <FormattedMarkdown content={msg.text} />
                       {msg.isStreaming && (
-                        <span className="inline-block w-1.5 h-3.5 ml-1 bg-emerald-500 animate-pulse align-middle"></span>
+                        <span className="inline-block w-1.5 h-4 bg-emerald-400 ml-1 translate-y-0.5 animate-pulse" />
                       )}
                     </div>
                   )}
 
-                  {/* Typing Indicator */}
-                  {msg.isTyping && (
-                    <div className="flex items-center gap-1.5 py-1 text-zinc-400">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce [animation-delay:-0.3s]"></span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce [animation-delay:-0.15s]"></span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce"></span>
-                      <span className="text-xs font-mono text-zinc-400 ml-2">Analyzing hardware requirements...</span>
-                    </div>
-                  )}
-
-                  {/* Step-by-Step Progress Pipeline */}
+                  {/* Live Progress Checklist while building */}
                   {msg.isStreaming && (
-                    <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 sm:p-4 space-y-2 font-mono text-xs">
-                      <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-                        <span>Live Hardware Synthesis</span>
-                        <span className="text-emerald-500 flex items-center gap-1.5">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          Streaming
-                        </span>
+                    <div className="p-3 rounded-xl bg-[#262626] border border-[#3a3a3a] space-y-2 text-xs">
+                      <div className="font-medium text-white flex items-center justify-between">
+                        <span>Hardware Co-Design Pipeline</span>
+                        <Loader2 className="w-3.5 h-3.5 text-emerald-400 animate-spin" />
                       </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
-                        {PROGRESS_STAGES.map((stg) => {
-                          const isDone = msg.completedSteps?.includes(stg.key);
-                          const isCurrent = msg.currentStep === stg.key;
+                      <div className="space-y-1.5 pt-1">
+                        {PROGRESS_STEPS.map((step) => {
+                          const isDone = msg.completedSteps?.includes(step.key);
+                          const isCurrent = msg.currentStep === step.key;
 
                           return (
                             <div
-                              key={stg.key}
-                              className={`p-2 rounded-xl border text-xs flex items-center gap-2 transition-all ${
+                              key={step.key}
+                              className={`flex items-center gap-2 transition-colors ${
                                 isDone
-                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                                  ? 'text-emerald-400 font-medium'
                                   : isCurrent
-                                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-300 ring-1 ring-amber-500/20'
-                                  : 'bg-zinc-100/50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800 text-zinc-400 opacity-60'
+                                  ? 'text-white font-medium'
+                                  : 'text-[#666666]'
                               }`}
                             >
                               {isDone ? (
-                                <Check className="w-3 h-3 text-emerald-500 shrink-0 stroke-[2.5]" />
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                               ) : isCurrent ? (
-                                <Loader2 className="w-3 h-3 text-amber-500 shrink-0 animate-spin" />
+                                <Loader2 className="w-3.5 h-3.5 text-emerald-400 animate-spin shrink-0" />
                               ) : (
-                                <span className="w-3 h-3 rounded-full border border-zinc-400 shrink-0 opacity-40"></span>
+                                <Circle className="w-3.5 h-3.5 text-[#555] shrink-0" />
                               )}
-                              <span className="text-[11px] font-semibold truncate">
-                                {stg.label}
-                              </span>
+                              <span>{step.label}</span>
                             </div>
                           );
                         })}
@@ -450,23 +464,25 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                   )}
 
-                  {/* Rich Embedded Result Card (3D Case, Parts, Wiring, Simulate, Firmware) */}
+                  {/* Embedded Rich Result Card (Parts, 3D Case, Wiring, Simulate, Firmware) */}
                   {msg.buildData && (
                     <AssistantResultCard
                       build={msg.buildData}
                       onOpenOrder={onOpenOrder}
+                      onOpenShip={onOpenShip}
+                      onOpenAr={onOpenAr}
                     />
                   )}
 
-                  {/* Row of small icon buttons under each reply: Copy, Regenerate, Share */}
-                  <div className="flex items-center gap-1 pt-1 text-zinc-400">
+                  {/* Row of ghost icon buttons under each reply: copy, regenerate, thumbs */}
+                  <div className="flex items-center gap-1 text-[#8e8e8e] pt-1">
                     <button
                       onClick={() => handleCopyMessage(msg.id, msg.text)}
-                      className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
+                      className="p-1.5 rounded-lg hover:bg-[#2a2a2a] hover:text-white transition"
                       title="Copy reply text"
                     >
                       {copiedMsgId === msg.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}
@@ -474,24 +490,34 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
                     <button
                       onClick={() => onSendMessage(msg.text || 'Rebuild')}
-                      className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
+                      className="p-1.5 rounded-lg hover:bg-[#2a2a2a] hover:text-white transition"
                       title="Regenerate build"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                     </button>
 
                     <button
-                      onClick={() => {
-                        if (navigator.share) {
-                          navigator.share({ title: 'Solder Build', text: msg.text });
-                        } else {
-                          handleCopyMessage(msg.id, window.location.href);
-                        }
-                      }}
-                      className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200 transition"
-                      title="Share build"
+                      onClick={() => handleRate(msg.id, 'up')}
+                      className={`p-1.5 rounded-lg hover:bg-[#2a2a2a] transition ${
+                        ratings[msg.id] === 'up'
+                          ? 'text-emerald-400'
+                          : 'hover:text-white text-[#8e8e8e]'
+                      }`}
+                      title="Good response"
                     >
-                      <Share2 className="w-3.5 h-3.5" />
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => handleRate(msg.id, 'down')}
+                      className={`p-1.5 rounded-lg hover:bg-[#2a2a2a] transition ${
+                        ratings[msg.id] === 'down'
+                          ? 'text-rose-400'
+                          : 'hover:text-white text-[#8e8e8e]'
+                      }`}
+                      title="Poor response"
+                    >
+                      <ThumbsDown className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -504,47 +530,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
       {/* 3. DOCKED BOTTOM COMPOSER (when conversation is active) */}
       {!isConversationEmpty && (
-        <div className="sticky bottom-0 z-20 shrink-0 w-full bg-gradient-to-t from-white via-white/95 dark:from-zinc-950 dark:via-zinc-950/95 to-transparent pt-3 pb-safe pb-4">
-          <div className="max-w-[768px] mx-auto w-full px-3 sm:px-4">
-            <form
-              onSubmit={handleSubmit}
-              className="relative flex items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-750 rounded-full shadow-xl focus-within:border-emerald-500/80 focus-within:ring-2 focus-within:ring-emerald-500/20 px-3 py-1.5 sm:py-2 transition-all"
-            >
-              {/* Attach / Scrap photo button */}
-              <button
-                type="button"
-                onClick={onOpenScrapMode}
-                className="p-2 rounded-full text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
-                title="Scan spare parts drawer"
-              >
-                <Camera className="w-4 h-4 text-emerald-500" />
-              </button>
-
-              {/* Text input with cycling placeholder */}
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                disabled={isLoading}
-                placeholder={placeholderText ? `e.g. ${placeholderText}` : 'Type any hardware idea...'}
-                className="flex-1 bg-transparent text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 px-2 py-1 focus:outline-hidden disabled:opacity-50"
-              />
-
-              {/* Circular send arrow button */}
-              <button
-                type="submit"
-                disabled={isLoading || !inputText.trim()}
-                className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center transition shadow-xs disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shrink-0"
-                title="Send idea"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-white dark:text-zinc-900" />
-                ) : (
-                  <ArrowUp className="w-4 h-4 stroke-[2.5]" />
-                )}
-              </button>
-            </form>
-          </div>
+        <div className="sticky bottom-0 z-20 shrink-0 w-full bg-gradient-to-t from-[#212121] via-[#212121]/95 to-transparent pt-3 pb-safe">
+          {renderComposer(false)}
         </div>
       )}
     </div>
