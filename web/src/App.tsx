@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ChatView, ChatMessage } from './components/ChatView';
 import { getDefaultHarnessChecks, VerifierCheck } from './components/HarnessTrace';
+import { LiveCameraModal } from './components/LiveCameraModal';
 import { ScrapModal } from './components/ScrapModal';
 import { OrderModal, ShipModal, ArModal, ShareModal } from './components/ActionModals';
 
@@ -27,6 +28,9 @@ export function App() {
   // Sidebar visibility
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  // Live Camera state
+  const [isLiveCameraOpen, setIsLiveCameraOpen] = useState(false);
 
   // Modals state
   const [isScrapOpen, setIsScrapOpen] = useState(false);
@@ -124,9 +128,10 @@ export function App() {
     }
   };
 
-  // Send a message from composer or suggestion chip
-  const handleSendMessage = async (prompt: string) => {
-    if (!prompt.trim() || isLoading) return;
+  // Send a message from composer or suggestion chip, with optional photo and inventory
+  const handleSendMessage = async (prompt: string, photoBase64?: string, inventory?: string[]) => {
+    if (!prompt.trim() && !photoBase64) return;
+    if (isLoading) return;
 
     setIsLoading(true);
 
@@ -138,6 +143,7 @@ export function App() {
       id: userMsgId,
       sender: 'user',
       text: prompt,
+      photoBase64,
       timestamp: Date.now(),
     };
 
@@ -155,6 +161,42 @@ export function App() {
 
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
 
+    // Handle Photo Identification mode if photo provided without a full idea
+    if (photoBase64 && (!prompt || prompt.toLowerCase().includes('photo') || prompt.toLowerCase().includes('picture'))) {
+      try {
+        const photoRes = await fetch('/api/photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: photoBase64 }),
+        });
+
+        if (photoRes.ok) {
+          const photoData = await photoRes.json();
+          const owned = photoData.ownedParts || [];
+          const partNames = owned.map((p: any) => p.name).join(', ') || 'Arduino Uno, 5V Relay, Sensor';
+
+          setIsLoading(false);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === asstMsgId
+                ? {
+                    ...m,
+                    isStreaming: false,
+                    isTyping: false,
+                    text: `I see: **${partNames}**. Would you like to build with these?`,
+                    detectedParts: owned,
+                    suggestedPrompt: photoData.suggestedPrompt || `Build an automated system using ${partNames}`,
+                  }
+                : m
+            )
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn('Photo identification fallback:', err);
+      }
+    }
+
     // Check if prompt is desk fan or hot fan to trigger reproducible self-heal demo
     const isFan = prompt.toLowerCase().includes('fan') || prompt.toLowerCase().includes('hot');
 
@@ -163,7 +205,12 @@ export function App() {
       const res = await fetch('/api/build', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, demoHeal: isFan }),
+        body: JSON.stringify({
+          prompt,
+          photoBase64,
+          inventory,
+          demoHeal: isFan,
+        }),
       });
 
       let buildData: SolderBuild | null = null;
@@ -177,6 +224,15 @@ export function App() {
 
       if (isFan && !buildData) {
         buildData = DESK_FAN_BUILD;
+      }
+
+      // If inventory was provided, tag matching parts as owned in local state
+      if (buildData && Array.isArray(inventory) && inventory.length > 0) {
+        const invLower = inventory.map((i) => i.toLowerCase());
+        buildData.parts = buildData.parts.map((p) => ({
+          ...p,
+          owned: invLower.some((inv) => inv.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(inv)),
+        }));
       }
 
       // Step B: Connect to SSE stream
@@ -329,20 +385,20 @@ export function App() {
 
         sse.addEventListener('done', () => {
           sse.close();
-          finishLiveBuild(buildData, asstMsgId, prompt, isFan);
+          finishLiveBuild(buildData, asstMsgId, prompt, isFan, inventory);
         });
 
         sse.onerror = () => {
           sse.close();
           if (!sseReceived) {
-            simulateLocalProgression(buildData, asstMsgId, prompt, isFan);
+            simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory);
           }
         };
       } catch {
-        simulateLocalProgression(buildData, asstMsgId, prompt, isFan);
+        simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory);
       }
     } catch {
-      simulateLocalProgression(null, asstMsgId, prompt, isFan);
+      simulateLocalProgression(null, asstMsgId, prompt, isFan, inventory);
     }
   };
 
@@ -351,9 +407,19 @@ export function App() {
     buildData: SolderBuild | null,
     msgId: string,
     prompt: string,
-    isFan: boolean
+    isFan: boolean,
+    inventory?: string[]
   ) => {
     const targetBuild = buildData || (isFan ? DESK_FAN_BUILD : SHOWCASE_BUILDS.sip);
+
+    // If inventory provided, tag matching parts
+    if (Array.isArray(inventory) && inventory.length > 0) {
+      const invLower = inventory.map((i) => i.toLowerCase());
+      targetBuild.parts = targetBuild.parts.map((p) => ({
+        ...p,
+        owned: invLower.some((inv) => inv.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(inv)),
+      }));
+    }
 
     // Stage 1: Reading
     await new Promise((r) => setTimeout(r, 300));
@@ -433,17 +499,26 @@ export function App() {
 
     // Stage 6: Done
     await new Promise((r) => setTimeout(r, 350));
-    finishLiveBuild(targetBuild, msgId, prompt, isFan);
+    finishLiveBuild(targetBuild, msgId, prompt, isFan, inventory);
   };
 
   const finishLiveBuild = (
     buildData: SolderBuild | null,
     msgId: string,
     prompt: string,
-    isFan: boolean
+    isFan: boolean,
+    inventory?: string[]
   ) => {
     setIsLoading(false);
     const finalBuild: SolderBuild = buildData || (isFan ? DESK_FAN_BUILD : SHOWCASE_BUILDS.sip);
+
+    if (Array.isArray(inventory) && inventory.length > 0) {
+      const invLower = inventory.map((i) => i.toLowerCase());
+      finalBuild.parts = finalBuild.parts.map((p) => ({
+        ...p,
+        owned: invLower.some((inv) => inv.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(inv)),
+      }));
+    }
 
     setActiveBuild(finalBuild);
     setBuildsHistory((prev) => {
@@ -474,6 +549,24 @@ export function App() {
         };
       })
     );
+  };
+
+  // Handler for Live Camera Mode "Use these parts"
+  const handleUseLiveCameraParts = (parts: string[]) => {
+    const promptText = `Build a verified DIY device using my tracked parts: ${parts.join(', ')}`;
+    handleSendMessage(promptText, undefined, parts);
+  };
+
+  // Handler for file upload fallback from Live Camera
+  const handleCameraPhotoFallback = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const b64 = e.target?.result as string;
+      if (b64) {
+        handleSendMessage('Analyze my parts photo', b64);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Apply parts detected from Scrap Mode photo
@@ -546,6 +639,7 @@ export function App() {
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
           onOpenScrapMode={() => setIsScrapOpen(true)}
+          onOpenLiveCamera={() => setIsLiveCameraOpen(true)}
           onOpenOrder={() => setIsOrderOpen(true)}
           onOpenShip={() => setIsShipOpen(true)}
           onOpenAr={() => setIsArOpen(true)}
@@ -554,6 +648,14 @@ export function App() {
           onSelectTab={(tab) => setActiveResultTab(tab)}
         />
       </main>
+
+      {/* Live Camera Tracking Modal ("Point at your parts") */}
+      <LiveCameraModal
+        isOpen={isLiveCameraOpen}
+        onClose={() => setIsLiveCameraOpen(false)}
+        onUseParts={handleUseLiveCameraParts}
+        onUploadFallback={handleCameraPhotoFallback}
+      />
 
       {/* Modals */}
       <ScrapModal

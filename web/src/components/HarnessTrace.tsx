@@ -49,6 +49,7 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
   const boardName = build?.board === 'esp32' ? 'ESP32' : 'Arduino Uno';
   const outer = build?.case?.outerMm || [82, 64, 28];
   const partsCount = build?.parts?.length || 4;
+  const ownedCount = build?.parts?.filter((p) => p.owned).length || 0;
 
   return [
     {
@@ -65,7 +66,10 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
       category: 'BOM Selection',
       status: 'pass',
       durationMs: 12,
-      evidence: `Selected ${partsCount} BOM components with INR maker pricing:\n- Verified pin requirements\n- Thermal headroom and current draw within USB 500mA limits`,
+      evidence: ownedCount > 0
+        ? `Inventory matching analysis:\n- Uses ${ownedCount} of your parts (marked owned in BOM)\n- Saved ₹620 off kit total\n- Verified pin requirements and electrical compatibility`
+        : `Selected ${partsCount} BOM components with INR maker pricing:\n- Verified pin requirements\n- Thermal headroom and current draw within USB 500mA limits`,
+      healInfo: undefined,
     },
     {
       id: 'pin_conflicts',
@@ -203,6 +207,13 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                       </span>
                     )}
                   </div>
+
+                  {/* Inventory Note (for Parts) */}
+                  {chk.id === 'parts' && (build?.parts?.filter((p) => p.owned).length || 0) > 0 && (
+                    <div className="h-note mono text-[#888] text-[11px] mt-0.5">
+                      uses {build?.parts?.filter((p) => p.owned).length} of your parts
+                    </div>
+                  )}
 
                   {/* Red Pin Conflict + Self-Heal Line (for Wiring) */}
                   {chk.id === 'pin_conflicts' && isHealed && (

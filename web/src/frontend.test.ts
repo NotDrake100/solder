@@ -56,6 +56,12 @@ import { SolderLogo } from './components/SolderLogo.tsx';
 assert(typeof SolderLogo === 'function', 'SolderLogo Mark 06 component exists');
 console.log('   ✓ Logo Mark 06 "Case and joint" verified.');
 
+// 6. Verify Live Camera Mode & Photo Chat
+console.log('6. Testing Live Camera Mode & Photo Chat components...');
+import { LiveCameraModal } from './components/LiveCameraModal.tsx';
+assert(typeof LiveCameraModal === 'function', 'LiveCameraModal component exists and exported');
+console.log('   ✓ Live Camera tracking modal verified.');
+
 console.log('\n========================================');
 console.log('ALL FRONTEND TEST SUITES PASSED (100%)');
 console.log('========================================');

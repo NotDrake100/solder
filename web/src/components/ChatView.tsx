@@ -8,6 +8,11 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
+  Plus,
+  Camera,
+  Image as ImageIcon,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { HarnessTrace, VerifierCheck } from './HarnessTrace';
@@ -19,6 +24,10 @@ export interface ChatMessage {
   sender: 'user' | 'assistant';
   text: string;
   timestamp: number;
+  photoBase64?: string;
+  detectedParts?: Array<{ name: string; libId?: string; confidence?: number }>;
+  suggestedPrompt?: string;
+  inventory?: string[];
   buildData?: SolderBuild;
   isStreaming?: boolean;
   isTyping?: boolean;
@@ -29,9 +38,10 @@ export interface ChatMessage {
 
 interface ChatViewProps {
   messages: ChatMessage[];
-  onSendMessage: (prompt: string) => void;
+  onSendMessage: (prompt: string, photoBase64?: string, inventory?: string[]) => void;
   isLoading: boolean;
   onOpenScrapMode: () => void;
+  onOpenLiveCamera: () => void;
   onOpenOrder: () => void;
   onOpenShip?: () => void;
   onOpenAr?: () => void;
@@ -57,7 +67,7 @@ const PROGRESS_STEPS = [
 ];
 
 /**
- * Clean markdown parser for assistant text
+ * Clean markdown parser for assistant text with comfortable reading typography
  */
 function FormattedMarkdown({ content }: { content: string }) {
   if (!content) return null;
@@ -88,7 +98,7 @@ function FormattedMarkdown({ content }: { content: string }) {
         parts.push(
           <code
             key={match.index}
-            className="mono px-1 py-0.5 rounded bg-[#202020] text-[#e0e0e0] text-[12px] border border-[#333]"
+            className="mono px-1.5 py-0.5 rounded bg-[#202020] text-[#e0e0e0] text-[13px] border border-[#333]"
           >
             {token.slice(1, -1)}
           </code>
@@ -118,7 +128,7 @@ function FormattedMarkdown({ content }: { content: string }) {
       return;
     }
     elements.push(
-      <p key={`p-${i}`} className="leading-relaxed text-[#d4d4d4]">
+      <p key={`p-${i}`} className="leading-[1.7] text-[#d4d4d4]">
         {parseInline(line)}
       </p>
     );
@@ -132,6 +142,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   onSendMessage,
   isLoading,
   onOpenScrapMode,
+  onOpenLiveCamera,
   onOpenOrder,
   onOpenShip,
   onOpenAr,
@@ -140,14 +151,19 @@ export const ChatView: React.FC<ChatViewProps> = ({
   onSelectTab,
 }) => {
   const [inputText, setInputText] = useState('');
+  const [selectedPhotoBase64, setSelectedPhotoBase64] = useState<string | null>(null);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileUploadInputRef = useRef<HTMLInputElement>(null);
+  const fileCaptureInputRef = useRef<HTMLInputElement>(null);
 
   const isConversationEmpty = messages.length === 0;
 
-  // Auto scroll to bottom when messages update
+  // Auto scroll to bottom with smooth behavior
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -155,9 +171,25 @@ export const ChatView: React.FC<ChatViewProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = inputText.trim();
-    if (!trimmed || isLoading) return;
-    onSendMessage(trimmed);
+    if ((!trimmed && !selectedPhotoBase64) || isLoading) return;
+
+    onSendMessage(trimmed || 'Build with this photo', selectedPhotoBase64 || undefined);
     setInputText('');
+    setSelectedPhotoBase64(null);
+    setShowAttachMenu(false);
+  };
+
+  const handlePhotoFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const b64 = e.target?.result as string;
+      if (b64) {
+        setSelectedPhotoBase64(b64);
+        setShowAttachMenu(false);
+        inputRef.current?.focus();
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleCopyMessage = (id: string, text: string) => {
@@ -173,64 +205,166 @@ export const ChatView: React.FC<ChatViewProps> = ({
     }));
   };
 
-  // Square tray composer matching chatgpt-inline.html
+  // Square tray composer matching chatgpt-inline.html + photo sharing & live camera
   const renderComposerTray = (autoFocus = false) => {
-    const hasText = inputText.trim().length > 0;
+    const hasText = inputText.trim().length > 0 || Boolean(selectedPhotoBase64);
 
     return (
-      <form
-        onSubmit={handleSubmit}
-        className="composer-tray w-full bg-[#161616] border border-[#333333] focus-within:border-[#555] rounded-xl px-3 py-2.5 flex items-center gap-2.5 transition"
-      >
-        <span
-          className="composer-dot w-2 h-2 rounded-full bg-[#555] shrink-0"
-          aria-hidden="true"
-        />
-
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Describe a device"
-          aria-label="Describe a device"
-          autoFocus={autoFocus}
-          disabled={isLoading}
-          className="bg-transparent text-sm text-[#f5f5f5] placeholder:text-[#666] outline-none flex-1 min-w-0"
-        />
-
-        <button
-          type="submit"
-          disabled={!hasText || isLoading}
-          className={`send w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${
-            hasText && !isLoading
-              ? 'bg-white text-black hover:bg-neutral-200 cursor-pointer'
-              : 'bg-[#262626] text-[#555] cursor-not-allowed opacity-50'
-          }`}
-          aria-label="Send"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M7 11.25V2.75M7 2.75L3.25 6.5M7 2.75L10.75 6.5"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+      <div className="relative w-full">
+        {/* Pending photo thumbnail preview */}
+        {selectedPhotoBase64 && (
+          <div className="mb-2 inline-flex items-center gap-2 p-1.5 rounded-xl bg-[#161616] border border-[#333] shadow-md animate-fadeIn">
+            <img
+              src={selectedPhotoBase64}
+              alt="Upload preview"
+              className="w-12 h-12 object-cover rounded-lg border border-[#444]"
             />
-          </svg>
-        </button>
-      </form>
+            <span className="text-xs text-[#a3a3a3] font-medium pr-1">Photo attached</span>
+            <button
+              type="button"
+              onClick={() => setSelectedPhotoBase64(null)}
+              className="p-1 rounded-full text-[#888] hover:text-white hover:bg-[#262626] transition cursor-pointer"
+              title="Remove photo"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Attach Menu Popover */}
+        {showAttachMenu && (
+          <div className="absolute bottom-14 left-0 z-30 p-1.5 rounded-xl bg-[#1a1a1a] border border-[#333] shadow-2xl flex flex-col gap-1 w-48 text-xs select-none animate-fadeIn">
+            <button
+              type="button"
+              onClick={() => fileUploadInputRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#d4d4d4] hover:text-white hover:bg-[#262626] transition text-left cursor-pointer"
+            >
+              <ImageIcon className="w-4 h-4 text-[#a3a3a3]" />
+              <span>Upload photo</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fileCaptureInputRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#d4d4d4] hover:text-white hover:bg-[#262626] transition text-left cursor-pointer"
+            >
+              <Camera className="w-4 h-4 text-[#a3a3a3]" />
+              <span>Take photo</span>
+            </button>
+
+            <div className="border-t border-[#2a2a2a] my-0.5" />
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowAttachMenu(false);
+                onOpenLiveCamera();
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-[#262626] transition text-left cursor-pointer font-medium"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Point at parts (Live)</span>
+            </button>
+          </div>
+        )}
+
+        {/* Hidden file pickers */}
+        <input
+          ref={fileUploadInputRef}
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handlePhotoFile(f);
+          }}
+          className="hidden"
+        />
+        <input
+          ref={fileCaptureInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handlePhotoFile(f);
+          }}
+          className="hidden"
+        />
+
+        <form
+          onSubmit={handleSubmit}
+          className="composer-tray w-full bg-[#161616] border border-[#333333] focus-within:border-[#555] rounded-xl px-2.5 py-2 flex items-center gap-2 transition shadow-xs"
+        >
+          {/* Plus Button for Photos */}
+          <button
+            type="button"
+            onClick={() => setShowAttachMenu((prev) => !prev)}
+            className="p-1.5 rounded-lg text-[#888] hover:text-white hover:bg-[#242424] transition cursor-pointer shrink-0"
+            title="Attach photo or open camera"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+
+          {/* Camera Button for Live Camera Tracking */}
+          <button
+            type="button"
+            onClick={onOpenLiveCamera}
+            className="p-1.5 rounded-lg text-[#888] hover:text-white hover:bg-[#242424] transition cursor-pointer shrink-0"
+            title="Point at your parts (Live tracking)"
+          >
+            <Camera className="w-4 h-4" />
+          </button>
+
+          <span
+            className="composer-dot w-1.5 h-1.5 rounded-full bg-[#555] shrink-0"
+            aria-hidden="true"
+          />
+
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Describe a device or ask Solder..."
+            aria-label="Describe a device"
+            autoFocus={autoFocus}
+            disabled={isLoading}
+            className="bg-transparent text-[15px] text-[#f5f5f5] placeholder:text-[#666] outline-none flex-1 min-w-0"
+          />
+
+          <button
+            type="submit"
+            disabled={!hasText || isLoading}
+            className={`send w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+              hasText && !isLoading
+                ? 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow'
+                : 'bg-[#262626] text-[#555] cursor-not-allowed opacity-50'
+            }`}
+            aria-label="Send"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path
+                d="M7 11.25V2.75M7 2.75L3.25 6.5M7 2.75L10.75 6.5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </form>
+      </div>
     );
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full bg-[#0f0f0f]">
+    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full bg-[#0f0f0f] scroll-smooth">
       {/* 1. EMPTY STATE (when no messages yet) */}
       {isConversationEmpty ? (
         <div className="empty flex-1 flex flex-col justify-center items-center px-4 py-12">
@@ -267,39 +401,94 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
               if (isUser) {
                 return (
-                  <div key={msg.id} className="flex justify-end w-full">
-                    <div className="msg-user bg-[#262626] border border-[#333] text-[#f5f5f5] rounded-2xl px-4 py-2.5 max-w-[85%] text-[14.5px] leading-relaxed shadow-xs break-words select-text">
-                      {msg.text}
+                  <div key={msg.id} className="flex justify-end w-full animate-fadeIn">
+                    <div className="msg-user bg-[#242424] border border-[#2e2e2e] text-[#f5f5f5] rounded-[22px] px-4.5 py-3 max-w-[85%] text-[16px] leading-[1.7] shadow-xs break-words select-text">
+                      {/* Thumbnail if user shared a photo */}
+                      {msg.photoBase64 && (
+                        <img
+                          src={msg.photoBase64}
+                          alt="User shared parts"
+                          className="rounded-xl max-h-56 w-auto object-cover border border-[#383838] mb-2.5 shadow"
+                        />
+                      )}
+                      <div>{msg.text}</div>
                     </div>
                   </div>
                 );
               }
 
-              // Assistant message: Lead text + Harness + Tabbed Result Card
+              // Assistant message: Avatar + Lead text + Harness + Tabbed Result Card
               return (
-                <div key={msg.id} className="msg-assistant w-full space-y-3">
-                  {/* Lead text */}
-                  {msg.text && (
-                    <div className="lead text-[14.5px] leading-relaxed text-[#d4d4d4]">
-                      <FormattedMarkdown content={msg.text} />
-                      {msg.isStreaming && (
-                        <span className="inline-block w-1.5 h-4 bg-[#f5f5f5] ml-1 translate-y-0.5 animate-pulse" />
+                <div key={msg.id} className="msg-assistant w-full space-y-3.5 animate-fadeIn">
+                  {/* Assistant Avatar + Lead text row */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-[#1c1c1c] border border-[#2c2c2c] flex items-center justify-center shrink-0 mt-0.5 text-white shadow-xs">
+                      <SolderLogo className="w-4 h-4" />
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-2">
+                      {/* Lead text */}
+                      {msg.text && (
+                        <div className="lead text-[16px] leading-[1.7] text-[#d4d4d4]">
+                          <FormattedMarkdown content={msg.text} />
+                          {msg.isStreaming && (
+                            <span className="inline-block w-1.5 h-4 bg-[#f5f5f5] ml-1 translate-y-0.5 animate-pulse" />
+                          )}
+                        </div>
+                      )}
+
+                      {/* Vision Detected Parts list & "Build with these" chip */}
+                      {msg.detectedParts && msg.detectedParts.length > 0 && (
+                        <div className="p-3 rounded-xl bg-[#161616] border border-[#2c2c2c] space-y-2.5 text-xs">
+                          <div className="font-semibold text-white flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Identified Hardware Components</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {msg.detectedParts.map((p, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#222] border border-[#333] text-white"
+                              >
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span>{p.name}</span>
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="pt-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onSendMessage(
+                                  msg.suggestedPrompt || `Build device using ${msg.detectedParts?.map((p) => p.name).join(', ')}`,
+                                  undefined,
+                                  msg.detectedParts?.map((p) => p.name)
+                                )
+                              }
+                              className="px-3.5 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition cursor-pointer shadow-sm flex items-center gap-1.5"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              <span>Build with these parts</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Typing / streaming progress indicator */}
+                      {msg.isTyping && (
+                        <div className="flex items-center gap-1.5 py-1 text-[#a3a3a3]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:150ms]"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:300ms]"></span>
+                        </div>
                       )}
                     </div>
-                  )}
-
-                  {/* Typing / streaming progress indicator */}
-                  {msg.isTyping && (
-                    <div className="flex items-center gap-1.5 py-1 text-[#a3a3a3]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse"></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:150ms]"></span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:300ms]"></span>
-                    </div>
-                  )}
+                  </div>
 
                   {/* Live Progress Checklist while synthesizing build */}
                   {msg.isStreaming && (
-                    <div className="p-3 rounded-lg bg-[#161616] border border-[#2a2a2a] space-y-2 text-xs">
+                    <div className="ml-10 p-3 rounded-xl bg-[#161616] border border-[#2a2a2a] space-y-2 text-xs">
                       <div className="font-medium text-[#f5f5f5] flex items-center justify-between">
                         <span>Hardware Co-Design Pipeline</span>
                         <Loader2 className="w-3.5 h-3.5 text-[#a3a3a3] animate-spin" />
@@ -335,29 +524,33 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                   )}
 
-                  {/* Solder Deterministic Harness Trace (vertical signal line, nodes, red pin-conflict line, summary) */}
+                  {/* Solder Deterministic Harness Trace */}
                   {(msg.buildData || !msg.isStreaming) && (
-                    <HarnessTrace
-                      build={msg.buildData}
-                      isStreaming={msg.isStreaming}
-                      checks={msg.harnessChecks}
-                      onSelectTab={onSelectTab}
-                    />
+                    <div className="ml-10">
+                      <HarnessTrace
+                        build={msg.buildData}
+                        isStreaming={msg.isStreaming}
+                        checks={msg.harnessChecks}
+                        onSelectTab={onSelectTab}
+                      />
+                    </div>
                   )}
 
                   {/* Tabbed Result Card (3D Case, Parts, Wiring, Simulate, Firmware) */}
                   {msg.buildData && (
-                    <ResultPanel
-                      build={msg.buildData}
-                      onOpenOrder={onOpenOrder}
-                      onOpenShip={onOpenShip}
-                      onOpenAr={onOpenAr}
-                      onOpenShare={onOpenShare}
-                    />
+                    <div className="ml-10">
+                      <ResultPanel
+                        build={msg.buildData}
+                        onOpenOrder={onOpenOrder}
+                        onOpenShip={onOpenShip}
+                        onOpenAr={onOpenAr}
+                        onOpenShare={onOpenShare}
+                      />
+                    </div>
                   )}
 
                   {/* Message Actions Row (Copy, Regenerate, Thumbs) */}
-                  <div className="flex items-center gap-1 text-[#666] pt-1">
+                  <div className="ml-10 flex items-center gap-1 text-[#666] pt-1">
                     <button
                       onClick={() => handleCopyMessage(msg.id, msg.text)}
                       className="p-1.5 rounded-md hover:bg-[#1f1f1f] hover:text-[#f5f5f5] transition cursor-pointer"
