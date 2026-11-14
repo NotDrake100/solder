@@ -19,6 +19,7 @@ import type { SolderBuild } from '../types';
 import { CaseViewer } from '../viewer';
 import { WiringDiagram } from './WiringDiagram';
 import { Simulator } from '../../../sim/Simulator';
+import { getBomTotal } from './HarnessTrace';
 
 export type ResultTab = 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware';
 
@@ -67,11 +68,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     return () => clearTimeout(timer);
   }, [build?.id]);
 
-  const totalCost =
-    build?.parts?.reduce(
-      (sum, p) => sum + (p.owned ? 0 : (p.priceInr || 0) * (p.qty || 1)),
-      0
-    ) || build?.product?.priceInr || 890;
+  const totalCost = getBomTotal(build);
 
   const handleCopyCode = () => {
     if (build?.code?.ino) {

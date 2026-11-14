@@ -37,6 +37,9 @@ export interface SolderBuild {
   buildSteps: string[];
   hex?: string;
   cadClearanceMm?: number;
+  elapsedSeconds?: number;
+  isCached?: boolean;
+  harnessChecks?: any[];
 }
 
 export interface AgentLogStep {

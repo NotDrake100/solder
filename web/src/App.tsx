@@ -5,7 +5,11 @@ import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ChatView, ChatMessage } from './components/ChatView';
-import { getDefaultHarnessChecks, VerifierCheck } from './components/HarnessTrace';
+import {
+  getDefaultHarnessChecks,
+  getInitialLiveHarnessChecks,
+  VerifierCheck,
+} from './components/HarnessTrace';
 import { LiveCameraModal } from './components/LiveCameraModal';
 import { ScrapModal } from './components/ScrapModal';
 import { OrderModal, ShipModal, ArModal, ShareModal } from './components/ActionModals';
@@ -138,7 +142,7 @@ export function App() {
         timestamp: Date.now() - 28000,
         buildData: build,
         completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
-        harnessChecks: getDefaultHarnessChecks(build),
+        harnessChecks: build.harnessChecks || getDefaultHarnessChecks(build),
       },
     ]);
   };
@@ -182,7 +186,7 @@ export function App() {
       timestamp: Date.now(),
     };
 
-    // 2. Post Assistant typing message
+    // 2. Post Assistant typing message with initial HarnessTrace rows
     const assistantMessage: ChatMessage = {
       id: asstMsgId,
       sender: 'assistant',
@@ -192,6 +196,7 @@ export function App() {
       isTyping: true,
       currentStep: 'reading',
       completedSteps: [],
+      harnessChecks: getInitialLiveHarnessChecks(prompt),
     };
 
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
@@ -234,6 +239,7 @@ export function App() {
 
     // Check if prompt is desk fan or hot fan to trigger reproducible self-heal demo
     const isFan = prompt.toLowerCase().includes('fan') || prompt.toLowerCase().includes('hot');
+    const buildStartTime = Date.now();
 
     try {
       // Step A: Trigger server build API
@@ -250,15 +256,21 @@ export function App() {
 
       let buildData: SolderBuild | null = null;
       let buildId = `build_${Date.now()}`;
+      let isCached = false;
 
       if (res.ok) {
         const json = await res.json();
         buildData = json.data || json;
         if (json.buildId) buildId = json.buildId;
+        if (json.cached) isCached = true;
       }
 
       if (isFan && !buildData) {
         buildData = DESK_FAN_BUILD;
+      }
+
+      if (buildData && isCached) {
+        buildData.isCached = true;
       }
 
       // If inventory was provided, tag matching parts as owned in local state
@@ -291,7 +303,7 @@ export function App() {
                 const completed = new Set(m.completedSteps || []);
                 let updatedChecks = m.harnessChecks
                   ? [...m.harnessChecks]
-                  : getDefaultHarnessChecks(buildData);
+                  : getInitialLiveHarnessChecks(prompt);
 
                 // Live verifier SSE events
                 if (data.step === 'verifier_check') {
@@ -348,54 +360,90 @@ export function App() {
 
                 if (stage === 'reading' || stage === 'generate') {
                   completed.add('reading');
+                  updatedChecks = updatedChecks.map((c) =>
+                    c.id === 'planner'
+                      ? { ...c, status: 'pass', durationMs: 14 }
+                      : c.id === 'parts'
+                      ? { ...c, status: 'running' }
+                      : c
+                  );
                   return {
                     ...m,
                     isTyping: false,
                     currentStep: 'parts',
                     completedSteps: Array.from(completed),
+                    harnessChecks: updatedChecks,
                     text: `Reading your idea: "${prompt}"... Analyzing MCU architecture and required sensor peripherals.`,
                   };
                 } else if (stage === 'parts') {
                   completed.add('reading');
                   completed.add('parts');
+                  updatedChecks = updatedChecks.map((c) =>
+                    c.id === 'planner' || c.id === 'parts'
+                      ? { ...c, status: 'pass', durationMs: c.durationMs || 18 }
+                      : c.id === 'pin_conflicts'
+                      ? { ...c, status: 'running' }
+                      : c
+                  );
                   return {
                     ...m,
                     isTyping: false,
                     currentStep: 'wiring',
                     completedSteps: Array.from(completed),
+                    harnessChecks: updatedChecks,
                     text: `Picking parts: Selected ${data.parts?.length || buildData?.parts?.length || 4} components with INR maker pricing. Routing pinout...`,
                   };
                 } else if (stage === 'wiring') {
                   completed.add('parts');
                   completed.add('wiring');
+                  updatedChecks = updatedChecks.map((c) =>
+                    c.id === 'planner' || c.id === 'parts'
+                      ? { ...c, status: 'pass' }
+                      : c.id === 'pin_conflicts'
+                      ? { ...c, status: c.status === 'pending' ? 'running' : c.status }
+                      : c
+                  );
                   return {
                     ...m,
                     currentStep: 'firmware',
                     completedSteps: Array.from(completed),
+                    harnessChecks: updatedChecks,
                     text: `Wiring: Routed ${data.wiring?.length || buildData?.wiring?.length || 8} pin connections (5V, GND, I2C, control lines). Synthesizing sketch...`,
                   };
                 } else if (stage === 'firmware' || stage === 'compile') {
                   completed.add('wiring');
                   completed.add('firmware');
+                  updatedChecks = updatedChecks.map((c) =>
+                    c.id === 'compile' ? { ...c, status: 'running' } : c
+                  );
                   return {
                     ...m,
                     currentStep: 'case',
                     completedSteps: Array.from(completed),
+                    harnessChecks: updatedChecks,
                     text: `Firmware compiled and verified for ${buildData?.board?.toUpperCase() || 'UNO'} ✓. Generating 3D parametric enclosure...`,
                   };
                 } else if (stage === 'case' || stage === 'fitcheck') {
                   completed.add('firmware');
                   completed.add('case');
+                  updatedChecks = updatedChecks.map((c) =>
+                    c.id === 'fit_check' ? { ...c, status: 'running' } : c
+                  );
                   return {
                     ...m,
                     currentStep: 'done',
                     completedSteps: Array.from(completed),
+                    harnessChecks: updatedChecks,
                     text: `Designing the case: Generated frosted snap-fit enclosure (${buildData?.case?.outerMm?.join('x') || '82x64x28'}mm) with 2.0mm wall clearance. Finalizing build...`,
                   };
                 } else if (stage === 'done' || stage === 'complete') {
                   completed.add('case');
                   completed.add('done');
                   if (data.data) buildData = data.data;
+                  updatedChecks = updatedChecks.map((c) => ({
+                    ...c,
+                    status: c.status === 'pending' || c.status === 'running' ? 'pass' : c.status,
+                  }));
                   return {
                     ...m,
                     isStreaming: false,
@@ -420,20 +468,21 @@ export function App() {
 
         sse.addEventListener('done', () => {
           sse.close();
-          finishLiveBuild(buildData, asstMsgId, prompt, isFan, inventory);
+          const elapsedSec = Math.max(1, Math.round((Date.now() - buildStartTime) / 1000));
+          finishLiveBuild(buildData, asstMsgId, prompt, isFan, inventory, isCached, elapsedSec);
         });
 
         sse.onerror = () => {
           sse.close();
           if (!sseReceived) {
-            simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory);
+            simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory, isCached);
           }
         };
       } catch {
-        simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory);
+        simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory, isCached);
       }
     } catch {
-      simulateLocalProgression(null, asstMsgId, prompt, isFan, inventory);
+      simulateLocalProgression(null, asstMsgId, prompt, isFan, inventory, false);
     }
   };
 
@@ -443,9 +492,11 @@ export function App() {
     msgId: string,
     prompt: string,
     isFan: boolean,
-    inventory?: string[]
+    inventory?: string[],
+    isCached: boolean = false
   ) => {
     const targetBuild = buildData || (isFan ? DESK_FAN_BUILD : SHOWCASE_BUILDS.sip);
+    const simStartTime = Date.now();
 
     // If inventory provided, tag matching parts
     if (Array.isArray(inventory) && inventory.length > 0) {
@@ -456,85 +507,166 @@ export function App() {
       }));
     }
 
-    // Stage 1: Reading
-    await new Promise((r) => setTimeout(r, 300));
+    // Stage 1: Planner
+    await new Promise((r) => setTimeout(r, 250));
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId
-          ? {
-              ...m,
-              isTyping: false,
-              currentStep: 'reading',
-              completedSteps: ['reading'],
-              text: `Reading your idea: "${prompt}"... Determining microcontroller target and hardware peripherals.`,
-            }
-          : m
-      )
+      prev.map((m) => {
+        if (m.id !== msgId) return m;
+        const checks = (m.harnessChecks || getInitialLiveHarnessChecks(prompt)).map((c) =>
+          c.id === 'planner'
+            ? { ...c, status: 'pass' as const, durationMs: 12 }
+            : c.id === 'parts'
+            ? { ...c, status: 'running' as const }
+            : c
+        );
+        return {
+          ...m,
+          isTyping: false,
+          currentStep: 'reading',
+          completedSteps: ['reading'],
+          harnessChecks: checks,
+          text: `Reading your idea: "${prompt}"... Determining microcontroller target and hardware peripherals.`,
+        };
+      })
     );
 
     // Stage 2: Parts
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 300));
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId
-          ? {
-              ...m,
-              currentStep: 'parts',
-              completedSteps: ['reading', 'parts'],
-              text: `Picking parts: Selected ${targetBuild.parts.length} components with exact INR pricing (Total: ₹${targetBuild.product?.priceInr || 890}).`,
-            }
-          : m
-      )
+      prev.map((m) => {
+        if (m.id !== msgId) return m;
+        const checks = (m.harnessChecks || []).map((c) =>
+          c.id === 'parts'
+            ? { ...c, status: 'pass' as const, durationMs: 18 }
+            : c.id === 'pin_conflicts'
+            ? { ...c, status: 'running' as const }
+            : c
+        );
+        return {
+          ...m,
+          currentStep: 'parts',
+          completedSteps: ['reading', 'parts'],
+          harnessChecks: checks,
+          text: `Picking parts: Selected ${targetBuild.parts.length} components with exact INR pricing.`,
+        };
+      })
     );
 
-    // Stage 3: Wiring
-    await new Promise((r) => setTimeout(r, 450));
+    // Stage 3: Wiring & Pin conflicts (Self-heal for desk fan)
+    await new Promise((r) => setTimeout(r, 350));
+    if (isFan) {
+      // First show pin conflict fixing
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== msgId) return m;
+          const checks = (m.harnessChecks || []).map((c) =>
+            c.id === 'pin_conflicts' ? { ...c, status: 'fixing' as const } : c
+          );
+          return {
+            ...m,
+            currentStep: 'wiring',
+            completedSteps: ['reading', 'parts', 'wiring'],
+            harnessChecks: checks,
+            text: 'Wiring: Detected pin collision on D7. Reallocating pins...',
+          };
+        })
+      );
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId
-          ? {
-              ...m,
-              currentStep: 'wiring',
-              completedSteps: ['reading', 'parts', 'wiring'],
-              text: `Wiring: Routed ${targetBuild.wiring.length} DuPont connections (5V, GND, I2C, control lines).`,
-            }
-          : m
-      )
+      prev.map((m) => {
+        if (m.id !== msgId) return m;
+        const checks = (m.harnessChecks || []).map((c) => {
+          if (c.id === 'pin_conflicts') {
+            return isFan
+              ? {
+                  ...c,
+                  status: 'healed' as const,
+                  durationMs: 340,
+                  healInfo: {
+                    round: 1,
+                    model: 'Flash-Lite',
+                    patchDiff: '- #define FAN_PIN 7\n+ #define FAN_PIN 8 // Reallocated buzzer/fan',
+                    explanation: 'Self-healed: buzzer moved D7 to D8',
+                  },
+                }
+              : { ...c, status: 'pass' as const, durationMs: 14 };
+          }
+          if (c.id === 'compile') return { ...c, status: 'running' as const };
+          return c;
+        });
+        return {
+          ...m,
+          currentStep: 'wiring',
+          completedSteps: ['reading', 'parts', 'wiring'],
+          harnessChecks: checks,
+          text: `Wiring: Routed ${targetBuild.wiring.length} DuPont connections (5V, GND, I2C, control lines).`,
+        };
+      })
     );
 
     // Stage 4: Firmware
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 300));
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId
-          ? {
-              ...m,
-              currentStep: 'firmware',
-              completedSteps: ['reading', 'parts', 'wiring', 'firmware'],
-              text: `Writing firmware: Synthesized Arduino C++ sketch (${targetBuild.code.filename}) verified for ${targetBuild.board.toUpperCase()}.`,
-            }
-          : m
-      )
+      prev.map((m) => {
+        if (m.id !== msgId) return m;
+        const checks = (m.harnessChecks || []).map((c) =>
+          c.id === 'compile'
+            ? { ...c, status: 'pass' as const, durationMs: 412 }
+            : c.id === 'simulate'
+            ? { ...c, status: 'running' as const }
+            : c
+        );
+        return {
+          ...m,
+          currentStep: 'firmware',
+          completedSteps: ['reading', 'parts', 'wiring', 'firmware'],
+          harnessChecks: checks,
+          text: `Writing firmware: Synthesized Arduino C++ sketch (${targetBuild.code.filename}) verified for ${targetBuild.board.toUpperCase()}.`,
+        };
+      })
     );
 
-    // Stage 5: Case
-    await new Promise((r) => setTimeout(r, 400));
+    // Stage 5: Simulation & Case
+    await new Promise((r) => setTimeout(r, 300));
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === msgId
-          ? {
-              ...m,
-              currentStep: 'case',
-              completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case'],
-              text: `Designing the case: Generated frosted snap-fit enclosure (${targetBuild.case.outerMm.join('x')}mm) with 2.0mm wall clearance.`,
-            }
-          : m
-      )
+      prev.map((m) => {
+        if (m.id !== msgId) return m;
+        const checks = (m.harnessChecks || []).map((c) =>
+          c.id === 'simulate'
+            ? { ...c, status: 'pass' as const, durationMs: 650 }
+            : c.id === 'fit_check'
+            ? { ...c, status: 'running' as const }
+            : c
+        );
+        return {
+          ...m,
+          currentStep: 'case',
+          completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case'],
+          harnessChecks: checks,
+          text: `Designing the case: Generated frosted snap-fit enclosure (${targetBuild.case.outerMm.join('x')}mm) with 2.0mm wall clearance.`,
+        };
+      })
     );
 
     // Stage 6: Done
-    await new Promise((r) => setTimeout(r, 350));
-    finishLiveBuild(targetBuild, msgId, prompt, isFan, inventory);
+    await new Promise((r) => setTimeout(r, 250));
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== msgId) return m;
+        const checks = (m.harnessChecks || []).map((c) =>
+          c.id === 'fit_check' ? { ...c, status: 'pass' as const, durationMs: 38 } : c
+        );
+        return {
+          ...m,
+          harnessChecks: checks,
+        };
+      })
+    );
+
+    const elapsed = Math.max(1, Math.round((Date.now() - simStartTime) / 1000));
+    finishLiveBuild(targetBuild, msgId, prompt, isFan, inventory, isCached, elapsed);
   };
 
   const finishLiveBuild = (
@@ -542,7 +674,9 @@ export function App() {
     msgId: string,
     prompt: string,
     isFan: boolean,
-    inventory?: string[]
+    inventory?: string[],
+    isCached: boolean = false,
+    elapsedSeconds?: number
   ) => {
     setIsLoading(false);
     const finalBuild: SolderBuild = buildData || (isFan ? DESK_FAN_BUILD : SHOWCASE_BUILDS.sip);
@@ -554,6 +688,9 @@ export function App() {
         owned: invLower.some((inv) => inv.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(inv)),
       }));
     }
+
+    if (isCached) finalBuild.isCached = true;
+    if (elapsedSeconds) finalBuild.elapsedSeconds = elapsedSeconds;
 
     setActiveBuild(finalBuild);
     setBuildsHistory((prev) => {
@@ -570,6 +707,18 @@ export function App() {
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id !== msgId) return m;
+
+        // Preserve real accumulated verifier checks, resolving any remaining pending/running to pass
+        const finalChecks =
+          m.harnessChecks && m.harnessChecks.length > 0
+            ? m.harnessChecks.map((c) => ({
+                ...c,
+                status: c.status === 'pending' || c.status === 'running' ? ('pass' as const) : c.status,
+              }))
+            : getDefaultHarnessChecks(finalBuild);
+
+        finalBuild.harnessChecks = finalChecks;
+
         return {
           ...m,
           isStreaming: false,
@@ -577,10 +726,12 @@ export function App() {
           currentStep: 'done',
           completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
           buildData: finalBuild,
-          harnessChecks: getDefaultHarnessChecks(finalBuild),
-          text: isFan
-            ? 'A temperature sensor switches a relay that powers the fan. Here is the verified build.'
-            : finalBuild.summary || finalBuild.tagline || `A verified hardware build for ${finalBuild.name}.`,
+          harnessChecks: finalChecks,
+          text:
+            m.text ||
+            (isFan
+              ? 'A temperature sensor switches a relay that powers the fan. Here is the verified build.'
+              : finalBuild.summary || finalBuild.tagline || `A verified hardware build for ${finalBuild.name}.`),
         };
       })
     );

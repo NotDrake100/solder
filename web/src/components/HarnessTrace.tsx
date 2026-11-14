@@ -40,6 +40,58 @@ interface HarnessTraceProps {
   className?: string;
 }
 
+export function getBomTotal(build?: SolderBuild | null): number {
+  if (!build?.parts?.length) return build?.product?.priceInr || 890;
+  return build.parts.reduce((sum, p) => sum + (p.priceInr || 0) * (p.qty || 1), 0);
+}
+
+export function getInitialLiveHarnessChecks(prompt?: string): VerifierCheck[] {
+  return [
+    {
+      id: 'planner',
+      name: 'Planner',
+      category: 'Architecture',
+      status: 'running',
+      evidence: 'Synthesizing MCU architecture and peripheral requirements...',
+    },
+    {
+      id: 'parts',
+      name: 'Parts',
+      category: 'BOM Selection',
+      status: 'pending',
+      evidence: 'Awaiting architecture synthesis to select BOM components...',
+    },
+    {
+      id: 'pin_conflicts',
+      name: 'Wiring',
+      category: 'Pin Routing',
+      status: 'pending',
+      evidence: 'Awaiting BOM selection to route netlist and audit pin allocations...',
+    },
+    {
+      id: 'compile',
+      name: 'Compile',
+      category: 'Firmware Verification',
+      status: 'pending',
+      evidence: 'Awaiting netlist routing to verify Arduino C++ sketch syntax...',
+    },
+    {
+      id: 'simulate',
+      name: 'Simulate',
+      category: 'Runtime Assertion',
+      status: 'pending',
+      evidence: 'Awaiting firmware compilation to execute virtual cycle simulation...',
+    },
+    {
+      id: 'fit_check',
+      name: 'Fit check',
+      category: 'Physical Enclosure',
+      status: 'pending',
+      evidence: 'Awaiting 3D layout coordinates to check physical enclosure clearance...',
+    },
+  ];
+}
+
 export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierCheck[] {
   const isFanOrConflict =
     build?.id === 'desk-fan' ||
@@ -136,8 +188,13 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
   const passedCount = checks.filter((c) => c.status === 'pass' || c.status === 'healed').length;
   const totalCount = checks.length;
   const totalDurationMs = checks.reduce((acc, c) => acc + (c.durationMs || 0), 0);
-  const totalSeconds = `${Math.max(1, Math.round(totalDurationMs / 1000 + 40))}s`;
-  const costInr = build?.product?.priceInr || 890;
+  const isCached = Boolean(build?.isCached);
+  const timeDisplay = isCached
+    ? 'cached'
+    : build?.elapsedSeconds
+    ? `${build.elapsedSeconds}s`
+    : `${Math.max(1, Math.round(totalDurationMs / 1000))}s`;
+  const costInr = getBomTotal(build);
 
   return (
     <div className={`harness select-text my-3 ${className}`}>
@@ -170,6 +227,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
       {isOpen && (
         <div className="harness-steps relative border-l border-[#333333] ml-2.5 my-2.5 pl-4 space-y-3">
           {checks.map((chk) => {
+            const isPending = chk.status === 'pending';
             const isHealed = chk.status === 'healed' || !!chk.healInfo;
             const isPass = chk.status === 'pass' || isHealed;
             const isRunning = chk.status === 'running' || chk.status === 'fixing';
@@ -181,8 +239,10 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                 {/* Signal Line Node sitting directly on the vertical line */}
                 <span
                   className={`node absolute -left-[21px] top-1.5 w-2 h-2 rounded-full ring-4 ring-[#0f0f0f] transition ${
-                    isRunning
-                      ? 'bg-[#888] animate-pulse ring-[#333]'
+                    isPending
+                      ? 'bg-[#444] ring-[#141414]'
+                      : isRunning
+                      ? 'bg-white animate-pulse ring-[#333]'
                       : isFail
                       ? 'bg-rose-500'
                       : 'bg-white'
@@ -192,16 +252,28 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                 <div className="h-body">
                   {/* Step Title Row */}
                   <div
-                    onClick={() => toggleExpand(chk.id)}
-                    className="flex items-center gap-2 cursor-pointer select-none"
+                    onClick={() => {
+                      if (!isPending) toggleExpand(chk.id);
+                    }}
+                    className={`flex items-center gap-2 select-none ${
+                      isPending ? 'cursor-default' : 'cursor-pointer'
+                    }`}
                   >
-                    <span className="h-name font-medium text-[#f5f5f5] hover:text-white transition">
+                    <span
+                      className={`h-name font-medium transition ${
+                        isPending
+                          ? 'text-[#777]'
+                          : isRunning
+                          ? 'text-white'
+                          : 'text-[#f5f5f5] hover:text-white'
+                      }`}
+                    >
                       {chk.name}
                     </span>
                     {isRunning && (
                       <Loader2 className="w-3 h-3 text-[#888] animate-spin" />
                     )}
-                    {chk.durationMs && !isRunning && (
+                    {chk.durationMs && !isRunning && !isPending && (
                       <span className="mono text-[10px] text-[#666]">
                         {chk.durationMs}ms
                       </span>
@@ -216,7 +288,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                   )}
 
                   {/* Red Pin Conflict + Self-Heal Line (for Wiring) */}
-                  {chk.id === 'pin_conflicts' && isHealed && (
+                  {chk.id === 'pin_conflicts' && isHealed && chk.healInfo?.explanation && (
                     <div className="h-branch flex items-center gap-1.5 text-xs mt-1">
                       <svg
                         className="h-x w-2.5 h-2.5 text-rose-500 shrink-0"
@@ -233,16 +305,26 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                       </svg>
                       <span className="text-rose-400 font-medium">Pin conflicts</span>
                       <span className="mono note text-[#888] text-[11px]">
-                        {chk.healInfo?.explanation || 'Self-healed: buzzer moved D7 to D8'}
+                        {chk.healInfo.explanation}
                       </span>
                     </div>
                   )}
 
-                  {/* Simulation Runtime Assertion Note */}
-                  {chk.id === 'simulate' && (
-                    <div className="h-note mono text-[#888] text-[11px] mt-0.5">
-                      relay D7 went LOW at 1.2s
-                    </div>
+                  {/* Simulation Runtime Assertion Note: only if found in evidence */}
+                  {chk.id === 'simulate' && chk.evidence && (
+                    (() => {
+                      const m =
+                        chk.evidence.match(/At t=[\d\.]+s [^\n\[]+/i) ||
+                        chk.evidence.match(/relay D\d went LOW at [\d\.]+s/i) ||
+                        chk.evidence.match(/\[Assert 2\]\s*([^\[\n]+)/i);
+                      if (!m) return null;
+                      const noteText = (m[1] || m[0]).replace(/\[PASS\]/gi, '').trim();
+                      return (
+                        <div className="h-note mono text-[#888] text-[11px] mt-0.5">
+                          {noteText}
+                        </div>
+                      );
+                    })()
                   )}
 
                   {/* Expandable Monospace Evidence */}
@@ -274,7 +356,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
         <span className="sep text-[#555]">·</span>
         <span>{selfHealCount} self-heal</span>
         <span className="sep text-[#555]">·</span>
-        <span className="mono text-[#888]">{totalSeconds}</span>
+        <span className="mono text-[#888]">{timeDisplay}</span>
         <span className="sep text-[#555]">·</span>
         <span className="mono text-[#f5f5f5]">Rs {costInr}</span>
       </div>

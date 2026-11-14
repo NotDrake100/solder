@@ -54,15 +54,6 @@ const CHIPS = [
   'Night light that fades on at dusk',
 ];
 
-const PROGRESS_STEPS = [
-  { key: 'reading', label: 'Reading your idea' },
-  { key: 'parts', label: 'Picking parts' },
-  { key: 'wiring', label: 'Wiring' },
-  { key: 'firmware', label: 'Writing firmware' },
-  { key: 'case', label: 'Designing the case' },
-  { key: 'done', label: 'Done' },
-];
-
 /**
  * Clean markdown parser for assistant text with comfortable reading typography
  */
@@ -482,46 +473,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Live Progress Checklist while synthesizing build */}
-                  {msg.isStreaming && (
-                    <div className="ml-10 p-3 rounded-xl bg-[#161616] border border-[#2a2a2a] space-y-2 text-xs">
-                      <div className="font-medium text-[#f5f5f5] flex items-center justify-between">
-                        <span>Hardware Co-Design Pipeline</span>
-                        <Loader2 className="w-3.5 h-3.5 text-[#a3a3a3] animate-spin" />
-                      </div>
-                      <div className="space-y-1.5 pt-1">
-                        {PROGRESS_STEPS.map((step) => {
-                          const isDone = msg.completedSteps?.includes(step.key);
-                          const isCurrent = msg.currentStep === step.key;
-
-                          return (
-                            <div
-                              key={step.key}
-                              className={`flex items-center gap-2 transition-colors ${
-                                isDone
-                                  ? 'text-white font-medium'
-                                  : isCurrent
-                                  ? 'text-white font-medium'
-                                  : 'text-[#666]'
-                              }`}
-                            >
-                              {isDone ? (
-                                <Check className="w-3.5 h-3.5 text-white shrink-0" />
-                              ) : isCurrent ? (
-                                <Loader2 className="w-3.5 h-3.5 text-[#a3a3a3] animate-spin shrink-0" />
-                              ) : (
-                                <Circle className="w-3.5 h-3.5 text-[#444] shrink-0" />
-                              )}
-                              <span>{step.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Solder Deterministic Harness Trace */}
-                  {(msg.buildData || !msg.isStreaming) && (
+                  {/* Solder Deterministic Harness Trace: Only HarnessTrace signal-line rows while building and done */}
+                  {(msg.buildData || msg.isStreaming || (msg.harnessChecks && msg.harnessChecks.length > 0)) && (
                     <div className="ml-10">
                       <HarnessTrace
                         build={msg.buildData}
