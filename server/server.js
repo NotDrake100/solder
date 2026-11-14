@@ -186,6 +186,11 @@ export function createServer() {
         await handleStreamBuild(id, req, res);
         return;
       }
+      if (req.method === 'GET' && pathname === '/api/build/stream') {
+        const id = parsedUrl.searchParams.get('id') || 'sip';
+        await handleStreamBuild(id, req, res);
+        return;
+      }
 
       // 6. GET /api/build/:id
       const getBuildMatch = pathname.match(/^\/api\/build\/([a-zA-Z0-9_-]+)$/);
