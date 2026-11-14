@@ -50,6 +50,21 @@ test('GET /api/showcase/sip returns valid Sip build', async () => {
   assert.ok(data.code && typeof data.code.ino === 'string');
 });
 
+test('GET /api/showcase/:id returns valid builds for all 4 showcase products (sip, wisp, hasp, eave)', async () => {
+  for (const id of ['sip', 'wisp', 'hasp', 'eave']) {
+    const res = await fetch(`${baseUrl}/api/showcase/${id}`);
+    assert.equal(res.status, 200, `Showcase ${id} returned status ${res.status}`);
+    const data = await res.json();
+    assert.ok(data.name, `Showcase ${id} missing name`);
+    assert.ok(data.board, `Showcase ${id} missing board`);
+    assert.ok(Array.isArray(data.parts) && data.parts.length > 0, `Showcase ${id} missing parts`);
+    assert.ok(Array.isArray(data.layout) && data.layout.length > 0, `Showcase ${id} missing layout`);
+    assert.ok(data.case?.outerMm, `Showcase ${id} missing case.outerMm`);
+    assert.ok(Array.isArray(data.wiring), `Showcase ${id} missing wiring`);
+    assert.ok(data.code?.ino, `Showcase ${id} missing code.ino`);
+  }
+});
+
 test('GET /api/showcase/invalid-id returns 404', async () => {
   const res = await fetch(`${baseUrl}/api/showcase/invalid-product`);
   assert.equal(res.status, 404);
