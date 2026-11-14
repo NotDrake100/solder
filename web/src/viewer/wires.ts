@@ -93,8 +93,8 @@ export function buildWiresAssembly(
     const startPos = partMap.get(fromKey) || new THREE.Vector3(0, 0, 10);
     const endPos = partMap.get(toKey) || new THREE.Vector3(20, 20, 10);
 
-    // Pick material
-    let mat = materials.wireMaterials.blue;
+    // Pick material (neutral white by default)
+    let mat = materials.wireMaterials.white;
     if (conn.color) {
       const hex = parseInt(conn.color.replace('#', '0x'), 16);
       mat = new THREE.MeshStandardMaterial({

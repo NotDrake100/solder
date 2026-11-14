@@ -53,6 +53,7 @@ export interface CaseViewerProps {
   showWires?: boolean;
   selectedPartId?: string | null;
   onSelectPart?: (libId: string | null) => void;
+  hideControls?: boolean;
   autoRotate?: boolean;
 }
 

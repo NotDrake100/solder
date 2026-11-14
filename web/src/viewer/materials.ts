@@ -157,7 +157,7 @@ export function createMaterialLibrary(
   let enclosure: THREE.Material;
   let enclosureLid: THREE.Material;
 
-  const hexColor = parseInt(customColor.replace('#', '0x'), 16) || 0x2563eb;
+  const hexColor = parseInt(customColor.replace('#', '0x'), 16) || 0xd1d5db;
 
   switch (theme) {
     case 'acrylic':
@@ -293,13 +293,13 @@ export function createMaterialLibrary(
   });
 
   const pcbBlue = new THREE.MeshStandardMaterial({
-    color: 0x1d4ed8,
+    color: 0x27272a,
     roughness: 0.4,
     metalness: 0.1,
   });
 
   const pcbGreen = new THREE.MeshStandardMaterial({
-    color: 0x15803d,
+    color: 0x3f3f46,
     roughness: 0.45,
     metalness: 0.1,
   });
@@ -335,19 +335,19 @@ export function createMaterialLibrary(
   });
 
   const relayBlue = new THREE.MeshStandardMaterial({
-    color: 0x2563eb,
+    color: 0x3f3f46,
     roughness: 0.35,
     metalness: 0.1,
   });
 
   const relayTerminal = new THREE.MeshStandardMaterial({
-    color: 0x16a34a,
+    color: 0x52525b,
     roughness: 0.5,
     metalness: 0.15,
   });
 
   const servoBlueTranslucent = new THREE.MeshPhysicalMaterial({
-    color: 0x2563eb,
+    color: 0x52525b,
     transmission: 0.45,
     opacity: 0.88,
     transparent: true,
@@ -357,7 +357,7 @@ export function createMaterialLibrary(
   });
 
   const dhtBlue = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
+    color: 0xe2e8f0,
     roughness: 0.6,
     metalness: 0.05,
   });

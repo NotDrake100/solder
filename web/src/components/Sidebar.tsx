@@ -29,11 +29,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobileDrawer,
   onGoHome,
 }) => {
-  // Recent builds list: only past builds and default maker recents
+  // Recent builds list: plain readable names (QA-R1 #8)
   const defaultItems = [
     { id: 'desk-fan', name: 'Desk fan' },
-    { id: 'sip', name: 'Soil waterer' },
-    { id: 'wisp', name: 'Dusk night light' },
+    { id: 'sip', name: 'Plant waterer' },
+    { id: 'wisp', name: 'Night light' },
   ];
 
   const displayBuilds = [

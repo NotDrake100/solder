@@ -32,7 +32,9 @@ export const TopBar: React.FC<TopBarProps> = ({
 
         <button
           onClick={onGoHome}
-          className="flex items-center gap-2 hover:opacity-80 transition cursor-pointer text-left"
+          className={`flex items-center gap-2 hover:opacity-80 transition cursor-pointer text-left ${
+            isSidebarOpen ? 'md:hidden' : ''
+          }`}
           title="Back to home"
         >
           <SolderLogo className="w-4 h-4 text-white" />

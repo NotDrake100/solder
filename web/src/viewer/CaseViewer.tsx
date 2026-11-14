@@ -39,6 +39,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       selectedPartId = null,
       onSelectPart,
       autoRotate = false,
+      hideControls = false,
     },
     ref
   ) => {
@@ -345,7 +346,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
             (item.dimensions?.height || 10) + 4
           );
           const haloMat = new THREE.MeshBasicMaterial({
-            color: 0x3b82f6,
+            color: 0xffffff,
             wireframe: true,
             transparent: true,
             opacity: 0.8,
@@ -490,6 +491,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
         )}
 
         {/* Clean Neutral Floating Control Pill Toolbar (Bottom) */}
+        {!hideControls && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#212121]/95 border border-[#2a2a2a] shadow-xl backdrop-blur-md">
           {/* Exploded / Assembled Toggle */}
           <button
@@ -658,9 +660,10 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
             </svg>
           </button>
         </div>
+        )}
 
         {/* Bottom Left Quick Specs Overlay */}
-        {caseSpec?.outerMm && (
+        {!hideControls && caseSpec?.outerMm && (
           <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#212121]/80 backdrop-blur border border-[#2a2a2a] text-[11px] font-mono text-[#a3a3a3] pointer-events-none">
             <span className="text-[#737373]">ENCLOSURE:</span>
             <span>
