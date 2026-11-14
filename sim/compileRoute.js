@@ -118,6 +118,15 @@ function validateSketchSyntax(code) {
     if (ch === '}') openBraces--;
   }
 
+  const hasSetup = /void\s+setup\s*\(/.test(code);
+  const hasLoop = /void\s+loop\s*\(/.test(code);
+  if (!hasSetup || !hasLoop) {
+    const missing = !hasSetup ? "setup()" : "loop()";
+    const err = new Error(`sketch.ino: error: '${missing}' undefined`);
+    err.stderr = `sketch.ino: In function 'main':\nerror: undefined reference to '${missing}'`;
+    throw err;
+  }
+
   if (openBraces !== 0) {
     const err = new Error("sketch.ino: error: expected '}' at end of input or unmatched braces");
     err.stderr = "sketch.ino: In function 'void loop()':\nsketch.ino: error: expected '}' at end of input";

@@ -2,3 +2,5 @@ node_modules/
 .env
 *.log
 dist/
+cache_store/
+server/cache_store/

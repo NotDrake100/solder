@@ -1,5 +1,67 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import http from 'node:http';
 import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DIST_DIR = path.resolve(__dirname, '../web/dist');
+
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.wasm': 'application/wasm'
+};
+
+function tryServeStatic(req, res, pathname) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+  if (pathname.startsWith('/api')) return false;
+
+  const normalized = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+  let filePath = path.join(DIST_DIR, normalized);
+
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    filePath = path.join(filePath, 'index.html');
+  }
+
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    setCorsHeaders(res);
+    res.writeHead(200, { 'Content-Type': contentType });
+    if (req.method === 'HEAD') {
+      res.end();
+      return true;
+    }
+    fs.createReadStream(filePath).pipe(res);
+    return true;
+  }
+
+  // SPA fallback
+  const indexPath = path.join(DIST_DIR, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    setCorsHeaders(res);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    if (req.method === 'HEAD') {
+      res.end();
+      return true;
+    }
+    fs.createReadStream(indexPath).pipe(res);
+    return true;
+  }
+
+  return false;
+}
 import { getShowcaseList, getShowcaseById } from './routes/showcase.js';
 import { handleCreateBuild, getBuildById, handleStreamBuild } from './routes/build.js';
 import { handleFixBuild } from './routes/fix.js';
@@ -170,7 +232,12 @@ export function createServer() {
         return;
       }
 
-      // Root welcome
+      // Serve static frontend from web/dist with SPA fallback for deploy
+      if (!pathname.startsWith('/api') && tryServeStatic(req, res, pathname)) {
+        return;
+      }
+
+      // Root welcome API fallback if web/dist not built
       if (req.method === 'GET' && pathname === '/') {
         sendJson(res, 200, {
           name: 'Solder API Server',
