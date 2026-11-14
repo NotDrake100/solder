@@ -32,7 +32,7 @@ ENV ARDUINO_CLI_ENABLE_UPDATES=false
 
 WORKDIR /app
 
-# Install system dependencies: curl, ca-certificates, and openscad
+# Install system dependencies: curl, ca-certificates, openscad
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
@@ -61,13 +61,14 @@ RUN chown -R node:node /root/.arduino15 || true \
 COPY server/package*.json ./server/
 RUN cd server && (npm ci --omit=dev || npm install --omit=dev)
 
-# Copy application code
+# Copy application directories
 COPY server/ ./server/
 COPY showcase/ ./showcase/
 COPY parts-lib/ ./parts-lib/
 COPY sim/ ./sim/
+COPY deploy/ ./deploy/
 
-# Copy built frontend assets into web/dist where Express serves static files
+# Copy built frontend assets into web/dist where Express/entrypoint serves static files
 COPY --from=web-builder /app/web/dist ./web/dist
 
 # Ensure proper permissions for node user
@@ -82,5 +83,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 
 EXPOSE 3000
 
-# Start Express server
-CMD ["node", "server/src/index.js"]
+# Start production server (serves static frontend from web/dist and /api/* routes)
+CMD ["node", "--experimental-strip-types", "deploy/entrypoint.js"]
