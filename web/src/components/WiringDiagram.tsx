@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Play, Pause, Zap, Info, Sliders, Cpu, Activity } from 'lucide-react';
 import type { WireConnection, SolderBuild } from '../types';
 import { ArduinoSimulator } from '../sim';
+import { Simulator } from '../../../sim/Simulator';
 
 interface WiringDiagramProps {
   build: SolderBuild;
@@ -51,12 +52,9 @@ export const WiringDiagram: React.FC<WiringDiagramProps> = ({ build }) => {
       {/* Main View: Either Simulator or Interactive SVG Schematic */}
       {isSimulating ? (
         <div className="p-4 flex-1 overflow-y-auto">
-          <ArduinoSimulator
+          <Simulator
             hex={build.hex}
-            inoCode={build.code.ino}
-            board={build.board}
-            tests={build.tests}
-            parts={build.parts}
+            ino={build.code?.ino}
             className="w-full"
           />
         </div>

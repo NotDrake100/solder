@@ -59,3 +59,4 @@ export interface ScrapPhotoResult {
   totalSavingsInr: number;
   suggestedPrompt: string;
 }
+

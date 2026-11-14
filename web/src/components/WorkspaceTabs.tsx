@@ -19,6 +19,7 @@ import {
 import type { SolderBuild } from '../types';
 import { CaseViewer } from '../viewer';
 import { WiringDiagram } from './WiringDiagram';
+import { Simulator } from '../../../sim/Simulator';
 
 interface WorkspaceTabsProps {
   build: SolderBuild;
@@ -33,7 +34,7 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({
   onOpenShip,
   onOpenAr,
 }) => {
-  const [activeTab, setActiveTab] = useState<'parts' | 'case' | 'wiring' | 'code'>('case');
+  const [activeTab, setActiveTab] = useState<'parts' | 'case' | 'wiring' | 'simulate' | 'code'>('case');
   const [isExploded, setIsExploded] = useState(false);
   const [burstCount, setBurstCount] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -113,6 +114,21 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({
             <Zap className="w-4 h-4 text-amber-500" />
             <span>Wiring</span>
             <span className="text-[10px] font-mono text-zinc-400">SVG</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('simulate')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'simulate'
+                ? 'bg-white text-zinc-900 shadow-xs border border-zinc-200/80'
+                : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/40'
+            }`}
+          >
+            <Sliders className="w-4 h-4 text-emerald-500" />
+            <span>Simulate</span>
+            <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200">
+              avr8js
+            </span>
           </button>
 
           <button
@@ -309,6 +325,13 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({
       {activeTab === 'wiring' && (
         <div className="animate-in fade-in duration-150">
           <WiringDiagram build={build} />
+        </div>
+      )}
+
+      {/* Tab 3.5: Virtual ATmega328P Hardware Simulator */}
+      {activeTab === 'simulate' && (
+        <div className="animate-in fade-in duration-150">
+          <Simulator hex={build.hex} ino={build.code?.ino} className="w-full" />
         </div>
       )}
 

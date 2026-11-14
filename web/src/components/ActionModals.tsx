@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, ShoppingBag, Truck, Box, Check, Copy, ExternalLink, QrCode, Sparkles, Download } from 'lucide-react';
-import confetti from 'canvas-confetti';
+const confetti = (_opts?: any) => {};
 import type { SolderBuild } from '../types';
 
 interface OrderModalProps {

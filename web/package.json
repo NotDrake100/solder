@@ -14,7 +14,7 @@
     "lucide-react": "^0.460.0",
     "canvas-confetti": "^1.9.3",
     "three": "^0.170.0",
-    "avr8js": "^0.23.0"
+    "avr8js": "0.21.1"
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
