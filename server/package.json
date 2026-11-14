@@ -1,0 +1,18 @@
+{
+  "name": "solder-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Solder backend API server",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@google/genai": "^3.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "zod": "^3.24.2"
+  }
+}
