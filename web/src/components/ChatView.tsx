@@ -5,14 +5,12 @@ import {
   Check,
   ThumbsUp,
   ThumbsDown,
-  CheckCircle2,
   Circle,
   Loader2,
   Plus,
   Camera,
   Image as ImageIcon,
   X,
-  Sparkles,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { HarnessTrace, VerifierCheck } from './HarnessTrace';
@@ -54,7 +52,6 @@ const CHIPS = [
   'Desk fan that starts when it gets hot',
   'Plant that waters itself when dry',
   'Night light that fades on at dusk',
-  'Doorbell that flashes a lamp',
 ];
 
 const PROGRESS_STEPS = [
@@ -260,9 +257,9 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 setShowAttachMenu(false);
                 onOpenLiveCamera();
               }}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-[#262626] transition text-left cursor-pointer font-medium"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:bg-[#262626] transition text-left cursor-pointer font-medium"
             >
-              <Sparkles className="w-4 h-4" />
+              <Camera className="w-4 h-4 text-white" />
               <span>Point at parts (Live)</span>
             </button>
           </div>
@@ -441,7 +438,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                       {msg.detectedParts && msg.detectedParts.length > 0 && (
                         <div className="p-3 rounded-xl bg-[#161616] border border-[#2c2c2c] space-y-2.5 text-xs">
                           <div className="font-semibold text-white flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                            <Camera className="w-3.5 h-3.5 text-white" />
                             <span>Identified Hardware Components</span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -450,7 +447,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                                 key={idx}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#222] border border-[#333] text-white"
                               >
-                                <Check className="w-3 h-3 text-emerald-400" />
+                                <Check className="w-3 h-3 text-white" />
                                 <span>{p.name}</span>
                               </span>
                             ))}
@@ -468,7 +465,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
                               }
                               className="px-3.5 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition cursor-pointer shadow-sm flex items-center gap-1.5"
                             >
-                              <Sparkles className="w-3 h-3" />
                               <span>Build with these parts</span>
                             </button>
                           </div>
@@ -503,14 +499,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
                               key={step.key}
                               className={`flex items-center gap-2 transition-colors ${
                                 isDone
-                                  ? 'text-emerald-500 font-medium'
+                                  ? 'text-white font-medium'
                                   : isCurrent
                                   ? 'text-white font-medium'
                                   : 'text-[#666]'
                               }`}
                             >
                               {isDone ? (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                <Check className="w-3.5 h-3.5 text-white shrink-0" />
                               ) : isCurrent ? (
                                 <Loader2 className="w-3.5 h-3.5 text-[#a3a3a3] animate-spin shrink-0" />
                               ) : (
@@ -557,7 +553,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                       title="Copy reply text"
                     >
                       {copiedMsgId === msg.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        <Check className="w-3.5 h-3.5 text-white" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}

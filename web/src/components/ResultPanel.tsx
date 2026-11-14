@@ -357,7 +357,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                   className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#202020] hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white transition cursor-pointer text-xs"
                 >
                   {copiedCode ? (
-                    <Check className="w-3 h-3 text-emerald-400" />
+                    <Check className="w-3 h-3 text-white" />
                   ) : (
                     <Copy className="w-3 h-3" />
                   )}
@@ -373,7 +373,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               </div>
             </div>
 
-            <pre className="mt-2 p-3 rounded-lg bg-black/60 border border-[#262626] overflow-x-auto text-emerald-400 font-mono text-[11px] leading-relaxed flex-1">
+            <pre className="mt-2 p-3 rounded-lg bg-black/60 border border-[#262626] overflow-x-auto text-zinc-200 font-mono text-[11px] leading-relaxed flex-1">
               <code>{build.code?.ino || '// No firmware sketch'}</code>
             </pre>
           </div>

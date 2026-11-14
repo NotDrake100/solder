@@ -249,7 +249,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                   {isExpanded && (
                     <div className="mt-2 rounded bg-[#161616] border border-[#2a2a2a] p-2 space-y-1.5">
                       {isHealed && chk.healInfo && (
-                        <pre className="p-1.5 rounded bg-black/60 text-emerald-400 font-mono text-[10.5px] leading-tight overflow-x-auto border border-[#333]">
+                        <pre className="p-1.5 rounded bg-black/60 text-zinc-300 font-mono text-[10.5px] leading-tight overflow-x-auto border border-[#333]">
                           <code>{chk.healInfo.patchDiff}</code>
                         </pre>
                       )}
@@ -267,7 +267,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
 
       {/* Summary Row */}
       <div className="h-sum flex items-center gap-1.5 text-xs text-[#a3a3a3] pt-1">
-        <span className="check text-emerald-400 font-bold">✓</span>
+        <span className="check text-white font-bold">✓</span>
         <span className="font-medium text-[#f5f5f5]">
           {passedCount}/{totalCount} checks passed
         </span>

@@ -299,7 +299,7 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
         <div className="flex items-center gap-2">
           <div
             className={`w-2 h-2 rounded-full ${
-              isDetecting ? 'bg-emerald-400 animate-ping' : 'bg-emerald-400'
+              isDetecting ? 'bg-white animate-ping' : 'bg-white'
             }`}
           />
           <span className="text-sm font-medium text-white tracking-tight">
@@ -428,7 +428,7 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
                 key={label}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#202020] border border-[#333] text-xs font-medium text-white shrink-0 animate-fadeIn"
               >
-                <Check className="w-3 h-3 text-emerald-400" />
+                <Check className="w-3 h-3 text-white" />
                 <span>{label}</span>
               </span>
             ))
