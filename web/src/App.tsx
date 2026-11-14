@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import type { SolderBuild, AgentLogStep, ScrapPhotoResult } from './types';
 import { SHOWCASE_BUILDS } from './data/showcases';
 import { Navbar } from './components/Navbar';
-import { HeroInput } from './components/HeroInput';
 import { IdeaChat } from './components/IdeaChat';
 import { AgentLogPanel } from './components/AgentLogPanel';
 import { WorkspaceTabs } from './components/WorkspaceTabs';
