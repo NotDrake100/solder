@@ -1,0 +1,38 @@
+{
+  "id": "mq135",
+  "name": "MQ-135 Hazardous Gas & Air Quality Sensor",
+  "category": "sensor",
+  "dims": [
+    32.0,
+    20.0,
+    22.0
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 3.0,
+      "y": 3.0,
+      "diameter": 3.0
+    },
+    {
+      "x": 29.0,
+      "y": 17.0,
+      "diameter": 3.0
+    }
+  ],
+  "pins": [
+    "VCC",
+    "GND",
+    "DO",
+    "AO"
+  ],
+  "specs": {
+    "targetGases": "NH3, NOx, Alcohol, Benzene, Smoke, CO2",
+    "sensingRange": "10 - 1000 ppm",
+    "heaterVoltage": "5.0V \u00b1 0.2V",
+    "preheatDuration": "> 24 hours for calibration"
+  },
+  "priceInr": 180,
+  "color": "#4A5568",
+  "description": "Metal oxide semiconductor sensor with onboard LM393 comparator for indoor air quality and noxious gas detection."
+}

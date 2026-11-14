@@ -1,0 +1,26 @@
+{
+  "id": "pump-mini",
+  "name": "Mini DC Submersible Water Pump 3-6V",
+  "category": "actuator",
+  "dims": [
+    45.0,
+    24.0,
+    33.0
+  ],
+  "shape": "box",
+  "mountingHoles": [],
+  "pins": [
+    "VCC (+ Red)",
+    "GND (- Black)"
+  ],
+  "specs": {
+    "operatingVoltage": "2.5V - 6V DC",
+    "operatingCurrent": "130 - 220 mA",
+    "flowRate": "80 - 120 Liters/Hour",
+    "liftHead": "40 - 110 cm",
+    "outletDiameter": "7.5 mm outer / 4.7 mm inner"
+  },
+  "priceInr": 160,
+  "color": "#4A5568",
+  "description": "Quiet brushless submersible centrifugal pump for automated plant watering, aquaponics, and fluid circulation."
+}

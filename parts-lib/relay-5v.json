@@ -1,0 +1,41 @@
+{
+  "id": "relay-5v",
+  "name": "5V 1-Channel Relay Module",
+  "category": "actuator",
+  "dims": [
+    43.0,
+    17.0,
+    18.0
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 3.0,
+      "y": 3.0,
+      "diameter": 3.0
+    },
+    {
+      "x": 40.0,
+      "y": 14.0,
+      "diameter": 3.0
+    }
+  ],
+  "pins": [
+    "VCC",
+    "GND",
+    "IN",
+    "NO",
+    "COM",
+    "NC"
+  ],
+  "specs": {
+    "triggerVoltage": "5V DC",
+    "triggerCurrent": "15-20 mA",
+    "maxAcLoad": "250V AC / 10A",
+    "maxDcLoad": "30V DC / 10A",
+    "isolation": "Optocoupler isolated input"
+  },
+  "priceInr": 95,
+  "color": "#22543D",
+  "description": "Optocoupler-isolated 5V single-channel relay board capable of switching high-voltage AC/DC loads up to 10A."
+}

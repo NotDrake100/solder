@@ -1,0 +1,50 @@
+{
+  "id": "oled-096",
+  "name": "0.96 inch I2C OLED Display (SSD1306)",
+  "category": "display",
+  "dims": [
+    27.0,
+    27.0,
+    4.1
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 2.0,
+      "y": 2.0,
+      "diameter": 2.0
+    },
+    {
+      "x": 25.0,
+      "y": 2.0,
+      "diameter": 2.0
+    },
+    {
+      "x": 2.0,
+      "y": 25.0,
+      "diameter": 2.0
+    },
+    {
+      "x": 25.0,
+      "y": 25.0,
+      "diameter": 2.0
+    }
+  ],
+  "pins": [
+    "GND",
+    "VCC",
+    "SCL",
+    "SDA"
+  ],
+  "specs": {
+    "resolution": "128 x 64 pixels",
+    "driverIc": "SSD1306",
+    "interface": "I2C (Default address 0x3C)",
+    "operatingVoltage": "3.3V - 5V DC",
+    "displayColor": "Monochrome White / Blue",
+    "viewingAngle": "> 160 degrees"
+  },
+  "priceInr": 220,
+  "color": "#1A365D",
+  "description": "High-contrast self-illuminating 0.96 inch graphic OLED display module with 4-pin standard I2C interface."
+}

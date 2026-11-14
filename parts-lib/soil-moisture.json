@@ -1,0 +1,32 @@
+{
+  "id": "soil-moisture",
+  "name": "Capacitive Soil Moisture Sensor v1.2",
+  "category": "sensor",
+  "dims": [
+    98.0,
+    23.0,
+    7.0
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 11.5,
+      "y": 14.0,
+      "diameter": 3.0
+    }
+  ],
+  "pins": [
+    "VCC",
+    "GND",
+    "AOUT"
+  ],
+  "specs": {
+    "operatingVoltage": "3.3V - 5.5V DC",
+    "outputVoltage": "0 - 3.0V DC",
+    "sensingType": "Capacitive permittivity (corrosion-proof)",
+    "circuit": "TL555 / NE555 timer based oscillator"
+  },
+  "priceInr": 140,
+  "color": "#744210",
+  "description": "Corrosion-resistant capacitive soil moisture sensor that measures soil volumetric water content without bare electrode degradation."
+}

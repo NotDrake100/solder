@@ -1,0 +1,24 @@
+{
+  "id": "breadboard-half",
+  "name": "400 Tie-Point Half Size Breadboard",
+  "category": "prototyping",
+  "dims": [
+    82.0,
+    55.0,
+    8.5
+  ],
+  "shape": "box",
+  "mountingHoles": [],
+  "pins": [
+    "400 Tie-points (300 terminal strips, 100 distribution buses)"
+  ],
+  "specs": {
+    "tiePoints": 400,
+    "wireGauge": "21 - 26 AWG",
+    "adhesiveBacking": "Double-sided foam tape",
+    "interlocking": "Side nubs for cascading modules"
+  },
+  "priceInr": 95,
+  "color": "#E2E8F0",
+  "description": "Solderless prototyping half-breadboard with dual power rails and standard 0.1 inch spacing."
+}

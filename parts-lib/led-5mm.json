@@ -1,0 +1,25 @@
+{
+  "id": "led-5mm",
+  "name": "5mm Diffused LED with 220 Ohm Resistor",
+  "category": "passive",
+  "dims": [
+    5.0,
+    5.0,
+    8.6
+  ],
+  "shape": "cylinder",
+  "mountingHoles": [],
+  "pins": [
+    "Anode (+ Long Leg)",
+    "Cathode (- Short Leg)"
+  ],
+  "specs": {
+    "forwardVoltage": "2.0V - 2.2V (Red/Yellow), 3.0V - 3.2V (Green/Blue)",
+    "forwardCurrent": "20 mA",
+    "luminousIntensity": "300 - 400 mcd",
+    "includedResistor": "220 Ohm 1/4W carbon film"
+  },
+  "priceInr": 15,
+  "color": "#E53E3E",
+  "description": "Standard 5mm diffused light emitting diode with matched current limiting resistor for 5V microcontroller logic."
+}

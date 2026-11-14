@@ -1,0 +1,26 @@
+{
+  "id": "buzzer",
+  "name": "Active Piezo Buzzer 5V",
+  "category": "actuator",
+  "dims": [
+    12.0,
+    12.0,
+    9.5
+  ],
+  "shape": "cylinder",
+  "mountingHoles": [],
+  "pins": [
+    "Positive Pin (+)",
+    "Negative Pin (-)"
+  ],
+  "specs": {
+    "operatingVoltage": "3.5V - 5.5V DC",
+    "current": "< 25 mA",
+    "resonantFrequency": "2300 \u00b1 300 Hz",
+    "soundOutput": "> 85 dB at 10 cm",
+    "internalOscillator": "Yes (Active buzzer, continuous tone on DC)"
+  },
+  "priceInr": 35,
+  "color": "#1A202C",
+  "description": "Self-oscillating active magnetic buzzer producing sharp 85dB audible alert when 5V logic high is applied."
+}

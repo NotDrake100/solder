@@ -1,0 +1,32 @@
+{
+  "id": "dht11",
+  "name": "DHT11 Temperature & Humidity Sensor",
+  "category": "sensor",
+  "dims": [
+    32.0,
+    14.0,
+    8.5
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 16.0,
+      "y": 2.5,
+      "diameter": 2.5
+    }
+  ],
+  "pins": [
+    "VCC",
+    "DATA",
+    "GND"
+  ],
+  "specs": {
+    "operatingVoltage": "3.5V - 5.5V DC",
+    "humidityRange": "20% - 90% RH (\u00b15% accuracy)",
+    "temperatureRange": "0\u00b0C - 50\u00b0C (\u00b12\u00b0C accuracy)",
+    "samplingRate": "1 Hz (1 sample per second)"
+  },
+  "priceInr": 110,
+  "color": "#319795",
+  "description": "Calibrated digital composite temperature and relative humidity sensor with single-wire serial bus communication."
+}

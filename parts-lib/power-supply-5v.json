@@ -1,0 +1,26 @@
+{
+  "id": "power-supply-5v",
+  "name": "5V 2A Regulated Power Supply Module",
+  "category": "power",
+  "dims": [
+    55.0,
+    35.0,
+    22.0
+  ],
+  "shape": "box",
+  "mountingHoles": [],
+  "pins": [
+    "AC L/N Input",
+    "+5V DC Output",
+    "GND Output"
+  ],
+  "specs": {
+    "inputVoltage": "100V - 240V AC 50/60Hz",
+    "outputVoltage": "5V DC \u00b1 5%",
+    "maxOutputCurrent": "2000 mA (2A)",
+    "protection": "Over-current, over-voltage, short-circuit protection"
+  },
+  "priceInr": 220,
+  "color": "#1A202C",
+  "description": "Isolated step-down AC-to-DC 5V 2A power converter providing ripple-free supply for microcontrollers and motors."
+}

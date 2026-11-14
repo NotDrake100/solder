@@ -1,0 +1,31 @@
+{
+  "id": "holder-18650",
+  "name": "Single 18650 Li-ion Battery Holder",
+  "category": "power",
+  "dims": [
+    76.0,
+    21.0,
+    18.0
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 38.0,
+      "y": 10.5,
+      "diameter": 3.0
+    }
+  ],
+  "pins": [
+    "V+ (Red Wire)",
+    "V- (Black Wire)"
+  ],
+  "specs": {
+    "cellType": "18650 3.7V Lithium-ion cell",
+    "nominalVoltage": "3.7V DC (4.2V fully charged)",
+    "terminalType": "Gold-plated steel springs with wire leads",
+    "material": "High impact ABS plastic"
+  },
+  "priceInr": 60,
+  "color": "#2D3748",
+  "description": "Sturdy ABS single-cell battery compartment for 18650 cylindrical Li-ion cells with 150mm tinned leads."
+}

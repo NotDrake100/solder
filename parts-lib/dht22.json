@@ -1,0 +1,33 @@
+{
+  "id": "dht22",
+  "name": "DHT22 / AM2302 Precision Temperature & Humidity Sensor",
+  "category": "sensor",
+  "dims": [
+    38.0,
+    20.0,
+    10.0
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 10.0,
+      "y": 3.0,
+      "diameter": 3.0
+    }
+  ],
+  "pins": [
+    "VCC",
+    "DATA",
+    "NC",
+    "GND"
+  ],
+  "specs": {
+    "operatingVoltage": "3.3V - 6V DC",
+    "humidityRange": "0% - 100% RH (\u00b12% accuracy)",
+    "temperatureRange": "-40\u00b0C - 80\u00b0C (\u00b10.5\u00b0C accuracy)",
+    "samplingRate": "0.5 Hz (every 2 seconds)"
+  },
+  "priceInr": 290,
+  "color": "#ED8936",
+  "description": "High-accuracy digital hygrometer and thermometer sensor providing 16-bit resolution over 1-wire bus."
+}

@@ -1,0 +1,38 @@
+{
+  "id": "sg90",
+  "name": "TowerPro SG90 Micro Servo 9g",
+  "category": "actuator",
+  "dims": [
+    22.8,
+    12.2,
+    28.5
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 2.5,
+      "y": 6.1,
+      "diameter": 2.0
+    },
+    {
+      "x": 28.0,
+      "y": 6.1,
+      "diameter": 2.0
+    }
+  ],
+  "pins": [
+    "GND (Brown)",
+    "VCC 5V (Red)",
+    "PWM Signal (Orange)"
+  ],
+  "specs": {
+    "operatingVoltage": "4.8V - 6.0V",
+    "stallTorque": "1.8 kg-cm at 4.8V",
+    "operatingSpeed": "0.1 s / 60 degrees",
+    "rotationAngle": "180 degrees",
+    "weight": "9 grams"
+  },
+  "priceInr": 120,
+  "color": "#2B6CB0",
+  "description": "Miniature lightweight 9g servo motor with 180 degree rotation, ideal for robotic arms and locking mechanisms."
+}

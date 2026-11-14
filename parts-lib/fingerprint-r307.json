@@ -1,0 +1,36 @@
+{
+  "id": "fingerprint-r307",
+  "name": "R307 Optical Fingerprint Scanner Module",
+  "category": "sensor",
+  "dims": [
+    56.0,
+    20.0,
+    21.5
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 3.0,
+      "y": 10.0,
+      "diameter": 2.5
+    }
+  ],
+  "pins": [
+    "VCC (5V)",
+    "GND",
+    "TXD",
+    "RXD",
+    "TOUCH_SENSE",
+    "3.3V_OUT"
+  ],
+  "specs": {
+    "resolution": "500 DPI",
+    "capacity": "1000 fingerprints",
+    "verificationTime": "< 0.3 seconds",
+    "baudRate": "9600 - 57600 bps UART",
+    "opticalWindow": "14 x 18 mm toughened glass"
+  },
+  "priceInr": 1450,
+  "color": "#2B6CB0",
+  "description": "Self-contained optical fingerprint reader with DSP processor, onboard flash template storage, and UART interface."
+}

@@ -1,0 +1,33 @@
+{
+  "id": "bme280",
+  "name": "BME280 Atmospheric Pressure, Temperature & Humidity",
+  "category": "sensor",
+  "dims": [
+    15.0,
+    12.0,
+    3.0
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 2.0,
+      "y": 6.0,
+      "diameter": 2.0
+    }
+  ],
+  "pins": [
+    "VCC (3.3V)",
+    "GND",
+    "SCL",
+    "SDA"
+  ],
+  "specs": {
+    "pressureRange": "300 - 1100 hPa (\u00b11 hPa accuracy)",
+    "temperatureRange": "-40\u00b0C - 85\u00b0C (\u00b11\u00b0C accuracy)",
+    "humidityRange": "0% - 100% RH (\u00b13% accuracy)",
+    "interface": "I2C (0x76 / 0x77) and SPI"
+  },
+  "priceInr": 280,
+  "color": "#9B2C2C",
+  "description": "Precision Bosch environmental sensor measuring barometric air pressure, temperature, and relative humidity."
+}

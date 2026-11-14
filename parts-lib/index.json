@@ -1,0 +1,715 @@
+{
+  "version": "1.0.0",
+  "count": 19,
+  "parts": [
+    {
+      "id": "uno",
+      "name": "Arduino Uno R3",
+      "category": "microcontroller",
+      "dims": [
+        68.6,
+        53.4,
+        15.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 14.0,
+          "y": 2.5,
+          "diameter": 3.2
+        },
+        {
+          "x": 15.2,
+          "y": 50.8,
+          "diameter": 3.2
+        },
+        {
+          "x": 66.0,
+          "y": 7.6,
+          "diameter": 3.2
+        },
+        {
+          "x": 66.0,
+          "y": 35.5,
+          "diameter": 3.2
+        }
+      ],
+      "pins": [
+        "5V",
+        "3.3V",
+        "GND",
+        "VIN",
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "D0",
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "D7",
+        "D8",
+        "D9",
+        "D10",
+        "D11",
+        "D12",
+        "D13",
+        "AREF",
+        "RESET"
+      ],
+      "specs": {
+        "microcontroller": "ATmega328P",
+        "operatingVoltage": "5V",
+        "inputVoltage": "7-12V",
+        "clockSpeed": "16 MHz",
+        "flashMemory": "32 KB",
+        "sram": "2 KB",
+        "eeprom": "1 KB",
+        "digitalIoPins": 14,
+        "pwmPins": 6,
+        "analogInputs": 6
+      },
+      "priceInr": 450,
+      "color": "#00979C",
+      "description": "Standard ATmega328P microcontroller board with 14 digital I/O pins, 6 analog inputs, and USB interface."
+    },
+    {
+      "id": "esp32",
+      "name": "ESP32 NodeMCU DevKit V1",
+      "category": "microcontroller",
+      "dims": [
+        51.5,
+        28.5,
+        12.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 2.0,
+          "y": 2.0,
+          "diameter": 2.5
+        },
+        {
+          "x": 49.5,
+          "y": 2.0,
+          "diameter": 2.5
+        },
+        {
+          "x": 2.0,
+          "y": 26.5,
+          "diameter": 2.5
+        },
+        {
+          "x": 49.5,
+          "y": 26.5,
+          "diameter": 2.5
+        }
+      ],
+      "pins": [
+        "3V3",
+        "GND",
+        "D15",
+        "D2",
+        "D4",
+        "RX2",
+        "TX2",
+        "D5",
+        "D18",
+        "D19",
+        "D21",
+        "RX0",
+        "TX0",
+        "D22",
+        "D23",
+        "EN",
+        "VP",
+        "VN",
+        "D34",
+        "D35",
+        "D32",
+        "D33",
+        "D25",
+        "D26",
+        "D27",
+        "D14",
+        "D12",
+        "D13",
+        "VIN"
+      ],
+      "specs": {
+        "processor": "Xtensa Dual-Core 32-bit LX6",
+        "operatingVoltage": "3.3V",
+        "clockSpeed": "240 MHz",
+        "wireless": "Wi-Fi 802.11 b/g/n & Bluetooth 4.2 BR/EDR/BLE",
+        "sram": "520 KB",
+        "flash": "4 MB"
+      },
+      "priceInr": 380,
+      "color": "#1A202C",
+      "description": "Powerful dual-core 240MHz microcontroller board featuring integrated 2.4 GHz Wi-Fi and Bluetooth LE."
+    },
+    {
+      "id": "sg90",
+      "name": "TowerPro SG90 Micro Servo 9g",
+      "category": "actuator",
+      "dims": [
+        22.8,
+        12.2,
+        28.5
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 2.5,
+          "y": 6.1,
+          "diameter": 2.0
+        },
+        {
+          "x": 28.0,
+          "y": 6.1,
+          "diameter": 2.0
+        }
+      ],
+      "pins": [
+        "GND (Brown)",
+        "VCC 5V (Red)",
+        "PWM Signal (Orange)"
+      ],
+      "specs": {
+        "operatingVoltage": "4.8V - 6.0V",
+        "stallTorque": "1.8 kg-cm at 4.8V",
+        "operatingSpeed": "0.1 s / 60 degrees",
+        "rotationAngle": "180 degrees",
+        "weight": "9 grams"
+      },
+      "priceInr": 120,
+      "color": "#2B6CB0",
+      "description": "Miniature lightweight 9g servo motor with 180 degree rotation, ideal for robotic arms and locking mechanisms."
+    },
+    {
+      "id": "relay-5v",
+      "name": "5V 1-Channel Relay Module",
+      "category": "actuator",
+      "dims": [
+        43.0,
+        17.0,
+        18.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 3.0,
+          "y": 3.0,
+          "diameter": 3.0
+        },
+        {
+          "x": 40.0,
+          "y": 14.0,
+          "diameter": 3.0
+        }
+      ],
+      "pins": [
+        "VCC",
+        "GND",
+        "IN",
+        "NO",
+        "COM",
+        "NC"
+      ],
+      "specs": {
+        "triggerVoltage": "5V DC",
+        "triggerCurrent": "15-20 mA",
+        "maxAcLoad": "250V AC / 10A",
+        "maxDcLoad": "30V DC / 10A",
+        "isolation": "Optocoupler isolated input"
+      },
+      "priceInr": 95,
+      "color": "#22543D",
+      "description": "Optocoupler-isolated 5V single-channel relay board capable of switching high-voltage AC/DC loads up to 10A."
+    },
+    {
+      "id": "oled-096",
+      "name": "0.96 inch I2C OLED Display (SSD1306)",
+      "category": "display",
+      "dims": [
+        27.0,
+        27.0,
+        4.1
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 2.0,
+          "y": 2.0,
+          "diameter": 2.0
+        },
+        {
+          "x": 25.0,
+          "y": 2.0,
+          "diameter": 2.0
+        },
+        {
+          "x": 2.0,
+          "y": 25.0,
+          "diameter": 2.0
+        },
+        {
+          "x": 25.0,
+          "y": 25.0,
+          "diameter": 2.0
+        }
+      ],
+      "pins": [
+        "GND",
+        "VCC",
+        "SCL",
+        "SDA"
+      ],
+      "specs": {
+        "resolution": "128 x 64 pixels",
+        "driverIc": "SSD1306",
+        "interface": "I2C (Default address 0x3C)",
+        "operatingVoltage": "3.3V - 5V DC",
+        "displayColor": "Monochrome White / Blue",
+        "viewingAngle": "> 160 degrees"
+      },
+      "priceInr": 220,
+      "color": "#1A365D",
+      "description": "High-contrast self-illuminating 0.96 inch graphic OLED display module with 4-pin standard I2C interface."
+    },
+    {
+      "id": "soil-moisture",
+      "name": "Capacitive Soil Moisture Sensor v1.2",
+      "category": "sensor",
+      "dims": [
+        98.0,
+        23.0,
+        7.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 11.5,
+          "y": 14.0,
+          "diameter": 3.0
+        }
+      ],
+      "pins": [
+        "VCC",
+        "GND",
+        "AOUT"
+      ],
+      "specs": {
+        "operatingVoltage": "3.3V - 5.5V DC",
+        "outputVoltage": "0 - 3.0V DC",
+        "sensingType": "Capacitive permittivity (corrosion-proof)",
+        "circuit": "TL555 / NE555 timer based oscillator"
+      },
+      "priceInr": 140,
+      "color": "#744210",
+      "description": "Corrosion-resistant capacitive soil moisture sensor that measures soil volumetric water content without bare electrode degradation."
+    },
+    {
+      "id": "dht11",
+      "name": "DHT11 Temperature & Humidity Sensor",
+      "category": "sensor",
+      "dims": [
+        32.0,
+        14.0,
+        8.5
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 16.0,
+          "y": 2.5,
+          "diameter": 2.5
+        }
+      ],
+      "pins": [
+        "VCC",
+        "DATA",
+        "GND"
+      ],
+      "specs": {
+        "operatingVoltage": "3.5V - 5.5V DC",
+        "humidityRange": "20% - 90% RH (\u00b15% accuracy)",
+        "temperatureRange": "0\u00b0C - 50\u00b0C (\u00b12\u00b0C accuracy)",
+        "samplingRate": "1 Hz (1 sample per second)"
+      },
+      "priceInr": 110,
+      "color": "#319795",
+      "description": "Calibrated digital composite temperature and relative humidity sensor with single-wire serial bus communication."
+    },
+    {
+      "id": "dht22",
+      "name": "DHT22 / AM2302 Precision Temperature & Humidity Sensor",
+      "category": "sensor",
+      "dims": [
+        38.0,
+        20.0,
+        10.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 10.0,
+          "y": 3.0,
+          "diameter": 3.0
+        }
+      ],
+      "pins": [
+        "VCC",
+        "DATA",
+        "NC",
+        "GND"
+      ],
+      "specs": {
+        "operatingVoltage": "3.3V - 6V DC",
+        "humidityRange": "0% - 100% RH (\u00b12% accuracy)",
+        "temperatureRange": "-40\u00b0C - 80\u00b0C (\u00b10.5\u00b0C accuracy)",
+        "samplingRate": "0.5 Hz (every 2 seconds)"
+      },
+      "priceInr": 290,
+      "color": "#ED8936",
+      "description": "High-accuracy digital hygrometer and thermometer sensor providing 16-bit resolution over 1-wire bus."
+    },
+    {
+      "id": "holder-18650",
+      "name": "Single 18650 Li-ion Battery Holder",
+      "category": "power",
+      "dims": [
+        76.0,
+        21.0,
+        18.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 38.0,
+          "y": 10.5,
+          "diameter": 3.0
+        }
+      ],
+      "pins": [
+        "V+ (Red Wire)",
+        "V- (Black Wire)"
+      ],
+      "specs": {
+        "cellType": "18650 3.7V Lithium-ion cell",
+        "nominalVoltage": "3.7V DC (4.2V fully charged)",
+        "terminalType": "Gold-plated steel springs with wire leads",
+        "material": "High impact ABS plastic"
+      },
+      "priceInr": 60,
+      "color": "#2D3748",
+      "description": "Sturdy ABS single-cell battery compartment for 18650 cylindrical Li-ion cells with 150mm tinned leads."
+    },
+    {
+      "id": "buzzer",
+      "name": "Active Piezo Buzzer 5V",
+      "category": "actuator",
+      "dims": [
+        12.0,
+        12.0,
+        9.5
+      ],
+      "shape": "cylinder",
+      "mountingHoles": [],
+      "pins": [
+        "Positive Pin (+)",
+        "Negative Pin (-)"
+      ],
+      "specs": {
+        "operatingVoltage": "3.5V - 5.5V DC",
+        "current": "< 25 mA",
+        "resonantFrequency": "2300 \u00b1 300 Hz",
+        "soundOutput": "> 85 dB at 10 cm",
+        "internalOscillator": "Yes (Active buzzer, continuous tone on DC)"
+      },
+      "priceInr": 35,
+      "color": "#1A202C",
+      "description": "Self-oscillating active magnetic buzzer producing sharp 85dB audible alert when 5V logic high is applied."
+    },
+    {
+      "id": "pump-mini",
+      "name": "Mini DC Submersible Water Pump 3-6V",
+      "category": "actuator",
+      "dims": [
+        45.0,
+        24.0,
+        33.0
+      ],
+      "shape": "box",
+      "mountingHoles": [],
+      "pins": [
+        "VCC (+ Red)",
+        "GND (- Black)"
+      ],
+      "specs": {
+        "operatingVoltage": "2.5V - 6V DC",
+        "operatingCurrent": "130 - 220 mA",
+        "flowRate": "80 - 120 Liters/Hour",
+        "liftHead": "40 - 110 cm",
+        "outletDiameter": "7.5 mm outer / 4.7 mm inner"
+      },
+      "priceInr": 160,
+      "color": "#4A5568",
+      "description": "Quiet brushless submersible centrifugal pump for automated plant watering, aquaponics, and fluid circulation."
+    },
+    {
+      "id": "breadboard-half",
+      "name": "400 Tie-Point Half Size Breadboard",
+      "category": "prototyping",
+      "dims": [
+        82.0,
+        55.0,
+        8.5
+      ],
+      "shape": "box",
+      "mountingHoles": [],
+      "pins": [
+        "400 Tie-points (300 terminal strips, 100 distribution buses)"
+      ],
+      "specs": {
+        "tiePoints": 400,
+        "wireGauge": "21 - 26 AWG",
+        "adhesiveBacking": "Double-sided foam tape",
+        "interlocking": "Side nubs for cascading modules"
+      },
+      "priceInr": 95,
+      "color": "#E2E8F0",
+      "description": "Solderless prototyping half-breadboard with dual power rails and standard 0.1 inch spacing."
+    },
+    {
+      "id": "breadboard-mini",
+      "name": "170 Tie-Point Mini Solderless Breadboard",
+      "category": "prototyping",
+      "dims": [
+        47.0,
+        35.0,
+        8.5
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 23.5,
+          "y": 17.5,
+          "diameter": 2.5
+        }
+      ],
+      "pins": [
+        "170 Tie-points in 34 rows of 5"
+      ],
+      "specs": {
+        "tiePoints": 170,
+        "wireGauge": "20 - 29 AWG",
+        "contactMaterial": "Phosphor bronze nickel plated"
+      },
+      "priceInr": 55,
+      "color": "#ED8936",
+      "description": "Ultra-compact 170-point breadboard designed for tight enclosure prototypes and shields."
+    },
+    {
+      "id": "led-5mm",
+      "name": "5mm Diffused LED with 220 Ohm Resistor",
+      "category": "passive",
+      "dims": [
+        5.0,
+        5.0,
+        8.6
+      ],
+      "shape": "cylinder",
+      "mountingHoles": [],
+      "pins": [
+        "Anode (+ Long Leg)",
+        "Cathode (- Short Leg)"
+      ],
+      "specs": {
+        "forwardVoltage": "2.0V - 2.2V (Red/Yellow), 3.0V - 3.2V (Green/Blue)",
+        "forwardCurrent": "20 mA",
+        "luminousIntensity": "300 - 400 mcd",
+        "includedResistor": "220 Ohm 1/4W carbon film"
+      },
+      "priceInr": 15,
+      "color": "#E53E3E",
+      "description": "Standard 5mm diffused light emitting diode with matched current limiting resistor for 5V microcontroller logic."
+    },
+    {
+      "id": "mq135",
+      "name": "MQ-135 Hazardous Gas & Air Quality Sensor",
+      "category": "sensor",
+      "dims": [
+        32.0,
+        20.0,
+        22.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 3.0,
+          "y": 3.0,
+          "diameter": 3.0
+        },
+        {
+          "x": 29.0,
+          "y": 17.0,
+          "diameter": 3.0
+        }
+      ],
+      "pins": [
+        "VCC",
+        "GND",
+        "DO",
+        "AO"
+      ],
+      "specs": {
+        "targetGases": "NH3, NOx, Alcohol, Benzene, Smoke, CO2",
+        "sensingRange": "10 - 1000 ppm",
+        "heaterVoltage": "5.0V \u00b1 0.2V",
+        "preheatDuration": "> 24 hours for calibration"
+      },
+      "priceInr": 180,
+      "color": "#4A5568",
+      "description": "Metal oxide semiconductor sensor with onboard LM393 comparator for indoor air quality and noxious gas detection."
+    },
+    {
+      "id": "bme280",
+      "name": "BME280 Atmospheric Pressure, Temperature & Humidity",
+      "category": "sensor",
+      "dims": [
+        15.0,
+        12.0,
+        3.0
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 2.0,
+          "y": 6.0,
+          "diameter": 2.0
+        }
+      ],
+      "pins": [
+        "VCC (3.3V)",
+        "GND",
+        "SCL",
+        "SDA"
+      ],
+      "specs": {
+        "pressureRange": "300 - 1100 hPa (\u00b11 hPa accuracy)",
+        "temperatureRange": "-40\u00b0C - 85\u00b0C (\u00b11\u00b0C accuracy)",
+        "humidityRange": "0% - 100% RH (\u00b13% accuracy)",
+        "interface": "I2C (0x76 / 0x77) and SPI"
+      },
+      "priceInr": 280,
+      "color": "#9B2C2C",
+      "description": "Precision Bosch environmental sensor measuring barometric air pressure, temperature, and relative humidity."
+    },
+    {
+      "id": "fingerprint-r307",
+      "name": "R307 Optical Fingerprint Scanner Module",
+      "category": "sensor",
+      "dims": [
+        56.0,
+        20.0,
+        21.5
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 3.0,
+          "y": 10.0,
+          "diameter": 2.5
+        }
+      ],
+      "pins": [
+        "VCC (5V)",
+        "GND",
+        "TXD",
+        "RXD",
+        "TOUCH_SENSE",
+        "3.3V_OUT"
+      ],
+      "specs": {
+        "resolution": "500 DPI",
+        "capacity": "1000 fingerprints",
+        "verificationTime": "< 0.3 seconds",
+        "baudRate": "9600 - 57600 bps UART",
+        "opticalWindow": "14 x 18 mm toughened glass"
+      },
+      "priceInr": 1450,
+      "color": "#2B6CB0",
+      "description": "Self-contained optical fingerprint reader with DSP processor, onboard flash template storage, and UART interface."
+    },
+    {
+      "id": "rain-sensor",
+      "name": "FC-37 Rain & Water Droplet Sensor",
+      "category": "sensor",
+      "dims": [
+        54.0,
+        40.0,
+        1.5
+      ],
+      "shape": "box",
+      "mountingHoles": [
+        {
+          "x": 3.0,
+          "y": 3.0,
+          "diameter": 3.0
+        },
+        {
+          "x": 51.0,
+          "y": 3.0,
+          "diameter": 3.0
+        }
+      ],
+      "pins": [
+        "VCC",
+        "GND",
+        "DO",
+        "AO"
+      ],
+      "specs": {
+        "operatingVoltage": "3.3V - 5V DC",
+        "sensingSurface": "Nickel-plated rain grid tracks",
+        "comparator": "LM393 with sensitivity potentiometer",
+        "output": "Digital high/low and analog voltage"
+      },
+      "priceInr": 95,
+      "color": "#2C5282",
+      "description": "Weather-resistant rain drop sensor plate paired with an LM393 comparator board for precipitation detection."
+    },
+    {
+      "id": "power-supply-5v",
+      "name": "5V 2A Regulated Power Supply Module",
+      "category": "power",
+      "dims": [
+        55.0,
+        35.0,
+        22.0
+      ],
+      "shape": "box",
+      "mountingHoles": [],
+      "pins": [
+        "AC L/N Input",
+        "+5V DC Output",
+        "GND Output"
+      ],
+      "specs": {
+        "inputVoltage": "100V - 240V AC 50/60Hz",
+        "outputVoltage": "5V DC \u00b1 5%",
+        "maxOutputCurrent": "2000 mA (2A)",
+        "protection": "Over-current, over-voltage, short-circuit protection"
+      },
+      "priceInr": 220,
+      "color": "#1A202C",
+      "description": "Isolated step-down AC-to-DC 5V 2A power converter providing ripple-free supply for microcontrollers and motors."
+    }
+  ]
+}

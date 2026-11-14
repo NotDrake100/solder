@@ -1,0 +1,29 @@
+{
+  "id": "breadboard-mini",
+  "name": "170 Tie-Point Mini Solderless Breadboard",
+  "category": "prototyping",
+  "dims": [
+    47.0,
+    35.0,
+    8.5
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 23.5,
+      "y": 17.5,
+      "diameter": 2.5
+    }
+  ],
+  "pins": [
+    "170 Tie-points in 34 rows of 5"
+  ],
+  "specs": {
+    "tiePoints": 170,
+    "wireGauge": "20 - 29 AWG",
+    "contactMaterial": "Phosphor bronze nickel plated"
+  },
+  "priceInr": 55,
+  "color": "#ED8936",
+  "description": "Ultra-compact 170-point breadboard designed for tight enclosure prototypes and shields."
+}

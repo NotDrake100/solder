@@ -1,0 +1,38 @@
+{
+  "id": "rain-sensor",
+  "name": "FC-37 Rain & Water Droplet Sensor",
+  "category": "sensor",
+  "dims": [
+    54.0,
+    40.0,
+    1.5
+  ],
+  "shape": "box",
+  "mountingHoles": [
+    {
+      "x": 3.0,
+      "y": 3.0,
+      "diameter": 3.0
+    },
+    {
+      "x": 51.0,
+      "y": 3.0,
+      "diameter": 3.0
+    }
+  ],
+  "pins": [
+    "VCC",
+    "GND",
+    "DO",
+    "AO"
+  ],
+  "specs": {
+    "operatingVoltage": "3.3V - 5V DC",
+    "sensingSurface": "Nickel-plated rain grid tracks",
+    "comparator": "LM393 with sensitivity potentiometer",
+    "output": "Digital high/low and analog voltage"
+  },
+  "priceInr": 95,
+  "color": "#2C5282",
+  "description": "Weather-resistant rain drop sensor plate paired with an LM393 comparator board for precipitation detection."
+}
