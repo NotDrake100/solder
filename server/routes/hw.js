@@ -6,8 +6,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let hwCompileModule = null;
 let hwFitcheckModule = null;
 let hwScadModule = null;
+let simCompileModule = null;
 
 async function loadHwModules() {
+  if (!simCompileModule) {
+    try {
+      simCompileModule = await import(path.resolve(__dirname, '../../sim/compileRoute.js'));
+    } catch (e) {
+      // ignore
+    }
+  }
   if (!hwCompileModule) {
     try {
       hwCompileModule = await import(path.resolve(__dirname, '../hw/compile.ts'));
@@ -33,14 +41,40 @@ async function loadHwModules() {
 
 export async function handleCompile(reqBody) {
   await loadHwModules();
-  const { ino, board = 'uno' } = reqBody;
+  const sketch = reqBody.sketch || reqBody.ino;
+  const board = reqBody.board || reqBody.fqbn || 'uno';
 
-  if (!ino) {
-    throw new Error('Missing ino code in request body');
+  if (!sketch) {
+    throw new Error('Missing sketch or ino code in request body');
+  }
+
+  // Use sim/compileRoute.js module
+  if (simCompileModule && simCompileModule.compileSketch) {
+    try {
+      const res = await simCompileModule.compileSketch(sketch, {
+        fqbn: board === 'uno' ? 'arduino:avr:uno' : board,
+        board,
+      });
+      return {
+        success: true,
+        hex: res.hex,
+        stdout: res.stdout || 'Compiled successfully',
+        errors: [],
+        board,
+        fallback: res.fallback || false,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        errors: [err.message, ...(err.stderr ? [err.stderr] : [])],
+        stdout: err.stderr || err.message,
+        board,
+      };
+    }
   }
 
   if (hwCompileModule && hwCompileModule.compileSketch) {
-    return await hwCompileModule.compileSketch({ ino, board });
+    return await hwCompileModule.compileSketch({ ino: sketch, board });
   }
 
   // Standalone fallback compiler check
