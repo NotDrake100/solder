@@ -1,16 +1,16 @@
 /**
  * In-memory sliding window rate limiter
- * - 3 live builds per IP / hour
- * - Global daily cap of 15 live builds (aligned with Gemini free tier 20 RPD)
+ * - 20 live builds per IP / hour
+ * - Global daily cap of 200 live builds (for hackathon evaluation)
  */
 
 const ipRequests = new Map(); // ip -> Array<timestamp>
 let dailyCount = 0;
 let dailyResetTime = Date.now() + 24 * 60 * 60 * 1000;
 
-const MAX_PER_IP_PER_HOUR = 3;
+const MAX_PER_IP_PER_HOUR = 20;
 const ONE_HOUR_MS = 60 * 60 * 1000;
-const GLOBAL_DAILY_CAP = 15;
+const GLOBAL_DAILY_CAP = 200;
 
 export function checkRateLimit(ip = '127.0.0.1') {
   const now = Date.now();
@@ -43,7 +43,7 @@ export function checkRateLimit(ip = '127.0.0.1') {
     return {
       allowed: false,
       reason: 'ip_hourly_limit',
-      message: 'Rate limit: You have used your 3 live builds for this hour. Try one of our instant showcase builds while your quota resets.',
+      message: 'Rate limit: You have used your 20 live builds for this hour. Try one of our instant showcase builds while your quota resets.',
       remaining: 0,
       resetAt
     };

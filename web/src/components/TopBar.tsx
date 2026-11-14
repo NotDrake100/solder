@@ -42,7 +42,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   const currentModel = MODELS.find((m) => m.id === selectedModel) || MODELS[0];
 
   return (
-    <header className="sticky top-0 z-20 h-12 sm:h-14 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80 px-3 sm:px-4 flex items-center justify-between gap-3 text-zinc-100 select-none">
+    <header className="h-12 sm:h-14 shrink-0 bg-zinc-950 border-b border-zinc-800/80 px-3 sm:px-4 flex items-center justify-between gap-3 text-zinc-100 select-none z-20">
       {/* Left: Sidebar toggle & Model Dropdown */}
       <div className="flex items-center gap-2">
         {/* Mobile Hamburger / Desktop Toggle */}
