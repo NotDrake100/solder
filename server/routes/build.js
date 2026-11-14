@@ -7,9 +7,9 @@ import { getShowcaseById } from './showcase.js';
 // Global memory registry of active builds by ID
 export const activeBuilds = new Map();
 
-export async function handleCreateBuild({ prompt, photoBase64, chips = [], ip = '127.0.0.1' }) {
-  if (!prompt && !photoBase64) {
-    throw new Error('Please provide an idea prompt or photo.');
+export async function handleCreateBuild({ prompt, photoBase64, chips = [], inventory = [], ip = '127.0.0.1' }) {
+  if (!prompt && !photoBase64 && (!inventory || inventory.length === 0)) {
+    throw new Error('Please provide an idea prompt, photo, or inventory.');
   }
 
   // 1. Check prompt cache first
@@ -29,7 +29,7 @@ export async function handleCreateBuild({ prompt, photoBase64, chips = [], ip = 
   const rateLimit = checkRateLimit(ip);
   if (!rateLimit.allowed) {
     // Graceful handling: when rate limited, serve offline generator or showcase
-    const fallbackBuild = await buildWithGemini(prompt, photoBase64, chips);
+    const fallbackBuild = await buildWithGemini(prompt, photoBase64, chips, inventory);
     activeBuilds.set(fallbackBuild.id, fallbackBuild);
     return {
       buildId: fallbackBuild.id,
@@ -41,7 +41,16 @@ export async function handleCreateBuild({ prompt, photoBase64, chips = [], ip = 
   }
 
   // 3. Generate with Gemini 3.8 Flash (or smart generator if offline/no key)
-  const buildData = await buildWithGemini(prompt, photoBase64, chips);
+  const buildData = await buildWithGemini(prompt, photoBase64, chips, inventory);
+
+  // Tag parts as owned if present in user inventory
+  if (Array.isArray(inventory) && inventory.length > 0 && Array.isArray(buildData.parts)) {
+    const invLower = inventory.map(i => (typeof i === 'string' ? i : i.name || i.label || '').toLowerCase());
+    buildData.parts = buildData.parts.map(p => {
+      const match = invLower.some(inv => inv.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(inv) || inv.includes(p.libId.toLowerCase()));
+      return match ? { ...p, owned: true } : p;
+    });
+  }
   recordLiveBuild(ip);
 
   // Store in cache and memory

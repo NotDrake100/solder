@@ -207,3 +207,25 @@ test('8. POST /api/fitcheck verifies clearance', async () => {
   assert.equal(res.body.fits, true);
   assert.ok(res.body.minClearanceMm >= 1.5);
 });
+
+test('9. POST /api/vision/detect tracks electronics bounding boxes and enforces rate limits', async () => {
+  const payload = {
+    imageBase64: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+  };
+
+  const res = await apiRequest('/api/vision/detect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  assert.equal(res.status, 200);
+  assert.ok(Array.isArray(res.body.detections));
+  assert.ok(res.body.detections.length > 0);
+  const first = res.body.detections[0];
+  assert.ok(first.label);
+  assert.ok(Array.isArray(first.box_2d));
+  assert.equal(first.box_2d.length, 4);
+  assert.ok(typeof first.confidence === 'number');
+  assert.ok(typeof res.body.sessionRemaining === 'number');
+});

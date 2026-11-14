@@ -66,6 +66,7 @@ import { getShowcaseList, getShowcaseById } from './routes/showcase.js';
 import { handleCreateBuild, getBuildById, handleStreamBuild } from './routes/build.js';
 import { handleFixBuild } from './routes/fix.js';
 import { handlePhotoUpload } from './routes/photo.js';
+import { handleVisionDetect } from './routes/vision.js';
 import { handleCompile, handleFitCheck } from './routes/hw.js';
 import { getRateLimitStatus } from './services/rateLimiter.js';
 
@@ -173,6 +174,7 @@ export function createServer() {
           prompt: body.prompt,
           photoBase64: body.photoBase64 || body.image,
           chips: body.chips,
+          inventory: body.inventory,
           ip: clientIp
         });
         sendJson(res, 200, result);
@@ -234,6 +236,14 @@ export function createServer() {
         const body = await parseBody(req);
         const fitResult = await handleFitCheck(body);
         sendJson(res, 200, fitResult);
+        return;
+      }
+
+      // 11. POST /api/vision/detect (Live Camera tracking)
+      if (req.method === 'POST' && pathname === '/api/vision/detect') {
+        const body = await parseBody(req);
+        const visionResult = await handleVisionDetect(body, clientIp);
+        sendJson(res, 200, visionResult);
         return;
       }
 
