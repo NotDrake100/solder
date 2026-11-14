@@ -1,8 +1,12 @@
-const compile = require('./compile.js');
-const scad = require('./scad.js');
-const fitcheck = require('./fitcheck.js');
+import * as compile from './compile.js';
+import * as scad from './scad.js';
+import * as fitcheck from './fitcheck.js';
 
-module.exports = {
+export * from './compile.js';
+export * from './scad.js';
+export * from './fitcheck.js';
+
+export default {
   ...compile,
   ...scad,
   ...fitcheck

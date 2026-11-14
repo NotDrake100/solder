@@ -1,11 +1,10 @@
-const partsLib = require('../../parts-lib/index.js');
-const { getPart, getAllParts } = partsLib;
-const { checkFit } = require('./fitcheck.js');
-const { generateOpenScad, compileScadToStl } = require('./scad.js');
-const { compileSketch } = require('./compile.js');
+import partsLib, { getPart, getAllParts } from '../../parts-lib/index.js';
+import { checkFit } from './fitcheck.js';
+import { generateOpenScad, compileScadToStl } from './scad.js';
+import { compileSketch } from './compile.js';
 
 async function runTests() {
-  console.log('--- Testing parts-lib (CommonJS) ---');
+  console.log('--- Testing parts-lib (ESM) ---');
   const allParts = getAllParts();
   console.log(`Loaded ${allParts.length} parts from parts-lib.`);
   if (allParts.length !== 11) {
@@ -18,7 +17,7 @@ async function runTests() {
   }
   console.log(`✓ Arduino Uno lookup: ${uno.name}, ${uno.dimensions.width}x${uno.dimensions.length}mm, ₹${uno.priceInr}`);
 
-  console.log('\n--- Testing fitcheck (CommonJS) ---');
+  console.log('\n--- Testing fitcheck (ESM) ---');
   const layout = [
     { libId: 'arduino_uno', x: 5, y: 5, z: 2 },
     { libId: 'relay_5v', x: 62, y: 5, z: 2 }
@@ -47,7 +46,7 @@ async function runTests() {
   }
   console.log(`✓ Collision detection caught overlapping parts: ${collisionResult.collisions[0].message}`);
 
-  console.log('\n--- Testing scad (CommonJS) ---');
+  console.log('\n--- Testing scad (ESM) ---');
   const scadCode = generateOpenScad(enclosure, layout);
   if (!scadCode.includes('enclosure_base') || !scadCode.includes('enclosure_lid')) {
     throw new Error('SCAD code generation missing core modules');
@@ -60,7 +59,7 @@ async function runTests() {
   }
   console.log(`✓ STL generated successfully: ${stlResult.stdout}`);
 
-  console.log('\n--- Testing compile (CommonJS) ---');
+  console.log('\n--- Testing compile (ESM) ---');
   const validSketch = `
     const int soilPin = A0;
     const int relayPin = 8;
@@ -98,7 +97,7 @@ async function runTests() {
   console.log(`✓ Broken sketch caught syntax errors cleanly: ${compileBad.errors.join('; ')}`);
 
   console.log('\n======================================================');
-  console.log('ALL SERVER/HW COMMONJS INTEGRATION TESTS PASSED 100%');
+  console.log('ALL SERVER/HW INTEGRATION TESTS PASSED 100%');
   console.log('======================================================');
 }
 

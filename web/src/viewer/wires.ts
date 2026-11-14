@@ -13,18 +13,36 @@ export interface WireAssembly {
 export function buildWiresAssembly(
   wiring: WireConnection[] | undefined,
   layout: PartLayoutItem[],
-  materials: MaterialLibrary
+  materials: MaterialLibrary,
+  partsGroup?: THREE.Group
 ): WireAssembly {
   const group = new THREE.Group();
   group.name = 'jumper_wires';
 
-  // Build a map of part locations
+  // Build a map of part locations from actual mesh positions
   const partMap = new Map<string, THREE.Vector3>();
+
+  if (partsGroup) {
+    for (const child of partsGroup.children) {
+      if (child.userData) {
+        const pos = child.position.clone();
+        pos.z += 10;
+        if (child.userData.partId) partMap.set(String(child.userData.partId).toLowerCase(), pos);
+        if (child.userData.libId) partMap.set(String(child.userData.libId).toLowerCase(), pos);
+        if (child.userData.name) partMap.set(String(child.userData.name).toLowerCase(), pos);
+      }
+    }
+  }
+
+  // Fallback to layout coordinates if not found in partsGroup
   for (const item of layout) {
     const key = (item.id || item.libId).toLowerCase();
-    partMap.set(key, new THREE.Vector3(item.x, item.y, (item.z || 0) + 10));
-    // Also map libId
-    partMap.set(item.libId.toLowerCase(), new THREE.Vector3(item.x, item.y, (item.z || 0) + 10));
+    if (!partMap.has(key)) {
+      partMap.set(key, new THREE.Vector3(item.x, item.y, (item.z || 0) + 10));
+    }
+    if (!partMap.has(item.libId.toLowerCase())) {
+      partMap.set(item.libId.toLowerCase(), new THREE.Vector3(item.x, item.y, (item.z || 0) + 10));
+    }
   }
 
   // If no explicit wiring provided, generate realistic default connections between MCU and peripherals

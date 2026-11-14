@@ -1,13 +1,28 @@
 {
-  "name": "server",
+  "name": "solder-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Solder backend API - Type an idea. Get a build.",
+  "type": "module",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node --experimental-strip-types server.js",
+    "dev": "node --watch --experimental-strip-types server.js",
+    "test": "node --test --experimental-strip-types test/*.test.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module"
+  "dependencies": {
+    "@google/genai": "^0.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "zod": "^3.23.8"
+  },
+  "keywords": [
+    "solder",
+    "gemini",
+    "antigravity",
+    "hardware",
+    "arduino"
+  ],
+  "author": "Solder Team",
+  "license": "MIT"
 }

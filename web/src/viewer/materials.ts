@@ -13,6 +13,13 @@ export function createOledScreenTexture(title = 'SOLDER v1.0', status = 'SYS REA
     return textureCache.get(cacheKey)!;
   }
 
+  if (typeof document === 'undefined') {
+    const dummyCanvas = { width: 256, height: 128 } as unknown as HTMLCanvasElement;
+    const tex = new THREE.CanvasTexture(dummyCanvas);
+    textureCache.set(cacheKey, tex);
+    return tex;
+  }
+
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 128;
@@ -72,6 +79,13 @@ export function createOledScreenTexture(title = 'SOLDER v1.0', status = 'SYS REA
 export function createChipSilkscreenTexture(label: string): THREE.CanvasTexture {
   if (textureCache.has(`chip_${label}`)) {
     return textureCache.get(`chip_${label}`)!;
+  }
+
+  if (typeof document === 'undefined') {
+    const dummyCanvas = { width: 128, height: 64 } as unknown as HTMLCanvasElement;
+    const tex = new THREE.CanvasTexture(dummyCanvas);
+    textureCache.set(`chip_${label}`, tex);
+    return tex;
   }
 
   const canvas = document.createElement('canvas');

@@ -320,7 +320,12 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       partsGroup.name = 'electronic_parts';
 
       for (const item of layout) {
-        const mesh = createPartMesh(item, materials);
+        const mesh = createPartMesh(
+          item,
+          materials,
+          enclosure.outerDimensions,
+          caseSpec?.wallMm || 2.0
+        );
 
         // Check if selected
         if (selectedPartId && (item.id === selectedPartId || item.libId === selectedPartId)) {
@@ -350,7 +355,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
 
       // 3. Build Wires
       if (showWires) {
-        const wiresAssembly = buildWiresAssembly(wiring, layout, materials);
+        const wiresAssembly = buildWiresAssembly(wiring, layout, materials, partsGroup);
         scene.add(wiresAssembly.group);
         wiresAssemblyRef.current = wiresAssembly;
       }

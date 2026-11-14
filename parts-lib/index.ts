@@ -1,14 +1,14 @@
-import arduinoUno from './arduino_uno.json';
-import esp32Devkit from './esp32_devkit.json';
-import sg90Servo from './sg90_servo.json';
-import relay5v from './relay_5v.json';
-import oled096 from './oled_096.json';
-import soilMoisture from './soil_moisture.json';
-import dht11 from './dht11.json';
-import mq135 from './mq135.json';
-import battery18650 from './battery_18650.json';
-import piezoBuzzer from './piezo_buzzer.json';
-import ultrasonicHcsr04 from './ultrasonic_hcsr04.json';
+import arduinoUno from './arduino_uno.json' with { type: 'json' };
+import esp32Devkit from './esp32_devkit.json' with { type: 'json' };
+import sg90Servo from './sg90_servo.json' with { type: 'json' };
+import relay5v from './relay_5v.json' with { type: 'json' };
+import oled096 from './oled_096.json' with { type: 'json' };
+import soilMoisture from './soil_moisture.json' with { type: 'json' };
+import dht11 from './dht11.json' with { type: 'json' };
+import mq135 from './mq135.json' with { type: 'json' };
+import battery18650 from './battery_18650.json' with { type: 'json' };
+import piezoBuzzer from './piezo_buzzer.json' with { type: 'json' };
+import ultrasonicHcsr04 from './ultrasonic_hcsr04.json' with { type: 'json' };
 
 export interface PartPin {
   name: string;
@@ -80,7 +80,7 @@ export function getAllParts(): PartDefinition[] {
 }
 
 export function calculatePartsCost(partIds: Array<{ libId: string; qty?: number }>): number {
-  return partIds.reduce((total, item) => {
+  return (partIds || []).reduce((total, item) => {
     const part = getPart(item.libId);
     const qty = item.qty || 1;
     return total + (part ? part.priceInr * qty : 0);

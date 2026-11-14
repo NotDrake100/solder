@@ -2,6 +2,36 @@ import * as THREE from 'three';
 import { MaterialLibrary, createChipSilkscreenTexture } from '../materials';
 import { PartLayoutItem } from '../types';
 
+export const PART_DIMENSIONS: Record<string, { width: number; length: number; height: number }> = {
+  arduino_uno: { width: 68.6, length: 53.4, height: 15.0 },
+  uno: { width: 68.6, length: 53.4, height: 15.0 },
+  esp32_devkit: { width: 51.5, length: 28.5, height: 12.0 },
+  esp32: { width: 51.5, length: 28.5, height: 12.0 },
+  sg90_servo: { width: 22.8, length: 12.0, height: 31.0 },
+  sg90: { width: 22.8, length: 12.0, height: 31.0 },
+  relay_5v: { width: 43.0, length: 17.0, height: 19.0 },
+  relay_1ch: { width: 43.0, length: 17.0, height: 19.0 },
+  oled_096: { width: 27.0, length: 27.0, height: 4.1 },
+  oled: { width: 27.0, length: 27.0, height: 4.1 },
+  soil_moisture: { width: 60.0, length: 20.0, height: 8.0 },
+  soil_sensor: { width: 60.0, length: 20.0, height: 8.0 },
+  dht11: { width: 15.5, length: 12.0, height: 5.5 },
+  mq135: { width: 35.0, length: 20.0, height: 21.0 },
+  battery_18650: { width: 75.0, length: 21.0, height: 18.0 },
+  piezo_buzzer: { width: 12.0, length: 12.0, height: 9.5 },
+  buzzer: { width: 12.0, length: 12.0, height: 9.5 },
+  ultrasonic_hcsr04: { width: 45.0, length: 20.0, height: 15.0 },
+  hcsr04: { width: 45.0, length: 20.0, height: 15.0 },
+};
+
+export function getPartDimensions(libId: string): { width: number; length: number; height: number } {
+  const normalized = (libId || '').toLowerCase().trim();
+  for (const [key, dims] of Object.entries(PART_DIMENSIONS)) {
+    if (normalized.includes(key)) return dims;
+  }
+  return { width: 35.0, length: 35.0, height: 12.0 };
+}
+
 /**
  * Builds a detailed procedural 3D model for Arduino Uno R3
  */
@@ -641,7 +671,9 @@ export function buildGenericModuleMesh(
  */
 export function createPartMesh(
   item: PartLayoutItem,
-  materials: MaterialLibrary
+  materials: MaterialLibrary,
+  enclosureDims?: [number, number, number],
+  wallMm = 2.0
 ): THREE.Group {
   const libId = (item.libId || '').toLowerCase().trim();
 
@@ -673,9 +705,22 @@ export function createPartMesh(
     meshGroup = buildGenericModuleMesh(item, materials);
   }
 
-  // Set position & rotation from layout item
-  // Units are in mm. We map layout mm directly or scaled into Three.js scene coordinates.
-  meshGroup.position.set(item.x || 0, item.y || 0, item.z || 0);
+  // Calculate position in scene coordinates
+  const dims = getPartDimensions(item.libId);
+  let posX = item.x || 0;
+  let posY = item.y || 0;
+  let posZ = item.z !== undefined ? item.z : wallMm;
+
+  if (enclosureDims) {
+    const [w, d] = enclosureDims;
+    // If coordinates are inside the [0, w] and [0, d] box (corner-based layout)
+    if (posX >= 0 && posY >= 0) {
+      posX = -w / 2 + wallMm + item.x + dims.width / 2;
+      posY = -d / 2 + wallMm + item.y + dims.length / 2;
+    }
+  }
+
+  meshGroup.position.set(posX, posY, posZ);
 
   // Rotation handling (degrees to radians)
   if (item.rotZ) {
@@ -693,6 +738,7 @@ export function createPartMesh(
     partId: item.id || item.libId,
     libId: item.libId,
     name: item.name || item.libId,
+    dimensions: dims,
     assembledPos: meshGroup.position.clone(),
     assembledRot: meshGroup.rotation.clone(),
   };
