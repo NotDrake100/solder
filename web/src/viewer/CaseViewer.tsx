@@ -177,12 +177,12 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       renderer.toneMappingExposure = 1.1;
       rendererRef.current = renderer;
 
-      // 4. Studio Lighting Setup (Clean b4/b6 white aesthetic with soft shadows & frosted rim highlights)
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      // 4. Crafted Maker Bench Studio Lighting (Warm desk lamp, copper rim highlights, soft contact shadows)
+      const ambientLight = new THREE.AmbientLight(0xfff7ed, 0.75);
       scene.add(ambientLight);
 
       // Key light with soft PCF shadow
-      const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+      const keyLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
       keyLight.position.set(90, -100, 160);
       keyLight.castShadow = true;
       keyLight.shadow.mapSize.width = 2048;
@@ -198,32 +198,32 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       keyLight.shadow.radius = 3.2; // soft shadow penumbra
       scene.add(keyLight);
 
-      // Soft blue-tinted studio fill bounce
-      const fillLight = new THREE.DirectionalLight(0xe0f2fe, 0.55);
+      // Soft neutral fill bounce
+      const fillLight = new THREE.DirectionalLight(0x94a3b8, 0.4);
       fillLight.position.set(-100, 80, 90);
       scene.add(fillLight);
 
-      // High-angle cool rim light to catch frosted enclosure edges
-      const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.65);
+      // Signature warm copper / solder-orange rim light catching translucent acrylic edges
+      const rimLight = new THREE.DirectionalLight(0xf97316, 0.5);
       rimLight.position.set(-30, 140, 60);
       scene.add(rimLight);
 
       // Subtle warm secondary rim light for component depth
-      const warmRimLight = new THREE.DirectionalLight(0xfef08a, 0.3);
+      const warmRimLight = new THREE.DirectionalLight(0xfef08a, 0.25);
       warmRimLight.position.set(40, 120, -40);
       scene.add(warmRimLight);
 
-      // 5. Studio Ground Grid Floor & Soft Contact Shadow
-      const gridHelper = new THREE.GridHelper(320, 32, 0x52525b, 0x27272a);
+      // 5. Studio Ground Grid Floor (Warm copper/espresso hairline) & Contact Shadow
+      const gridHelper = new THREE.GridHelper(320, 32, 0x5c4d3c, 0x262422);
       gridHelper.rotation.x = Math.PI / 2;
       gridHelper.position.set(0, 0, -2);
       (gridHelper.material as THREE.Material).transparent = true;
-      (gridHelper.material as THREE.Material).opacity = 0.35;
+      (gridHelper.material as THREE.Material).opacity = 0.38;
       scene.add(gridHelper);
 
       // Soft shadow-catching contact ground disc
       const shadowPlaneGeom = new THREE.PlaneGeometry(360, 360);
-      const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.35 });
+      const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.38 });
       const shadowPlane = new THREE.Mesh(shadowPlaneGeom, shadowPlaneMat);
       shadowPlane.position.set(0, 0, -1.95);
       shadowPlane.receiveShadow = true;
@@ -453,7 +453,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
     return (
       <div
         ref={containerRef}
-        className={`relative w-full h-full min-h-[420px] select-none overflow-hidden rounded-2xl bg-[#1e1e1e]/60 border border-neutral-800 shadow-sm ${className}`}
+        className={`relative w-full h-full min-h-[420px] select-none overflow-hidden rounded-2xl bg-[#161514]/70 border border-[#2e2a25] shadow-sm ${className}`}
         style={style}
       >
         {/* WebGL Canvas */}
@@ -466,15 +466,15 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
 
         {/* Floating Part Inspector Tooltip */}
         {hoveredPartName && (
-          <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-lg bg-neutral-900/90 text-white backdrop-blur text-xs font-mono shadow-md border border-neutral-800 pointer-events-none flex items-center space-x-2 animate-in fade-in zoom-in-95 duration-150">
-            <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+          <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-lg bg-[#1c1a17]/95 text-neutral-200 backdrop-blur text-xs font-mono shadow-md border border-[#38332e] pointer-events-none flex items-center space-x-2 animate-in fade-in zoom-in-95 duration-150">
+            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
             <span>{hoveredPartName}</span>
           </div>
         )}
 
         {/* Burst Reveal Playing Indicator Badge */}
         {isBurstActive && (
-          <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-blue-600/90 text-white backdrop-blur text-xs font-medium shadow-lg flex items-center space-x-2 animate-pulse pointer-events-none">
+          <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-600 to-amber-600 text-white backdrop-blur text-xs font-medium shadow-lg border border-orange-500/30 flex items-center space-x-2 animate-pulse pointer-events-none">
             <svg
               className="w-3.5 h-3.5 animate-spin"
               viewBox="0 0 24 24"
@@ -490,15 +490,15 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
         )}
 
         {/* Aesthetic Floating Control Pill Toolbar (Bottom) */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#2a2a2a]/95 border border-neutral-700/80 shadow-2xl backdrop-blur-md">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#1c1a17]/95 border border-[#38332e] shadow-2xl backdrop-blur-md">
           {/* Exploded / Assembled Toggle */}
           <button
             type="button"
             onClick={handleToggleExploded}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
               isExploded
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-neutral-300 hover:bg-neutral-800 hover:text-white'
+                ? 'bg-orange-600 text-white shadow-sm'
+                : 'text-neutral-300 hover:bg-[#2a2622] hover:text-white'
             }`}
             title="Toggle Exploded CAD View"
           >
@@ -518,11 +518,11 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
           <button
             type="button"
             onClick={triggerBurst}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-neutral-300 hover:bg-[#2a2622] hover:text-white transition-colors"
             title="Replay Signature Burst Reveal"
           >
             <svg
-              className="w-3.5 h-3.5 text-amber-500"
+              className="w-3.5 h-3.5 text-orange-500"
               fill="currentColor"
               viewBox="0 0 24 24"
             >
@@ -531,7 +531,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
             <span>Burst</span>
           </button>
 
-          <div className="w-[1px] h-4 bg-neutral-700 mx-0.5" />
+          <div className="w-[1px] h-4 bg-[#38332e] mx-0.5" />
 
           {/* Material Theme Switcher */}
           <div className="flex items-center space-x-0.5">
@@ -540,8 +540,8 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
               onClick={() => setCurrentTheme('pla')}
               className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${
                 currentTheme === 'pla'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  ? 'bg-orange-600 text-white font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#2a2622]'
               }`}
               title="3D Print Matte PLA"
             >
@@ -552,8 +552,8 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
               onClick={() => setCurrentTheme('acrylic')}
               className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${
                 currentTheme === 'acrylic'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  ? 'bg-orange-600 text-white font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#2a2622]'
               }`}
               title="Frosted Translucent Acrylic"
             >
@@ -564,8 +564,8 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
               onClick={() => setCurrentTheme('dark')}
               className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${
                 currentTheme === 'dark'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-neutral-400 hover:text-neutral-200'
+                  ? 'bg-orange-600 text-white font-semibold'
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#2a2622]'
               }`}
               title="Stealth Matte Dark"
             >
@@ -573,14 +573,14 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
             </button>
           </div>
 
-          <div className="w-[1px] h-4 bg-neutral-700 mx-0.5" />
+          <div className="w-[1px] h-4 bg-[#38332e] mx-0.5" />
 
           {/* Lid Toggle */}
           <button
             type="button"
             onClick={() => setShowLid((v) => !v)}
             className={`p-1.5 rounded-lg text-xs transition-colors ${
-              showLid ? 'text-white bg-neutral-800' : 'text-neutral-500 hover:text-neutral-300'
+              showLid ? 'text-orange-400 bg-[#2a2622]' : 'text-neutral-500 hover:text-neutral-300 hover:bg-[#2a2622]'
             }`}
             title={showLid ? 'Hide Lid' : 'Show Lid'}
           >
@@ -601,7 +601,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
             type="button"
             onClick={() => setShowWireframe((v) => !v)}
             className={`p-1.5 rounded-lg text-xs transition-colors ${
-              showWireframe ? 'text-blue-400 bg-neutral-800' : 'text-neutral-500 hover:text-neutral-300'
+              showWireframe ? 'text-orange-400 bg-[#2a2622]' : 'text-neutral-500 hover:text-neutral-300 hover:bg-[#2a2622]'
             }`}
             title="Toggle Wireframe CAD mesh"
           >
@@ -623,7 +623,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
             type="button"
             onClick={() => setShowWires((v) => !v)}
             className={`p-1.5 rounded-lg text-xs transition-colors ${
-              showWires ? 'text-emerald-400 bg-neutral-800' : 'text-neutral-500 hover:text-neutral-300'
+              showWires ? 'text-emerald-400 bg-[#2a2622]' : 'text-neutral-500 hover:text-neutral-300 hover:bg-[#2a2622]'
             }`}
             title="Toggle 3D Jumper Wires"
           >
@@ -643,7 +643,7 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
           <button
             type="button"
             onClick={() => cameraControllerRef.current?.reset()}
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+            className="p-1.5 rounded-lg text-neutral-400 hover:text-orange-200 hover:bg-[#2a2622] transition-colors"
             title="Reset Camera Isometric View"
           >
             <svg
@@ -661,12 +661,12 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
 
         {/* Bottom Left Quick Specs Overlay */}
         {caseSpec?.outerMm && (
-          <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white/80 backdrop-blur border border-neutral-200/80 text-[11px] font-mono text-neutral-600 pointer-events-none">
-            <span className="text-neutral-400">ENCLOSURE:</span>
+          <div className="absolute bottom-4 left-4 z-10 hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#1c1a17]/85 backdrop-blur border border-[#38332e] text-[11px] font-mono text-neutral-300 pointer-events-none">
+            <span className="text-orange-400/80">ENCLOSURE:</span>
             <span>
               {caseSpec.outerMm[0]} × {caseSpec.outerMm[1]} × {caseSpec.outerMm[2]} mm
             </span>
-            <span className="text-neutral-300">|</span>
+            <span className="text-neutral-600">|</span>
             <span>wall {caseSpec.wallMm || 2.0}mm</span>
           </div>
         )}
