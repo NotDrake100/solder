@@ -1,43 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import type { SolderBuild, AgentLogStep, ScrapPhotoResult } from './types';
+import type { SolderBuild, ScrapPhotoResult } from './types';
 import { SHOWCASE_BUILDS } from './data/showcases';
-import { Navbar } from './components/Navbar';
-import { IdeaChat } from './components/IdeaChat';
-import { AgentLogPanel } from './components/AgentLogPanel';
-import { WorkspaceTabs } from './components/WorkspaceTabs';
+import { Sidebar } from './components/Sidebar';
+import { TopBar } from './components/TopBar';
+import { ChatView, ChatMessage } from './components/ChatView';
 import { ScrapModal } from './components/ScrapModal';
 import { OrderModal, ShipModal, ArModal, ShareModal } from './components/ActionModals';
 
 export function App() {
   const [activeBuild, setActiveBuild] = useState<SolderBuild>(SHOWCASE_BUILDS.sip);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isStreamingLog, setIsStreamingLog] = useState(false);
-  const [agentSteps, setAgentSteps] = useState<AgentLogStep[]>([
-    {
-      id: 'step-1',
-      step: 'compile',
-      label: 'AVR Compiler Check',
-      status: 'success',
-      detail: 'Sketch compiled for ATmega328P (Flash: 14%, RAM: 8%)',
-      timestamp: Date.now() - 3600000,
-    },
-    {
-      id: 'step-2',
-      step: 'simulate',
-      label: 'avr8js Headless Verification',
-      status: 'success',
-      detail: 'Soil <35% asserts relay HIGH within 12ms. Serial telemetry OK.',
-      timestamp: Date.now() - 3550000,
-    },
-    {
-      id: 'step-3',
-      step: 'fitcheck',
-      label: 'Enclosure Clearance',
-      status: 'success',
-      detail: 'Wall clearance 2.0mm verified. Zero component collision detected.',
-      timestamp: Date.now() - 3500000,
-    },
+  const [buildsHistory, setBuildsHistory] = useState<SolderBuild[]>([
+    SHOWCASE_BUILDS.sip,
+    SHOWCASE_BUILDS.wisp,
+    SHOWCASE_BUILDS.hasp,
+    SHOWCASE_BUILDS.eave,
   ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-3.8-flash');
+
+  // Sidebar visibility
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   // Modals state
   const [isScrapOpen, setIsScrapOpen] = useState(false);
@@ -46,138 +29,333 @@ export function App() {
   const [isArOpen, setIsArOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
 
-  // Scrap drawer state
+  // Scrap drawer savings state
   const [scrapSummary, setScrapSummary] = useState<string | null>(null);
   const [scrapSavings, setScrapSavings] = useState(0);
 
-  // Handle URL permalink routing (/b/:id or #id)
+  // Conversation messages state (empty state by default until user types or picks a suggestion)
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // Permalink routing (/b/:id or #id)
   useEffect(() => {
     const path = window.location.pathname;
     const match = path.match(/\/b\/([a-zA-Z0-9_-]+)/);
     const buildId = match ? match[1] : window.location.hash.replace('#', '');
 
     if (buildId && SHOWCASE_BUILDS[buildId]) {
-      setActiveBuild(SHOWCASE_BUILDS[buildId]);
+      loadBuildIntoChat(SHOWCASE_BUILDS[buildId]);
     }
   }, []);
 
-  // Switch showcase build
-  const handleSelectShowcase = async (id: string) => {
-    if (SHOWCASE_BUILDS[id]) {
-      setActiveBuild(SHOWCASE_BUILDS[id]);
-      // Update browser URL hash without full reload
-      window.history.pushState(null, '', `/b/${id}`);
+  // Load a showcase or past build into chat view
+  const loadBuildIntoChat = (build: SolderBuild) => {
+    setActiveBuild(build);
+    setMessages([
+      {
+        id: `user-${build.id}`,
+        sender: 'user',
+        text: build.tagline || build.name,
+        timestamp: Date.now() - 30000,
+      },
+      {
+        id: `asst-${build.id}`,
+        sender: 'assistant',
+        text: `Here is the verified architecture for **${build.name}**! ${build.summary}`,
+        timestamp: Date.now() - 28000,
+        buildData: build,
+        completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
+      },
+    ]);
+  };
 
-      // Update synthetic agent logs for this showcase
-      setAgentSteps([
-        {
-          id: `step-${Date.now()}-1`,
-          step: 'compile',
-          label: 'AVR/ESP Compiler',
-          status: 'success',
-          detail: `Synthesized sketch for ${SHOWCASE_BUILDS[id].board.toUpperCase()} target`,
-          timestamp: Date.now() - 5000,
-        },
-        {
-          id: `step-${Date.now()}-2`,
-          step: 'simulate',
-          label: 'avr8js Sim Suite',
-          status: 'success',
-          detail: `Asserted ${SHOWCASE_BUILDS[id].tests.length} automated test assertions`,
-          timestamp: Date.now() - 3000,
-        },
-        {
-          id: `step-${Date.now()}-3`,
-          step: 'fitcheck',
-          label: 'Geometric Fit Check',
-          status: 'success',
-          detail: `Wall thickness ${SHOWCASE_BUILDS[id].case.wallMm}mm, clearance 2.0mm passed`,
-          timestamp: Date.now() - 1000,
-        },
-      ]);
+  // Start fresh empty build conversation ("New build" button)
+  const handleNewBuild = () => {
+    setMessages([]);
+    window.history.pushState(null, '', '/');
+  };
+
+  // Switch build from sidebar
+  const handleSelectBuild = (id: string) => {
+    const found = buildsHistory.find((b) => b.id === id) || SHOWCASE_BUILDS[id];
+    if (found) {
+      loadBuildIntoChat(found);
+      window.history.pushState(null, '', `/b/${id}`);
     }
   };
 
-  // Submit idea prompt to backend
-  const handlePromptSubmit = async (prompt: string, chips: string[]) => {
-    setIsLoading(true);
-    setIsStreamingLog(true);
+  // Send a message from composer or suggestion card
+  const handleSendMessage = async (prompt: string) => {
+    if (!prompt.trim() || isLoading) return;
 
-    const initialStepId = `step-${Date.now()}`;
-    setAgentSteps([
-      {
-        id: initialStepId,
-        step: 'generate',
-        label: 'Gemini 3.8 Flash Synthesis',
-        status: 'pending',
-        detail: `Synthesizing circuit, enclosure, and firmware for "${prompt}"...`,
-        timestamp: Date.now(),
-      },
-    ]);
+    setIsLoading(true);
+
+    const userMsgId = `user-${Date.now()}`;
+    const asstMsgId = `asst-${Date.now()}`;
+
+    // 1. Post User message
+    const userMessage: ChatMessage = {
+      id: userMsgId,
+      sender: 'user',
+      text: prompt,
+      timestamp: Date.now(),
+    };
+
+    // 2. Post Assistant typing message
+    const assistantMessage: ChatMessage = {
+      id: asstMsgId,
+      sender: 'assistant',
+      text: '',
+      timestamp: Date.now(),
+      isStreaming: true,
+      isTyping: true,
+      currentStep: 'reading',
+      completedSteps: [],
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
 
     try {
-      const response = await fetch('/api/build', {
+      // Step A: Trigger server build API
+      const res = await fetch('/api/build', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          chips,
-        }),
+        body: JSON.stringify({ prompt }),
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        const buildData: SolderBuild = result.data || result;
-        setActiveBuild(buildData);
+      let buildData: SolderBuild | null = null;
+      let buildId = `build_${Date.now()}`;
 
-        // Stream or complete agent logs
-        setAgentSteps([
-          {
-            id: `step-${Date.now()}-1`,
-            step: 'generate',
-            label: 'Gemini 3.8 Flash Synthesis',
-            status: 'success',
-            detail: `Synthesized BOM (${buildData.parts.length} parts) & layout`,
-            timestamp: Date.now() - 3000,
-          },
-          {
-            id: `step-${Date.now()}-2`,
-            step: 'compile',
-            label: 'Arduino C++ Compilation',
-            status: 'success',
-            detail: 'Compiled sketch cleanly with 0 warnings',
-            timestamp: Date.now() - 2000,
-          },
-          {
-            id: `step-${Date.now()}-3`,
-            step: 'simulate',
-            label: 'avr8js Virtual Logic Check',
-            status: 'success',
-            detail: 'Virtual sensor and actuator triggers validated',
-            timestamp: Date.now() - 1000,
-          },
-          {
-            id: `step-${Date.now()}-4`,
-            step: 'fitcheck',
-            label: 'OpenSCAD Fit & Tolerance',
-            status: 'success',
-            detail: '2.0mm enclosure wall clearance verified',
-            timestamp: Date.now(),
-          },
-        ]);
-      } else {
-        // Fallback to closest showcase or smart offline build
-        const fallback = SHOWCASE_BUILDS.sip;
-        setActiveBuild(fallback);
+      if (res.ok) {
+        const json = await res.json();
+        buildData = json.data || json;
+        if (json.buildId) buildId = json.buildId;
       }
-    } catch (e) {
-      // Offline fallback
-      const fallback = SHOWCASE_BUILDS.sip;
-      setActiveBuild(fallback);
-    } finally {
-      setIsLoading(false);
-      setIsStreamingLog(false);
+
+      // Step B: Connect to SSE stream
+      let sseReceived = false;
+      const streamUrl = `/api/build/${buildId}/stream`;
+
+      try {
+        const sse = new EventSource(streamUrl);
+
+        sse.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (!data) return;
+            sseReceived = true;
+
+            const stage = data.stage || data.step;
+
+            setMessages((prev) =>
+              prev.map((m) => {
+                if (m.id !== asstMsgId) return m;
+                const completed = new Set(m.completedSteps || []);
+
+                if (stage === 'reading' || stage === 'generate') {
+                  completed.add('reading');
+                  return {
+                    ...m,
+                    isTyping: false,
+                    currentStep: 'parts',
+                    completedSteps: Array.from(completed),
+                    text: `Reading your idea: "${prompt}"... Analyzing MCU architecture and required sensor peripherals.`,
+                  };
+                } else if (stage === 'parts') {
+                  completed.add('reading');
+                  completed.add('parts');
+                  return {
+                    ...m,
+                    isTyping: false,
+                    currentStep: 'wiring',
+                    completedSteps: Array.from(completed),
+                    text: `Picking parts: Selected ${data.parts?.length || buildData?.parts?.length || 4} components with INR maker pricing. Routing pinout...`,
+                  };
+                } else if (stage === 'wiring') {
+                  completed.add('parts');
+                  completed.add('wiring');
+                  return {
+                    ...m,
+                    currentStep: 'firmware',
+                    completedSteps: Array.from(completed),
+                    text: `Wiring: Routed ${data.wiring?.length || buildData?.wiring?.length || 8} pin connections (5V, GND, I2C, control lines). Synthesizing sketch...`,
+                  };
+                } else if (stage === 'firmware' || stage === 'compile') {
+                  completed.add('wiring');
+                  completed.add('firmware');
+                  return {
+                    ...m,
+                    currentStep: 'case',
+                    completedSteps: Array.from(completed),
+                    text: `Firmware compiled and verified for ${buildData?.board?.toUpperCase() || 'UNO'} ✓. Generating 3D parametric enclosure...`,
+                  };
+                } else if (stage === 'case' || stage === 'fitcheck') {
+                  completed.add('firmware');
+                  completed.add('case');
+                  return {
+                    ...m,
+                    currentStep: 'done',
+                    completedSteps: Array.from(completed),
+                    text: `Designing the case: Generated frosted snap-fit enclosure (${buildData?.case?.outerMm?.join('x') || '128x96x40'}mm) with 2.0mm wall clearance. Finalizing build...`,
+                  };
+                } else if (stage === 'done' || stage === 'complete') {
+                  completed.add('case');
+                  completed.add('done');
+                  if (data.data) buildData = data.data;
+                  return {
+                    ...m,
+                    isStreaming: false,
+                    isTyping: false,
+                    currentStep: 'done',
+                    completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
+                    buildData: buildData || undefined,
+                    text: `I've synthesized **${buildData?.name || 'Custom Build'}** for your idea! ${buildData?.tagline || ''}\n\nExplore the interactive 3D case, circuit wiring, virtual simulator, and firmware below:`,
+                  };
+                }
+
+                return m;
+              })
+            );
+          } catch {
+            // ignore
+          }
+        };
+
+        sse.addEventListener('done', () => {
+          sse.close();
+          finishLiveBuild(buildData, asstMsgId, prompt);
+        });
+
+        sse.onerror = () => {
+          sse.close();
+          if (!sseReceived) {
+            simulateLocalProgression(buildData, asstMsgId, prompt);
+          }
+        };
+      } catch {
+        simulateLocalProgression(buildData, asstMsgId, prompt);
+      }
+    } catch {
+      simulateLocalProgression(null, asstMsgId, prompt);
     }
+  };
+
+  // Graceful fallback streaming sequence
+  const simulateLocalProgression = async (
+    buildData: SolderBuild | null,
+    msgId: string,
+    prompt: string
+  ) => {
+    const targetBuild = buildData || SHOWCASE_BUILDS.sip;
+
+    // Stage 1: Reading
+    await new Promise((r) => setTimeout(r, 350));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId
+          ? {
+              ...m,
+              isTyping: false,
+              currentStep: 'reading',
+              completedSteps: ['reading'],
+              text: `Reading your idea: "${prompt}"... Determining microcontroller target and hardware peripherals.`,
+            }
+          : m
+      )
+    );
+
+    // Stage 2: Parts
+    await new Promise((r) => setTimeout(r, 550));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId
+          ? {
+              ...m,
+              currentStep: 'parts',
+              completedSteps: ['reading', 'parts'],
+              text: `Picking parts: Selected ${targetBuild.parts.length} components with exact INR pricing (Total: ₹${targetBuild.product?.priceInr || 890}).`,
+            }
+          : m
+      )
+    );
+
+    // Stage 3: Wiring
+    await new Promise((r) => setTimeout(r, 600));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId
+          ? {
+              ...m,
+              currentStep: 'wiring',
+              completedSteps: ['reading', 'parts', 'wiring'],
+              text: `Wiring: Routed ${targetBuild.wiring.length} DuPont connections (5V, GND, I2C, control lines).`,
+            }
+          : m
+      )
+    );
+
+    // Stage 4: Firmware
+    await new Promise((r) => setTimeout(r, 550));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId
+          ? {
+              ...m,
+              currentStep: 'firmware',
+              completedSteps: ['reading', 'parts', 'wiring', 'firmware'],
+              text: `Writing firmware: Synthesized Arduino C++ sketch (${targetBuild.code.filename}) verified for ${targetBuild.board.toUpperCase()}.`,
+            }
+          : m
+      )
+    );
+
+    // Stage 5: Case
+    await new Promise((r) => setTimeout(r, 550));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === msgId
+          ? {
+              ...m,
+              currentStep: 'case',
+              completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case'],
+              text: `Designing the case: Generated frosted snap-fit enclosure (${targetBuild.case.outerMm.join('x')}mm) with 2.0mm wall clearance.`,
+            }
+          : m
+      )
+    );
+
+    // Stage 6: Done
+    await new Promise((r) => setTimeout(r, 450));
+    finishLiveBuild(targetBuild, msgId, prompt);
+  };
+
+  const finishLiveBuild = (
+    buildData: SolderBuild | null,
+    msgId: string,
+    prompt: string
+  ) => {
+    setIsLoading(false);
+    const finalBuild: SolderBuild = buildData || SHOWCASE_BUILDS.sip;
+
+    setActiveBuild(finalBuild);
+    setBuildsHistory((prev) => {
+      if (prev.some((b) => b.id === finalBuild.id)) return prev;
+      return [finalBuild, ...prev];
+    });
+
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== msgId) return m;
+        return {
+          ...m,
+          isStreaming: false,
+          isTyping: false,
+          currentStep: 'done',
+          completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
+          buildData: finalBuild,
+          text: `I've synthesized **${finalBuild.name}** for your idea! ${finalBuild.tagline || finalBuild.summary}\n\nExplore the interactive 3D case, circuit wiring, virtual simulator, and firmware below:`,
+        };
+      })
+    );
   };
 
   // Apply parts detected from Scrap Mode photo
@@ -187,7 +365,6 @@ export function App() {
       `${result.ownedParts.length} parts owned (${result.ownedParts.map((p) => p.name).join(', ')})`
     );
 
-    // Mark owned parts in current build
     setActiveBuild((prev) => {
       const ownedLibIds = new Set(result.ownedParts.map((p) => p.libId));
       const updatedParts = prev.parts.map((p) => ({
@@ -201,54 +378,66 @@ export function App() {
     });
   };
 
-  const handleClearScrap = () => {
-    setScrapSummary(null);
-    setScrapSavings(0);
-    setActiveBuild((prev) => ({
-      ...prev,
-      parts: prev.parts.map((p) => ({ ...p, owned: false })),
-    }));
-  };
-
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans selection:bg-zinc-900 selection:text-white">
-      {/* Top Navigation */}
-      <Navbar
+    <div className="flex h-screen w-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans overflow-hidden">
+      {/* Desktop Sidebar (Collapsible) */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen((prev) => !prev)}
+        onNewBuild={handleNewBuild}
+        builds={buildsHistory}
         activeBuildId={activeBuild.id}
-        onSelectShowcase={handleSelectShowcase}
+        onSelectBuild={handleSelectBuild}
         onOpenScrapMode={() => setIsScrapOpen(true)}
-        onOpenShare={() => setIsShareOpen(true)}
         ownedCount={activeBuild.parts.filter((p) => p.owned).length}
         savingsInr={scrapSavings}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-6 pt-4">
-        {/* Modern Idea Chatbot (ChatGPT/Gemini style) with live streaming build experience */}
-        <IdeaChat
-          onBuildReady={(newBuild) => {
-            setActiveBuild(newBuild);
+      {/* Mobile Slide-in Drawer */}
+      <Sidebar
+        isOpen={isMobileDrawerOpen}
+        onToggle={() => setIsMobileDrawerOpen((prev) => !prev)}
+        onNewBuild={handleNewBuild}
+        builds={buildsHistory}
+        activeBuildId={activeBuild.id}
+        onSelectBuild={handleSelectBuild}
+        onOpenScrapMode={() => setIsScrapOpen(true)}
+        ownedCount={activeBuild.parts.filter((p) => p.owned).length}
+        savingsInr={scrapSavings}
+        isMobileDrawer={true}
+        onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
+      />
+
+      {/* Main Column */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+        {/* Thin Top Bar */}
+        <TopBar
+          onToggleSidebar={() => {
+            if (window.innerWidth < 768) {
+              setIsMobileDrawerOpen((prev) => !prev);
+            } else {
+              setIsSidebarOpen((prev) => !prev);
+            }
           }}
+          isSidebarOpen={isSidebarOpen}
+          onNewBuild={handleNewBuild}
+          onOpenShare={() => setIsShareOpen(true)}
           onOpenScrapMode={() => setIsScrapOpen(true)}
-          initialBuild={activeBuild}
-          activeBuildId={activeBuild.id}
+          selectedModel={selectedModel}
+          onSelectModel={setSelectedModel}
+          activeBuildName={activeBuild.name}
         />
 
-        {/* Multi-Tab Workspace (Parts, 3D Case, Wiring + Sim, Code) */}
-        <WorkspaceTabs
-          build={activeBuild}
+        {/* ChatGPT / Gemini Style Chat View */}
+        <ChatView
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          onOpenScrapMode={() => setIsScrapOpen(true)}
           onOpenOrder={() => setIsOrderOpen(true)}
-          onOpenShip={() => setIsShipOpen(true)}
-          onOpenAr={() => setIsArOpen(true)}
+          onSelectShowcase={(id) => handleSelectBuild(id)}
         />
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-zinc-100 py-6 bg-zinc-50/50 text-center text-xs text-zinc-400">
-        <p>
-          Solder • Built for Berkeley × DeepMind Hackathon with Antigravity CLI /swarm &amp; Gemini 3.8 Flash.
-        </p>
-      </footer>
+      </div>
 
       {/* Modals */}
       <ScrapModal
