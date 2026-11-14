@@ -7,6 +7,7 @@ interface TopBarProps {
   isSidebarOpen: boolean;
   onNewBuild: () => void;
   onOpenShare?: () => void;
+  onGoHome?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -14,6 +15,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   isSidebarOpen,
   onNewBuild,
   onOpenShare,
+  onGoHome,
 }) => {
   return (
     <header className="h-[48px] shrink-0 bg-[#0f0f0f] border-b border-[#262626] px-3 sm:px-4 flex items-center justify-between select-none z-20">
@@ -28,12 +30,16 @@ export const TopBar: React.FC<TopBarProps> = ({
           <PanelLeft className="w-4 h-4 hidden md:block" />
         </button>
 
-        <div className="flex items-center gap-2">
+        <button
+          onClick={onGoHome}
+          className="flex items-center gap-2 hover:opacity-80 transition cursor-pointer text-left"
+          title="Back to home"
+        >
           <SolderLogo className="w-4 h-4 text-white" />
           <span className="font-medium text-[15px] tracking-tight text-white">
             Solder
           </span>
-        </div>
+        </button>
       </div>
 
       {/* Right: New build icon button + Share */}
