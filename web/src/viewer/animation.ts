@@ -98,6 +98,7 @@ export class BurstAnimationController {
   public startBurstReveal(onComplete?: () => void): void {
     this.isRunningBurst = true;
     this.burstStartTime = performance.now() / 1000;
+    (this as any).burstElapsed = 0;
     this.onCompleteCallback = onComplete;
     this.targetExplodedProgress = 0; // ends assembled
   }
@@ -121,7 +122,8 @@ export class BurstAnimationController {
     const now = performance.now() / 1000;
 
     if (this.isRunningBurst) {
-      const elapsed = now - this.burstStartTime;
+      (this as any).burstElapsed = ((this as any).burstElapsed || 0) + delta;
+      const elapsed = Math.max(now - this.burstStartTime, (this as any).burstElapsed);
       const t = Math.min(1.0, elapsed / this.burstDuration);
 
       // Signature 3-stage choreography:
