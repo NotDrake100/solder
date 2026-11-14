@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SHOWCASE_DIR = path.resolve(__dirname, '../../showcase');
 
-const SHOWCASE_IDS = ['sip', 'wisp', 'hasp', 'eave'];
+const SHOWCASE_IDS = ['sip', 'wisp', 'hasp', 'eave', 'fan'];
 
 export function getShowcaseList() {
   return SHOWCASE_IDS.map(id => {

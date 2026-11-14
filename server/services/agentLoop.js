@@ -183,30 +183,44 @@ export async function runAgentLoop(buildData, emit) {
     let diff = '';
 
     if (failedCheck.id === 'pin_conflicts') {
-      // Reassign conflicting pin D7 to D6
+      // Reassign conflicting pin D7 (fan, motor, or buzzer) to D9 (or D6)
+      const targetPin = 'D9';
+      let reallocatedName = 'actuator';
+
       currentBuild.wiring = (currentBuild.wiring || []).map((w) => {
-        if (
-          (w.to?.part?.includes('buzzer') || w.from?.part?.includes('buzzer')) &&
-          (w.from?.pin === 'D7' || w.to?.pin === 'D7')
-        ) {
+        const toPart = (w.to?.part || '').toLowerCase();
+        const fromPart = (w.from?.part || '').toLowerCase();
+        const toPin = String(w.to?.pin || '').toUpperCase();
+        const fromPin = String(w.from?.pin || '').toUpperCase();
+
+        const isConflictLoad =
+          toPart.includes('fan') || fromPart.includes('fan') ||
+          toPart.includes('motor') || fromPart.includes('motor') ||
+          toPart.includes('buzzer') || fromPart.includes('buzzer');
+
+        if (isConflictLoad && (toPin === 'D7' || toPin === '7' || fromPin === 'D7' || fromPin === '7')) {
+          reallocatedName = w.to?.part || w.from?.part;
+          const isFromMcu = fromPart.includes('uno') || fromPart.includes('esp32');
           return {
             ...w,
-            from: { part: 'arduino_uno', pin: 'D6' },
-            to: { part: 'piezo_buzzer', pin: 'SIG' },
+            from: { part: w.from.part, pin: isFromMcu ? targetPin : w.from.pin },
+            to: { part: w.to.part, pin: isFromMcu ? w.to.pin : targetPin },
+            signal: (w.signal || 'SIG').replace(/\(CONFLICT\)/i, `(Reallocated ${targetPin})`),
           };
         }
         return w;
       });
 
       if (currentBuild.code?.ino) {
-        currentBuild.code.ino = currentBuild.code.ino.replace(
-          /const int BUZZER_PIN\s*=\s*7;/,
-          'const int BUZZER_PIN = 6;'
-        );
+        currentBuild.code.ino = currentBuild.code.ino
+          .replace(/#define\s+FAN_PIN\s+7/i, '#define FAN_PIN 9 // Reallocated to free PWM channel')
+          .replace(/const\s+int\s+FAN_PIN\s*=\s*7;/i, 'const int FAN_PIN = 9;')
+          .replace(/const\s+int\s+BUZZER_PIN\s*=\s*7;/i, 'const int BUZZER_PIN = 6;')
+          .replace(/#define\s+BUZZER_PIN\s+7/i, '#define BUZZER_PIN 6');
       }
 
-      changelog = 'Reassigned piezo_buzzer from D7 to D6 in netlist and firmware sketch';
-      diff = '- #define BUZZER_PIN 7\n+ #define BUZZER_PIN 6';
+      changelog = `Reallocated ${reallocatedName} from D7 to ${targetPin} in wiring and firmware sketch`;
+      diff = `- #define FAN_PIN 7\n+ #define FAN_PIN 9 // Reallocated to free PWM channel`;
     } else if (failedCheck.id === 'compile') {
       const fixResult = await fixWithGemini(currentBuild, failedCheck.evidence);
       currentBuild = fixResult.patchedBuild || currentBuild;
@@ -217,8 +231,8 @@ export async function runAgentLoop(buildData, emit) {
       diff = '+ External 5V 2A regulator rail added';
     } else if (failedCheck.id === 'fit_check') {
       currentBuild.case.outerMm = [
-        currentBuild.case.outerMm[0] + 10,
-        currentBuild.case.outerMm[1] + 10,
+        Math.max(currentBuild.case.outerMm[0], 140) + 20,
+        Math.max(currentBuild.case.outerMm[1], 100) + 25,
         currentBuild.case.outerMm[2],
       ];
       changelog = `Expanded case outer dimensions to ${currentBuild.case.outerMm.join('x')}mm to maintain 2.2mm clearance`;

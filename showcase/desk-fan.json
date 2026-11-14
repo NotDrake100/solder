@@ -1,0 +1,63 @@
+{
+  "id": "fan",
+  "name": "BreezeMate (Smart Desk Fan)",
+  "tagline": "Autonomous temperature-activated desk cooling fan",
+  "summary": "Monitors ambient desk temperature with a DHT11 sensor and activates a DC cooling fan via relay when ambient heat rises.",
+  "board": "uno",
+  "product": {
+    "pageHeadline": "BreezeMate — Smart Temperature-Controlled Desk Fan",
+    "bullets": [
+      "Automated temperature activation threshold (28°C)",
+      "High-contrast 0.96 inch OLED temperature & humidity gauge",
+      "Whisper-quiet 5V DC blower fan with isolated relay driver",
+      "Snap-fit 3D printable desktop enclosure with translucent acrylic lid"
+    ],
+    "priceInr": 970,
+    "boxSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 500\" width=\"100%\" height=\"100%\"><rect width=\"800\" height=\"500\" rx=\"16\" fill=\"#1c1917\"/><text x=\"60\" y=\"80\" fill=\"#f97316\" font-family=\"system-ui, sans-serif\" font-size=\"14\" font-weight=\"700\" letter-spacing=\"3\">SOLDER SEED SHOWCASE</text><text x=\"60\" y=\"140\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"42\" font-weight=\"800\">BreezeMate Desk Fan</text><text x=\"60\" y=\"180\" fill=\"#a8a29e\" font-family=\"system-ui, sans-serif\" font-size=\"16\">Autonomous Temperature-Controlled Cooling</text><text x=\"60\" y=\"420\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"28\" font-weight=\"800\">₹970</text></svg>"
+  },
+  "parts": [
+    { "id": "arduino_uno", "libId": "arduino_uno", "name": "Arduino Uno R3", "qty": 1, "priceInr": 450, "why": "Core microcontroller running sensor polling and PWM control" },
+    { "id": "dht11", "libId": "dht11", "name": "DHT11 Temperature & Humidity Sensor", "qty": 1, "priceInr": 95, "why": "Measures ambient desk temperature" },
+    { "id": "relay_5v", "libId": "relay_5v", "name": "5V 1-Channel Relay Module", "qty": 1, "priceInr": 85, "why": "Switches inductive fan power cleanly without noise" },
+    { "id": "dc_motor_fan", "libId": "dc_motor_fan", "name": "5V DC High-Speed Blower Fan", "qty": 1, "priceInr": 120, "why": "Airflow impeller for active desk cooling" },
+    { "id": "oled_096", "libId": "oled_096", "name": "0.96 inch I2C OLED Display", "qty": 1, "priceInr": 220, "why": "Displays live temperature readout and fan RPM state" }
+  ],
+  "layout": [
+    { "id": "arduino_uno", "libId": "arduino_uno", "name": "Arduino Uno R3", "x": 10, "y": 10, "z": 2, "rotZ": 0, "dims": [68.6, 53.4, 15], "color": "#00979c" },
+    { "id": "dht11", "libId": "dht11", "name": "DHT11 Sensor", "x": 88, "y": 15, "z": 2, "rotZ": 0, "dims": [15, 12, 28], "color": "#0284c7" },
+    { "id": "relay_5v", "libId": "relay_5v", "name": "5V Relay Module", "x": 88, "y": 55, "z": 2, "rotZ": 0, "dims": [34, 27, 19], "color": "#1e3a8a" },
+    { "id": "dc_motor_fan", "libId": "dc_motor_fan", "name": "5V DC Blower Fan", "x": 45, "y": 50, "z": 2, "rotZ": 0, "dims": [40, 40, 15], "color": "#334155" },
+    { "id": "oled_096", "libId": "oled_096", "name": "OLED Display", "x": 45, "y": 15, "z": 18, "rotZ": 0, "dims": [27, 28, 8], "color": "#0284c7" }
+  ],
+  "case": {
+    "outerMm": [140, 115, 42],
+    "wallMm": 2.2,
+    "lidType": "snap-fit",
+    "clearanceMm": 2.2,
+    "material": "acrylic",
+    "color": "#f8fafc",
+    "scad": "cube([140, 115, 42]);"
+  },
+  "wiring": [
+    { "from": { "part": "arduino_uno", "pin": "5V" }, "to": { "part": "dht11", "pin": "VCC" }, "color": "#ef4444", "signal": "5V Power" },
+    { "from": { "part": "arduino_uno", "pin": "GND" }, "to": { "part": "dht11", "pin": "GND" }, "color": "#18181b", "signal": "GND Ground" },
+    { "from": { "part": "arduino_uno", "pin": "D4" }, "to": { "part": "dht11", "pin": "DATA" }, "color": "#14b8a6", "signal": "DHT11 Data" },
+    { "from": { "part": "arduino_uno", "pin": "D7" }, "to": { "part": "relay_5v", "pin": "IN" }, "color": "#eab308", "signal": "Relay Active-Low" },
+    { "from": { "part": "arduino_uno", "pin": "D7" }, "to": { "part": "dc_motor_fan", "pin": "PWM" }, "color": "#f59e0b", "signal": "Fan Speed PWM (CONFLICT)" },
+    { "from": { "part": "arduino_uno", "pin": "A4" }, "to": { "part": "oled_096", "pin": "SDA" }, "color": "#10b981", "signal": "I2C SDA" },
+    { "from": { "part": "arduino_uno", "pin": "A5" }, "to": { "part": "oled_096", "pin": "SCL" }, "color": "#06b6d4", "signal": "I2C SCL" }
+  ],
+  "code": {
+    "filename": "breeze_mate.ino",
+    "ino": "/*\n * Solder: BreezeMate Desk Fan (Draft with Seed Pin Conflict)\n * Target: Arduino Uno (ATmega328P)\n */\n#include <Wire.h>\n\n#define DHT_PIN 4\n#define RELAY_PIN 7\n#define FAN_PIN 7 // Initial intentional pin collision on D7!\n\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(DHT_PIN, INPUT);\n  pinMode(RELAY_PIN, OUTPUT);\n  pinMode(FAN_PIN, OUTPUT);\n  digitalWrite(RELAY_PIN, HIGH); // Relay off on boot\n  Serial.println(F(\"SYSTEM_BOOT: OK\"));\n}\n\nvoid loop() {\n  Serial.println(F(\"FAN:ACTIVE\"));\n  delay(1000);\n}\n"
+  },
+  "tests": [
+    { "name": "Overheat Activation", "sensorInput": { "tempC": 32 }, "expectedOutputPin": "D7", "expectedState": "LOW" }
+  ],
+  "buildSteps": [
+    "Step 1: 3D print the snap-fit chassis with 20% infill.",
+    "Step 2: Mount the Arduino Uno R3 and secure the standoff clips.",
+    "Step 3: Route DHT11, Relay, and OLED I2C wiring according to schematic.",
+    "Step 4: Flash firmware and verify temperature threshold trigger."
+  ]
+}

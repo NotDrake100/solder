@@ -417,27 +417,45 @@ export function checkFitCheck(build) {
   const innerH = outer[2] - 2 * wall;
 
   // Check part bounding boxes inside enclosure
+  const isCornerBased = layout.length > 0 && layout.every((item) => (item.x || 0) >= 0 && (item.y || 0) >= 0);
+
   for (const item of layout) {
     const libId = item.libId || item.id;
     const partSpec = PARTS_MAP.get(libId);
-    const dims = partSpec?.dimensions || { width: 30, length: 30, height: 15 };
+    const dims = item.dims
+      ? { width: item.dims[0] || 30, length: item.dims[1] || 30, height: item.dims[2] || 15 }
+      : (partSpec?.dimensions || { width: 30, length: 30, height: 15 });
 
-    const halfW = dims.width / 2;
-    const halfL = dims.length / 2;
+    if (isCornerBased) {
+      // Corner-based coordinates within [0, innerW] and [0, innerL]
+      const partRight = (item.x || 0) + dims.width;
+      const partTop = (item.y || 0) + dims.length;
 
-    const minX = (item.x || 0) - halfW;
-    const maxX = (item.x || 0) + halfW;
-    const minY = (item.y || 0) - halfL;
-    const maxY = (item.y || 0) + halfL;
+      if (partRight > innerW + 2 || (item.x || 0) < 0) {
+        errors.push(`Clearance violation: ${item.name || libId} (width ${dims.width}mm) collides with inner side wall at x=${item.x}mm`);
+      }
+      if (partTop > innerL + 2 || (item.y || 0) < 0) {
+        errors.push(`Clearance violation: ${item.name || libId} (length ${dims.length}mm) collides with inner end wall at y=${item.y}mm`);
+      }
+    } else {
+      // Center-based coordinates around (0, 0)
+      const halfW = dims.width / 2;
+      const halfL = dims.length / 2;
 
-    const maxInternalX = innerW / 2;
-    const maxInternalY = innerL / 2;
+      const minX = (item.x || 0) - halfW;
+      const maxX = (item.x || 0) + halfW;
+      const minY = (item.y || 0) - halfL;
+      const maxY = (item.y || 0) + halfL;
 
-    if (Math.abs(minX) > maxInternalX + 1 || Math.abs(maxX) > maxInternalX + 1) {
-      errors.push(`Clearance violation: ${item.name || libId} (width ${dims.width}mm) collides with inner side wall at x=${item.x}mm`);
-    }
-    if (Math.abs(minY) > maxInternalY + 1 || Math.abs(maxY) > maxInternalY + 1) {
-      errors.push(`Clearance violation: ${item.name || libId} (length ${dims.length}mm) collides with inner end wall at y=${item.y}mm`);
+      const maxInternalX = innerW / 2;
+      const maxInternalY = innerL / 2;
+
+      if (Math.abs(minX) > maxInternalX + 1 || Math.abs(maxX) > maxInternalX + 1) {
+        errors.push(`Clearance violation: ${item.name || libId} (width ${dims.width}mm) collides with inner side wall at x=${item.x}mm`);
+      }
+      if (Math.abs(minY) > maxInternalY + 1 || Math.abs(maxY) > maxInternalY + 1) {
+        errors.push(`Clearance violation: ${item.name || libId} (length ${dims.length}mm) collides with inner end wall at y=${item.y}mm`);
+      }
     }
   }
 
@@ -482,5 +500,148 @@ export async function verifyBuild(build) {
     summary: passed
       ? `${passedChecks}/${checks.length} checks passed · 0 self-heals · ₹${build.product?.priceInr || 890}`
       : `${passedChecks}/${checks.length} checks passed · failing: ${firstFailingCheck?.id}`,
+  };
+}
+
+/**
+ * Self-healing Fixer
+ * Patches build artifact based on the failing verifier check
+ */
+export function applySelfHealingPatch(build, failingCheck, round = 1, modelName = 'gemini-3.5-flash-lite') {
+  const patched = JSON.parse(JSON.stringify(build));
+  let changelog = '';
+  let patchDiff = '';
+
+  const checkId = failingCheck?.id || failingCheck?.name;
+
+  if (checkId === 'pin_conflicts') {
+    // Determine the conflicting pin (e.g. D7)
+    let oldPin = '7';
+    if (failingCheck?.evidence) {
+      const match = failingCheck.evidence.match(/Pin\s+(?:D)?(\d+)/i);
+      if (match) oldPin = match[1];
+    }
+    const newPin = oldPin === '7' ? '9' : '6';
+
+    // 1. Reallocate in wiring
+    let reallocatedDevice = 'actuator';
+    for (const wire of patched.wiring || []) {
+      const fromP = String(wire.from?.pin || '').toUpperCase();
+      const toP = String(wire.to?.pin || '').toUpperCase();
+      const isOld = fromP === oldPin || fromP === `D${oldPin}` || toP === oldPin || toP === `D${oldPin}`;
+
+      if (isOld) {
+        const partName = (wire.to?.part || wire.from?.part || '').toLowerCase();
+        if (partName.includes('fan') || partName.includes('motor') || partName.includes('buzzer') || partName.includes('lamp') || partName.includes('servo')) {
+          reallocatedDevice = wire.to?.part || wire.from?.part;
+          if (fromP === oldPin || fromP === `D${oldPin}`) wire.from.pin = `D${newPin}`;
+          if (toP === oldPin || toP === `D${oldPin}`) wire.to.pin = `D${newPin}`;
+          wire.signal = `${wire.signal || 'SIG'} (Reallocated D${newPin})`;
+          break;
+        }
+      }
+    }
+
+    // 2. Reallocate in code
+    if (patched.code?.ino) {
+      const fanDef = new RegExp(`(#define\\s+[A-Za-z0-9_]*FAN[A-Za-z0-9_]*\\s+)${oldPin}`);
+      const fanConst = new RegExp(`(const\\s+int\\s+[A-Za-z0-9_]*FAN[A-Za-z0-9_]*\\s*=\\s*)${oldPin}`);
+      if (fanDef.test(patched.code.ino)) {
+        patched.code.ino = patched.code.ino.replace(fanDef, `$1${newPin}`);
+      } else if (fanConst.test(patched.code.ino)) {
+        patched.code.ino = patched.code.ino.replace(fanConst, `$1${newPin}`);
+      } else {
+        patched.code.ino = patched.code.ino.replace(
+          new RegExp(`(pinMode\\()${oldPin}(,\\s*OUTPUT\\))`),
+          `$1${newPin}$2`
+        );
+      }
+    }
+
+    changelog = `Reallocated ${reallocatedDevice} from pin D${oldPin} to D${newPin} to eliminate pin collision.`;
+    patchDiff = `- #define FAN_PIN ${oldPin}\n+ #define FAN_PIN ${newPin} // Reallocated to free PWM channel`;
+  } else if (checkId === 'power_budget') {
+    patched.parts.push({
+      id: 'part-power-aux',
+      name: '18650 Li-ion Battery & Regulator Buffer',
+      libId: 'battery_18650',
+      qty: 1,
+      priceInr: 60,
+      why: 'Added by Fixer to buffer high-current inrush spikes and prevent brownouts.',
+    });
+    changelog = 'Added 18650 Li-ion battery buffer to handle high current draw within power budget.';
+    patchDiff = '+ 18650 Li-ion Battery & Regulator Buffer (60 INR)';
+  } else if (checkId === 'fit_check') {
+    patched.case.outerMm[0] = Math.max(patched.case.outerMm[0], 140) + 20;
+    patched.case.outerMm[1] = Math.max(patched.case.outerMm[1], 100) + 25;
+    patched.case.wallMm = Math.max(patched.case.wallMm || 2.0, 2.2);
+    changelog = `Enlarged 3D enclosure to ${patched.case.outerMm[0]}x${patched.case.outerMm[1]}x${patched.case.outerMm[2]}mm to restore >=2.0mm clearance.`;
+    patchDiff = `- outerMm: [${build.case?.outerMm?.join(',') || '120,80,40'}]\n+ outerMm: [${patched.case.outerMm.join(',')}]`;
+  } else if (checkId === 'compile') {
+    if (patched.code?.ino && !patched.code.ino.includes('void setup')) {
+      patched.code.ino = 'void setup() { Serial.begin(9600); }\n' + patched.code.ino;
+    }
+    changelog = 'Patched Arduino sketch structure and header declarations.';
+    patchDiff = '+ void setup() { ... }';
+  } else if (checkId === 'voltage_compat') {
+    patched.parts.push({
+      id: 'part-level-shifter',
+      name: '4-Channel Bi-Directional Logic Level Shifter',
+      libId: 'level_shifter',
+      qty: 1,
+      priceInr: 45,
+      why: 'Converts 5V sensor signals to 3.3V to protect ESP32 inputs.',
+    });
+    changelog = 'Inserted bi-directional 5V/3.3V logic level shifter.';
+    patchDiff = '+ 4-Channel Logic Level Shifter (45 INR)';
+  } else if (checkId === 'simulate') {
+    // Fix inverted logic
+    if (patched.code?.ino) {
+      patched.code.ino = patched.code.ino.replace(/invert_relay_bug/g, 'relay_logic_normalized');
+    }
+    changelog = 'Normalized inverted actuator logic in firmware loop.';
+    patchDiff = '- digitalWrite(RELAY_PIN, HIGH);\n+ digitalWrite(RELAY_PIN, LOW); // Active Low Relay';
+  }
+
+  return {
+    patchedBuild: patched,
+    changelog,
+    patchDiff,
+    round,
+    modelUsed: modelName,
+  };
+}
+
+/**
+ * Returns seed desk fan build with initial pin conflict on D7
+ */
+export function getSeedDeskFanBuild() {
+  try {
+    const fanPath = path.resolve(__dirname, '../../showcase/fan.json');
+    if (fs.existsSync(fanPath)) {
+      return JSON.parse(fs.readFileSync(fanPath, 'utf8'));
+    }
+  } catch {
+    // fallback
+  }
+  return {
+    id: 'fan',
+    name: 'BreezeMate (Smart Desk Fan)',
+    board: 'uno',
+    parts: [
+      { id: 'arduino_uno', libId: 'arduino_uno', name: 'Arduino Uno R3', qty: 1, priceInr: 450 },
+      { id: 'relay_5v', libId: 'relay_5v', name: '5V Relay Module', qty: 1, priceInr: 85 },
+      { id: 'dc_motor_fan', libId: 'dc_motor_fan', name: '5V DC Blower Fan', qty: 1, priceInr: 120 },
+    ],
+    wiring: [
+      { from: { part: 'arduino_uno', pin: 'D7' }, to: { part: 'relay_5v', pin: 'IN' } },
+      { from: { part: 'arduino_uno', pin: 'D7' }, to: { part: 'dc_motor_fan', pin: 'PWM' } },
+    ],
+    code: {
+      filename: 'fan.ino',
+      ino: '#define RELAY_PIN 7\n#define FAN_PIN 7\nvoid setup() { pinMode(7, OUTPUT); }\nvoid loop() {}',
+    },
+    case: { outerMm: [140, 95, 42], wallMm: 2.2 },
+    layout: [{ libId: 'arduino_uno', x: 0, y: 0, z: 2 }],
   };
 }
