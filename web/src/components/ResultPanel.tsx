@@ -108,16 +108,16 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     <div
       className={`result rounded-xl border border-[#2a2a2a] bg-[#141414] overflow-hidden my-3 select-none ${className}`}
     >
-      {/* Result Tabs Bar */}
+      {/* Result Tabs Bar (QA-R3 #7: horizontal scroll, no wrap, Order Kit below card on mobile) */}
       <div
-        className="result-tabs flex items-center justify-between border-b border-[#262626] px-3 bg-[#171717] overflow-x-auto scrollbar-none gap-2"
+        className="result-tabs flex items-center justify-between border-b border-[#262626] px-3 bg-[#171717] gap-2 overflow-x-auto whitespace-nowrap scrollbar-none"
         role="tablist"
       >
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0 whitespace-nowrap">
           <button
             type="button"
             onClick={() => handleTabClick('case')}
-            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 whitespace-nowrap ${
               activeTab === 'case'
                 ? 'border-white text-white'
                 : 'border-transparent text-[#888] hover:text-white'
@@ -130,7 +130,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           <button
             type="button"
             onClick={() => handleTabClick('parts')}
-            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 whitespace-nowrap ${
               activeTab === 'parts'
                 ? 'border-white text-white'
                 : 'border-transparent text-[#888] hover:text-white'
@@ -143,7 +143,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           <button
             type="button"
             onClick={() => handleTabClick('wiring')}
-            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 whitespace-nowrap ${
               activeTab === 'wiring'
                 ? 'border-white text-white'
                 : 'border-transparent text-[#888] hover:text-white'
@@ -156,7 +156,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           <button
             type="button"
             onClick={() => handleTabClick('simulate')}
-            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 whitespace-nowrap ${
               activeTab === 'simulate'
                 ? 'border-white text-white'
                 : 'border-transparent text-[#888] hover:text-white'
@@ -169,7 +169,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           <button
             type="button"
             onClick={() => handleTabClick('firmware')}
-            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 whitespace-nowrap ${
               activeTab === 'firmware'
                 ? 'border-white text-white'
                 : 'border-transparent text-[#888] hover:text-white'
@@ -180,12 +180,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </button>
         </div>
 
-        {/* Right CTA: Order Kit */}
+        {/* Right CTA: Order Kit on Desktop */}
         {onOpenOrder && (
-          <div className="shrink-0 py-1">
+          <div className="shrink-0 py-1 hidden sm:block">
             <button
               onClick={onOpenOrder}
-              className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer whitespace-nowrap"
             >
               <ShoppingBag className="w-3 h-3" />
               <span>Order Kit</span>
@@ -353,6 +353,20 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         )}
       </div>
+
+      {/* Mobile CTA: Order Kit Below the Card (QA-R3 #7) */}
+      {onOpenOrder && (
+        <div className="sm:hidden p-2.5 border-t border-[#262626] bg-[#171717]">
+          <button
+            onClick={onOpenOrder}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer"
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Order Kit</span>
+            <span className="mono text-[11px] opacity-80">· Rs {totalCost}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

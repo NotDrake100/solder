@@ -484,12 +484,12 @@ export function buildMq135Mesh(materials: MaterialLibrary): THREE.Group {
   dome.castShadow = true;
   group.add(dome);
 
-  // Inner heating element glow
+  // Inner heating element glow (neutral slate/zinc)
   const glowGeom = new THREE.CylinderGeometry(3, 3, 10, 16);
   const glowMat = new THREE.MeshStandardMaterial({
-    color: 0xf97316,
-    emissive: 0xea580c,
-    emissiveIntensity: 0.8,
+    color: 0x71717a,
+    emissive: 0x52525b,
+    emissiveIntensity: 0.2,
   });
   const glow = new THREE.Mesh(glowGeom, glowMat);
   glow.rotation.x = Math.PI / 2;
@@ -519,10 +519,10 @@ export function buildBattery18650Mesh(materials: MaterialLibrary): THREE.Group {
   cradle.castShadow = true;
   group.add(cradle);
 
-  // 2. 18650 Cylindrical Battery Cell (d=18mm, length=65mm)
+  // 2. 18650 Cylindrical Battery Cell (d=18mm, length=65mm) - Neutral grey #3a3a3a
   const cellGeom = new THREE.CylinderGeometry(9, 9, 65, 32);
   const wrapMat = new THREE.MeshStandardMaterial({
-    color: 0x16a34a, // Vibrant green battery wrap
+    color: 0x3a3a3a, // Neutral grey battery wrap
     roughness: 0.3,
     metalness: 0.1,
   });

@@ -53,8 +53,20 @@ console.log('   ✓ UI navigation chips and pills verified.');
 // 5. Verify Logo Mark 06 & Deterministic Harness Trace
 console.log('5. Testing Logo Mark 06 and Harness Trace checks...');
 import { SolderLogo } from './components/SolderLogo.tsx';
+import { getInitialLiveHarnessChecks, getDefaultHarnessChecks } from './components/HarnessTrace.tsx';
 assert(typeof SolderLogo === 'function', 'SolderLogo Mark 06 component exists');
-console.log('   ✓ Logo Mark 06 "Case and joint" verified.');
+
+const initialChecks = getInitialLiveHarnessChecks();
+assert(initialChecks.length === 6, 'Exactly 6 real server verifier checks');
+assert(initialChecks.map((c) => c.id).join(',') === 'pin_conflicts,power_budget,voltage_compat,compile,simulate,fit_check', 'Check IDs match server agentLoop checks');
+
+const defaultChecks = getDefaultHarnessChecks({ id: 'desk-fan', name: 'Desk fan' } as any);
+assert(defaultChecks.length === 6, 'Default checks length is 6');
+const healedCheck = defaultChecks.find((c) => c.id === 'pin_conflicts');
+assert(healedCheck?.status === 'healed', 'Desk fan pin conflict is marked healed');
+assert(!!healedCheck?.failedEvidence, 'Healed check has visible round 1 failed evidence');
+assert(!!healedCheck?.healInfo, 'Healed check has fixer model and explanation');
+console.log('   ✓ Logo Mark 06 and 6 Real Harness Checks with self-heal verified.');
 
 // 6. Verify Live Camera Mode & Photo Chat
 console.log('6. Testing Live Camera Mode & Photo Chat components...');

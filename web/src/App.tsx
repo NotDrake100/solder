@@ -306,16 +306,50 @@ export function App() {
                   ? [...m.harnessChecks]
                   : getInitialLiveHarnessChecks(prompt);
 
-                // Live verifier SSE events
+                // Live verifier SSE events (QA-R4 #5: 6 real check names, preserve failures & self-heal)
+                const normalizeCheckId = (rawId?: string) => {
+                  if (rawId === 'voltage') return 'voltage_compat';
+                  if (rawId === 'fit') return 'fit_check';
+                  return rawId || '';
+                };
+
                 if (data.step === 'verifier_check') {
+                  const targetId = normalizeCheckId(data.id);
                   updatedChecks = updatedChecks.map((chk) => {
-                    if (chk.id === data.id) {
-                      return {
-                        ...chk,
-                        status: data.status === 'pass' ? 'pass' : 'fail',
-                        evidence: data.evidence || chk.evidence,
-                        durationMs: data.durationMs || chk.durationMs,
-                      };
+                    if (chk.id === targetId) {
+                      if (data.status === 'fail') {
+                        return {
+                          ...chk,
+                          status: 'fail',
+                          evidence: data.evidence || chk.evidence,
+                          durationMs: data.durationMs || chk.durationMs,
+                          failedRound: data.round || 1,
+                          failedEvidence: data.evidence || chk.evidence,
+                        };
+                      } else if (data.status === 'pass') {
+                        // If this check previously had a failure / heal, DO NOT overwrite with plain pass!
+                        if (
+                          chk.status === 'fail' ||
+                          chk.status === 'fixing' ||
+                          chk.status === 'healed' ||
+                          chk.healInfo ||
+                          chk.failedEvidence
+                        ) {
+                          return {
+                            ...chk,
+                            status: 'healed',
+                            evidence: data.evidence || chk.evidence,
+                            durationMs: data.durationMs || chk.durationMs,
+                          };
+                        } else {
+                          return {
+                            ...chk,
+                            status: 'pass',
+                            evidence: data.evidence || chk.evidence,
+                            durationMs: data.durationMs || chk.durationMs,
+                          };
+                        }
+                      }
                     }
                     return chk;
                   });
@@ -324,11 +358,19 @@ export function App() {
                     harnessChecks: updatedChecks,
                   };
                 } else if (data.step === 'fixer_start') {
+                  const targetId = normalizeCheckId(data.checkId);
                   updatedChecks = updatedChecks.map((chk) => {
-                    if (chk.id === data.checkId) {
+                    if (chk.id === targetId) {
                       return {
                         ...chk,
                         status: 'fixing',
+                        failedEvidence: chk.failedEvidence || data.evidence || chk.evidence,
+                        healInfo: {
+                          round: data.round || 1,
+                          model: data.model || 'gemini-3.5-flash-lite',
+                          patchDiff: '',
+                          explanation: `Fixing (${data.model || 'gemini-3.5-flash-lite'}): ${data.evidence || chk.evidence}`,
+                        },
                       };
                     }
                     return chk;
@@ -338,16 +380,18 @@ export function App() {
                     harnessChecks: updatedChecks,
                   };
                 } else if (data.step === 'fixer_done') {
+                  const targetId = normalizeCheckId(data.checkId);
                   updatedChecks = updatedChecks.map((chk) => {
-                    if (chk.id === data.checkId) {
+                    if (chk.id === targetId) {
                       return {
                         ...chk,
                         status: 'healed',
+                        failedEvidence: chk.failedEvidence || data.evidence || chk.evidence,
                         healInfo: {
                           round: data.round || 1,
-                          model: data.model || 'Gemini 3.5 Flash-Lite',
+                          model: data.model || 'gemini-3.5-flash-lite',
                           patchDiff: data.diff || '',
-                          explanation: data.changelog || 'Self-healed: buzzer moved D7 to D8',
+                          explanation: data.changelog || 'Self-healed pin conflict',
                         },
                       };
                     }
@@ -513,13 +557,7 @@ export function App() {
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id !== msgId) return m;
-        const checks = (m.harnessChecks || getInitialLiveHarnessChecks(prompt)).map((c) =>
-          c.id === 'planner'
-            ? { ...c, status: 'pass' as const, durationMs: 12 }
-            : c.id === 'parts'
-            ? { ...c, status: 'running' as const }
-            : c
-        );
+        const checks = m.harnessChecks || getInitialLiveHarnessChecks(prompt);
         return {
           ...m,
           isTyping: false,
@@ -536,12 +574,8 @@ export function App() {
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id !== msgId) return m;
-        const checks = (m.harnessChecks || []).map((c) =>
-          c.id === 'parts'
-            ? { ...c, status: 'pass' as const, durationMs: 18 }
-            : c.id === 'pin_conflicts'
-            ? { ...c, status: 'running' as const }
-            : c
+        const checks = (m.harnessChecks || getInitialLiveHarnessChecks(prompt)).map((c) =>
+          c.id === 'pin_conflicts' ? { ...c, status: 'running' as const } : c
         );
         return {
           ...m,
@@ -561,7 +595,14 @@ export function App() {
         prev.map((m) => {
           if (m.id !== msgId) return m;
           const checks = (m.harnessChecks || []).map((c) =>
-            c.id === 'pin_conflicts' ? { ...c, status: 'fixing' as const } : c
+            c.id === 'pin_conflicts'
+              ? {
+                  ...c,
+                  status: 'fixing' as const,
+                  failedRound: 1,
+                  failedEvidence: 'Pin collision on D7: Relay IN and Buzzer I/O both assigned to D7',
+                }
+              : c
           );
           return {
             ...m,
@@ -584,16 +625,20 @@ export function App() {
               ? {
                   ...c,
                   status: 'healed' as const,
-                  durationMs: 340,
+                  durationMs: 14,
+                  failedRound: 1,
+                  failedEvidence: 'Pin collision on D7: Relay IN and Buzzer I/O both assigned to D7',
                   healInfo: {
                     round: 1,
-                    model: 'Flash-Lite',
-                    patchDiff: '- #define FAN_PIN 7\n+ #define FAN_PIN 8 // Reallocated buzzer/fan',
-                    explanation: 'Self-healed: buzzer moved D7 to D8',
+                    model: 'gemini-3.5-flash-lite',
+                    patchDiff: '- #define FAN_PIN 7\n+ #define FAN_PIN 9 // Reallocated to free PWM channel',
+                    explanation: 'Reallocated relay from D7 to D9 in wiring netlist and sketch',
                   },
                 }
               : { ...c, status: 'pass' as const, durationMs: 14 };
           }
+          if (c.id === 'power_budget') return { ...c, status: 'pass' as const, durationMs: 12 };
+          if (c.id === 'voltage_compat') return { ...c, status: 'pass' as const, durationMs: 10 };
           if (c.id === 'compile') return { ...c, status: 'running' as const };
           return c;
         });
@@ -614,7 +659,7 @@ export function App() {
         if (m.id !== msgId) return m;
         const checks = (m.harnessChecks || []).map((c) =>
           c.id === 'compile'
-            ? { ...c, status: 'pass' as const, durationMs: 412 }
+            ? { ...c, status: 'pass' as const, durationMs: 35 }
             : c.id === 'simulate'
             ? { ...c, status: 'running' as const }
             : c
@@ -636,7 +681,7 @@ export function App() {
         if (m.id !== msgId) return m;
         const checks = (m.harnessChecks || []).map((c) =>
           c.id === 'simulate'
-            ? { ...c, status: 'pass' as const, durationMs: 650 }
+            ? { ...c, status: 'pass' as const, durationMs: 42 }
             : c.id === 'fit_check'
             ? { ...c, status: 'running' as const }
             : c
@@ -657,7 +702,7 @@ export function App() {
       prev.map((m) => {
         if (m.id !== msgId) return m;
         const checks = (m.harnessChecks || []).map((c) =>
-          c.id === 'fit_check' ? { ...c, status: 'pass' as const, durationMs: 38 } : c
+          c.id === 'fit_check' ? { ...c, status: 'pass' as const, durationMs: 24 } : c
         );
         return {
           ...m,

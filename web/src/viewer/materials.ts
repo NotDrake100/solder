@@ -273,39 +273,39 @@ export function createMaterialLibrary(
   }
 
   const enclosureWireframe = new THREE.MeshBasicMaterial({
-    color: 0x00f0ff,
+    color: 0xffffff,
     wireframe: true,
     transparent: true,
     opacity: 0.35,
   });
 
-  // Electronics materials
+  // Electronics materials (QA-R4 #3: neutral greys: board #3a3a3a, modules #5a5a5a, highlights #bdbdbd)
   const pcbUno = new THREE.MeshStandardMaterial({
-    color: 0x00828a, // Arduino signature teal
+    color: 0x3a3a3a, // Neutral board #3a3a3a
     roughness: 0.45,
     metalness: 0.15,
   });
 
   const pcbEsp32 = new THREE.MeshStandardMaterial({
-    color: 0x1e1e24, // ESP32 matte black PCB
+    color: 0x3a3a3a, // Neutral board #3a3a3a
     roughness: 0.5,
     metalness: 0.1,
   });
 
   const pcbBlue = new THREE.MeshStandardMaterial({
-    color: 0x27272a,
+    color: 0x3a3a3a, // Neutral board #3a3a3a
     roughness: 0.4,
     metalness: 0.1,
   });
 
   const pcbGreen = new THREE.MeshStandardMaterial({
-    color: 0x3f3f46,
+    color: 0x5a5a5a, // Modules #5a5a5a
     roughness: 0.45,
     metalness: 0.1,
   });
 
   const metalGold = new THREE.MeshStandardMaterial({
-    color: 0xd4af37,
+    color: 0xbdbdbd, // Highlights #bdbdbd
     roughness: 0.25,
     metalness: 0.92,
   });
@@ -317,7 +317,7 @@ export function createMaterialLibrary(
   });
 
   const metalShield = new THREE.MeshStandardMaterial({
-    color: 0xe2e8f0,
+    color: 0xbdbdbd, // Highlights #bdbdbd
     roughness: 0.32,
     metalness: 0.95,
   });
@@ -335,19 +335,19 @@ export function createMaterialLibrary(
   });
 
   const relayBlue = new THREE.MeshStandardMaterial({
-    color: 0x3f3f46,
+    color: 0x5a5a5a, // Modules #5a5a5a
     roughness: 0.35,
     metalness: 0.1,
   });
 
   const relayTerminal = new THREE.MeshStandardMaterial({
-    color: 0x52525b,
+    color: 0x5a5a5a, // Modules #5a5a5a
     roughness: 0.5,
     metalness: 0.15,
   });
 
   const servoBlueTranslucent = new THREE.MeshPhysicalMaterial({
-    color: 0x52525b,
+    color: 0x5a5a5a, // Modules #5a5a5a
     transmission: 0.45,
     opacity: 0.88,
     transparent: true,
@@ -357,22 +357,22 @@ export function createMaterialLibrary(
   });
 
   const dhtBlue = new THREE.MeshStandardMaterial({
-    color: 0xe2e8f0,
+    color: 0x5a5a5a, // Modules #5a5a5a
     roughness: 0.6,
     metalness: 0.05,
   });
 
   const ledRed = new THREE.MeshStandardMaterial({
-    color: 0xef4444,
-    emissive: 0xdc2626,
-    emissiveIntensity: 0.6,
+    color: 0x5a5a5a,
+    emissive: 0x27272a,
+    emissiveIntensity: 0.2,
     roughness: 0.2,
   });
 
   const ledGreen = new THREE.MeshStandardMaterial({
-    color: 0x22c55e,
-    emissive: 0x16a34a,
-    emissiveIntensity: 0.6,
+    color: 0x5a5a5a,
+    emissive: 0x27272a,
+    emissiveIntensity: 0.2,
     roughness: 0.2,
   });
 
@@ -385,7 +385,7 @@ export function createMaterialLibrary(
   const oledTexture = createOledScreenTexture();
   const oledScreen = new THREE.MeshStandardMaterial({
     map: oledTexture,
-    emissive: 0x38bdf8,
+    emissive: 0xffffff,
     emissiveMap: oledTexture,
     emissiveIntensity: 0.85,
     roughness: 0.1,
@@ -404,40 +404,40 @@ export function createMaterialLibrary(
   });
 
   const ledLampGlow = new THREE.MeshStandardMaterial({
-    color: 0xfffbeb,
-    emissive: 0xf59e0b,
-    emissiveIntensity: 0.95,
+    color: 0xfafafa,
+    emissive: 0xbdbdbd,
+    emissiveIntensity: 0.5,
     roughness: 0.15,
     metalness: 0.1,
   });
 
   const ldrCeramic = new THREE.MeshStandardMaterial({
-    color: 0xd97706,
+    color: 0x5a5a5a,
     roughness: 0.55,
     metalness: 0.1,
   });
 
   const ldrTrack = new THREE.MeshStandardMaterial({
-    color: 0xb45309,
+    color: 0xbdbdbd,
     roughness: 0.3,
     metalness: 0.6,
   });
 
   const potOrange = new THREE.MeshStandardMaterial({
-    color: 0xf97316,
+    color: 0x5a5a5a,
     roughness: 0.4,
     metalness: 0.1,
   });
 
   // Wire insulation materials
   const wireColors: Record<string, number> = {
-    red: 0xef4444,
-    black: 0x18181b,
-    yellow: 0xeab308,
-    blue: 0x3b82f6,
-    green: 0x22c55e,
-    purple: 0xa855f7,
-    orange: 0xf97316,
+    red: 0x5a5a5a,
+    black: 0x27272a,
+    yellow: 0x71717a,
+    blue: 0x52525b,
+    green: 0x3f3f46,
+    purple: 0x52525b,
+    orange: 0x71717a,
     white: 0xf8fafc,
   };
 
