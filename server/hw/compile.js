@@ -48,8 +48,9 @@ export function analyzeArduinoCode(code) {
   }
 
   for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i].trim();
-    if (!rawLine || rawLine.startsWith('//') || rawLine.startsWith('#') || rawLine.startsWith('/*')) continue;
+    // Strip comments for statement checks
+    const rawLine = lines[i].replace(/\/\/.*$/, '').trim();
+    if (!rawLine || rawLine.startsWith('#') || rawLine.startsWith('/*')) continue;
     if (rawLine.endsWith('{') || rawLine.endsWith('}') || rawLine.endsWith(':') || rawLine.endsWith(',')) continue;
     if (/^(if|for|while|else|switch|void|int|float|bool|char)\b/.test(rawLine) && !rawLine.includes(';')) {
       if (!rawLine.includes('(') || (rawLine.includes(')') && !rawLine.endsWith(')'))) {

@@ -32,12 +32,30 @@ async function loadHwModules() {
 }
 
 export async function handleCompile(reqBody) {
-  await loadHwModules();
   const { ino, board = 'uno' } = reqBody;
 
   if (!ino) {
     throw new Error('Missing ino code in request body');
   }
+
+  // If Archit's external compile service is running (configured via env var)
+  if (process.env.COMPILE_SERVICE_URL) {
+    try {
+      const targetUrl = process.env.COMPILE_SERVICE_URL.replace(/\/+$/, '') + '/compile';
+      const extRes = await fetch(targetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ino, board })
+      });
+      if (extRes.ok) {
+        return await extRes.json();
+      }
+    } catch (err) {
+      console.warn('[Compile Proxy] External compile service failed, falling back to local:', err.message);
+    }
+  }
+
+  await loadHwModules();
 
   if (hwCompileModule && hwCompileModule.compileSketch) {
     return await hwCompileModule.compileSketch({ ino, board });

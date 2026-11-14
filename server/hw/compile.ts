@@ -74,9 +74,9 @@ function analyzeArduinoCode(code: string): { valid: boolean; errors: string[] } 
 
   // Check 3: Missing semicolons on simple statements
   for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i].trim();
-    // Ignore comments, preprocessor directives, empty lines, braces, flow control
-    if (!rawLine || rawLine.startsWith('//') || rawLine.startsWith('#') || rawLine.startsWith('/*')) continue;
+    // Strip comments for statement checks
+    const rawLine = lines[i].replace(/\/\/.*$/, '').trim();
+    if (!rawLine || rawLine.startsWith('#') || rawLine.startsWith('/*')) continue;
     if (rawLine.endsWith('{') || rawLine.endsWith('}') || rawLine.endsWith(':') || rawLine.endsWith(',')) continue;
     if (/^(if|for|while|else|switch|void|int|float|bool|char)\b/.test(rawLine) && !rawLine.includes(';')) {
       if (!rawLine.includes('(') || (rawLine.includes(')') && !rawLine.endsWith(')'))) {
