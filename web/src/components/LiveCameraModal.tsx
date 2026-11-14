@@ -122,13 +122,39 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // QA-R5 #1: Capture exactly the visible object-fit: cover crop region
+      const container = video.parentElement || video;
+      const cw = container.clientWidth || window.innerWidth;
+      const ch = container.clientHeight || window.innerHeight;
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+
+      let sx = 0;
+      let sy = 0;
+      let sw = vw;
+      let sh = vh;
+
+      if (cw > 0 && ch > 0 && vw > 0 && vh > 0) {
+        const containerAspect = cw / ch;
+        const videoAspect = vw / vh;
+        if (containerAspect > videoAspect) {
+          // Container is wider: crop top and bottom of video
+          sh = vw / containerAspect;
+          sy = (vh - sh) / 2;
+        } else {
+          // Container is taller: crop left and right of video (portrait mobile)
+          sw = vh * containerAspect;
+          sx = (vw - sw) / 2;
+        }
+      }
+
       // Scale down to 512px width for fast Gemini vision detection (q0.6)
       const targetWidth = 512;
-      const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth) || 288;
+      const targetHeight = Math.round((sh / sw) * targetWidth) || 512;
       canvas.width = targetWidth;
       canvas.height = targetHeight;
 
-      ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
       const jpegBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
       inFlight = true;

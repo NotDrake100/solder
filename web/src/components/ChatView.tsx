@@ -241,26 +241,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
           <div className="absolute bottom-14 left-0 z-30 p-1.5 rounded-xl bg-[#1a1a1a] border border-[#333] shadow-2xl flex flex-col gap-1 w-48 text-xs select-none animate-fadeIn">
             <button
               type="button"
-              onClick={() => fileUploadInputRef.current?.click()}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#d4d4d4] hover:text-white hover:bg-[#262626] transition text-left cursor-pointer"
-            >
-              <ImageIcon className="w-4 h-4 text-[#a3a3a3]" />
-              <span>Upload photo</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fileCaptureInputRef.current?.click()}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#d4d4d4] hover:text-white hover:bg-[#262626] transition text-left cursor-pointer"
-            >
-              <Camera className="w-4 h-4 text-[#a3a3a3]" />
-              <span>Take photo</span>
-            </button>
-
-            <div className="border-t border-[#2a2a2a] my-0.5" />
-
-            <button
-              type="button"
               onClick={() => {
                 setShowAttachMenu(false);
                 onOpenLiveCamera();
@@ -268,7 +248,32 @@ export const ChatView: React.FC<ChatViewProps> = ({
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-white hover:bg-[#262626] transition text-left cursor-pointer font-medium"
             >
               <Camera className="w-4 h-4 text-white" />
-              <span>Point at parts (Live)</span>
+              <span>Scan my parts</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowAttachMenu(false);
+                fileUploadInputRef.current?.click();
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-[#d4d4d4] hover:text-white hover:bg-[#262626] transition text-left cursor-pointer"
+            >
+              <ImageIcon className="w-4 h-4 text-[#a3a3a3]" />
+              <span>Upload photo</span>
+            </button>
+
+            {/* Camera photo: only on mobile devices (QA-R5 #3) */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowAttachMenu(false);
+                fileCaptureInputRef.current?.click();
+              }}
+              className="md:hidden flex items-center gap-2 px-3 py-2 rounded-lg text-[#d4d4d4] hover:text-white hover:bg-[#262626] transition text-left cursor-pointer"
+            >
+              <Camera className="w-4 h-4 text-[#a3a3a3]" />
+              <span>Camera photo</span>
             </button>
           </div>
         )}
