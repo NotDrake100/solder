@@ -139,6 +139,15 @@ export class MaterialPalette {
 
   // OLED Active Display emissive screen
   static createOledScreenMaterial(): THREE.MeshStandardMaterial {
+    if (typeof document === 'undefined') {
+      return new THREE.MeshStandardMaterial({
+        color: 0x050b14,
+        emissive: new THREE.Color(0x38bdf8),
+        emissiveIntensity: 0.5,
+        roughness: 0.2,
+      });
+    }
+
     // Canvas texture for screen graphics
     const canvas = document.createElement('canvas');
     canvas.width = 256;
