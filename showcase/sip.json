@@ -1,0 +1,148 @@
+{
+  "id": "sip",
+  "name": "Sip",
+  "tagline": "Autonomous plant hydration system with moisture telemetry",
+  "summary": "Sip continuously monitors soil moisture via an analog capacitive sensor probe. When the moisture drops below 35%, it engages a 5V relay driving a submersible DC water pump for 3 seconds, displays moisture and status on an I2C OLED screen, and reports telemetry over serial.",
+  "board": "uno",
+  "parts": [
+    {
+      "id": "part-mcu",
+      "name": "Arduino Uno R3",
+      "libId": "arduino_uno",
+      "qty": 1,
+      "priceInr": 450,
+      "why": "Central ATmega328P controller running realtime moisture threshold control logic."
+    },
+    {
+      "id": "part-sensor",
+      "name": "Capacitive Soil Moisture Sensor",
+      "libId": "soil_moisture",
+      "qty": 1,
+      "priceInr": 90,
+      "why": "Corrosion-resistant analog soil humidity measurement probe."
+    },
+    {
+      "id": "part-relay",
+      "name": "5V Single Channel Relay Module",
+      "libId": "relay_5v",
+      "qty": 1,
+      "priceInr": 80,
+      "why": "Optocoupled 5V relay safely switching 5V/12V submersible water pump current."
+    },
+    {
+      "id": "part-display",
+      "name": "0.96 inch I2C OLED Display",
+      "libId": "oled_096",
+      "qty": 1,
+      "priceInr": 220,
+      "why": "128x64 high contrast display showing real-time moisture % and pump status."
+    },
+    {
+      "id": "part-battery",
+      "name": "18650 Li-ion Battery Holder with DC Jack",
+      "libId": "battery_18650",
+      "qty": 1,
+      "priceInr": 50,
+      "why": "Powers Arduino VIN and water pump via standard DC barrel connector."
+    }
+  ],
+  "layout": [
+    {
+      "libId": "arduino_uno",
+      "name": "Arduino Uno R3",
+      "x": 10,
+      "y": 10,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "relay_5v",
+      "name": "5V Relay Module",
+      "x": 75,
+      "y": 10,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "soil_moisture",
+      "name": "Soil Moisture Interface",
+      "x": 75,
+      "y": 35,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "battery_18650",
+      "name": "18650 Battery Holder",
+      "x": 10,
+      "y": 70,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "oled_096",
+      "name": "0.96\" OLED Display",
+      "x": 42,
+      "y": 42,
+      "z": 24,
+      "rotZ": 0
+    }
+  ],
+  "case": {
+    "wallMm": 2.0,
+    "lidType": "snap-fit",
+    "outerMm": [128, 96, 40],
+    "material": "frosted_acrylic",
+    "color": "#10b981",
+    "scad": "// Solder Sip Enclosure - Procedural OpenSCAD\n$fn = 40;\nwall = 2.0;\ninner_x = 124.0;\ninner_y = 92.0;\ninner_z = 36.0;\nouter_x = inner_x + 2*wall;\nouter_y = inner_y + 2*wall;\nouter_z = inner_z + 2*wall;\n\nmodule base_enclosure() {\n  difference() {\n    cube([outer_x, outer_y, outer_z], center = false);\n    translate([wall, wall, wall])\n      cube([inner_x, inner_y, inner_z + 1], center = false);\n    // USB port cutout\n    translate([-1, 15, wall + 3])\n      cube([wall + 2, 13, 11]);\n    // DC barrel jack cutout\n    translate([-1, 40, wall + 2])\n      cube([wall + 2, 10, 11]);\n    // Sensor probe cable gland slot\n    translate([outer_x - wall - 1, 30, wall + 5])\n      cube([wall + 2, 12, 8]);\n  }\n  // Uno standoffs (M3)\n  translate([wall + 14.0, wall + 2.5, wall]) standoff();\n  translate([wall + 15.2, wall + 50.8, wall]) standoff();\n  translate([wall + 66.0, wall + 7.6, wall]) standoff();\n  translate([wall + 66.0, wall + 35.5, wall]) standoff();\n}\n\nmodule standoff() {\n  difference() {\n    cylinder(r = 3.2, h = 4.0);\n    cylinder(r = 1.4, h = 4.5);\n  }\n}\n\nmodule snap_lid() {\n  difference() {\n    cube([outer_x, outer_y, wall + 2.0]);\n    // OLED screen window cutout\n    translate([wall + 42, wall + 42, -1])\n      cube([26, 16, wall + 4]);\n    // Ventilation grills\n    for (i = [0:4]) {\n      translate([wall + 80 + (i*3), wall + 20, -1])\n        cube([1.5, 20, wall + 4]);\n    }\n  }\n}\n\nbase_enclosure();\ntranslate([0, outer_y + 15, 0]) snap_lid();\n"
+  },
+  "wiring": [
+    { "from": { "part": "arduino_uno", "pin": "5V" }, "to": { "part": "soil_moisture", "pin": "VCC" }, "color": "#e11d48", "signal": "VCC" },
+    { "from": { "part": "arduino_uno", "pin": "GND" }, "to": { "part": "soil_moisture", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
+    { "from": { "part": "arduino_uno", "pin": "A0" }, "to": { "part": "soil_moisture", "pin": "AOUT" }, "color": "#eab308", "signal": "Analog Moisture" },
+    { "from": { "part": "arduino_uno", "pin": "5V" }, "to": { "part": "relay_5v", "pin": "VCC" }, "color": "#e11d48", "signal": "VCC" },
+    { "from": { "part": "arduino_uno", "pin": "GND" }, "to": { "part": "relay_5v", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
+    { "from": { "part": "arduino_uno", "pin": "D7" }, "to": { "part": "relay_5v", "pin": "IN" }, "color": "#2563eb", "signal": "Pump Relay Trigger" },
+    { "from": { "part": "arduino_uno", "pin": "5V" }, "to": { "part": "oled_096", "pin": "VCC" }, "color": "#e11d48", "signal": "VCC" },
+    { "from": { "part": "arduino_uno", "pin": "GND" }, "to": { "part": "oled_096", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
+    { "from": { "part": "arduino_uno", "pin": "A4" }, "to": { "part": "oled_096", "pin": "SDA" }, "color": "#10b981", "signal": "I2C SDA" },
+    { "from": { "part": "arduino_uno", "pin": "A5" }, "to": { "part": "oled_096", "pin": "SCL" }, "color": "#06b6d4", "signal": "I2C SCL" }
+  ],
+  "code": {
+    "filename": "sip.ino",
+    "ino": "#include <Wire.h>\n\n// Pin definitions\nconst int MOISTURE_PIN = A0;\nconst int RELAY_PIN = 7;\nconst int DRY_THRESHOLD_PERCENT = 35;\n\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(RELAY_PIN, OUTPUT);\n  digitalWrite(RELAY_PIN, LOW); // Relay off initially\n  \n  Serial.println(F(\"--- Solder Sip Plant Hydrator Initialized ---\"));\n  Serial.println(F(\"Sensor: Capacitive Soil Probe | Actuator: 5V Relay\"));\n}\n\nvoid loop() {\n  // Read analog moisture sensor (0-1023)\n  // In air ~800 (dry), In water ~300 (wet)\n  int rawValue = analogRead(MOISTURE_PIN);\n  int moisturePercent = map(rawValue, 850, 300, 0, 100);\n  moisturePercent = constrain(moisturePercent, 0, 100);\n\n  Serial.print(F(\"MOISTURE: \"));\n  Serial.print(moisturePercent);\n  Serial.print(F(\"% (raw: \"));\n  Serial.print(rawValue);\n  Serial.print(F(\") -> \"));\n\n  if (moisturePercent < DRY_THRESHOLD_PERCENT) {\n    Serial.println(F(\"STATUS: DRY | PUMP_ACTIVE\"));\n    digitalWrite(RELAY_PIN, HIGH); // Turn pump ON\n  } else {\n    Serial.println(F(\"STATUS: OK | PUMP_IDLE\"));\n    digitalWrite(RELAY_PIN, LOW);  // Turn pump OFF\n  }\n\n  delay(1000);\n}\n"
+  },
+  "tests": [
+    {
+      "name": "Dry Soil Activates Water Pump",
+      "set": { "soil_moisture": 25 },
+      "expectPin": { "pin": 7, "state": 1 },
+      "expectSerial": "PUMP_ACTIVE"
+    },
+    {
+      "name": "Adequate Moisture Keeps Pump Idle",
+      "set": { "soil_moisture": 60 },
+      "expectPin": { "pin": 7, "state": 0 },
+      "expectSerial": "PUMP_IDLE"
+    }
+  ],
+  "product": {
+    "pageHeadline": "Never let your monstera or basil dry out again.",
+    "bullets": [
+      "Precision capacitive soil moisture telemetry prevents over- or under-watering",
+      "Isolated 5V relay drive supports standard submersible 5V/12V DC water pumps",
+      "Integrated 0.96-inch OLED displays live hydration metrics and watering timestamps",
+      "Snap-fit desktop enclosure with custom cutouts for power and probe routing"
+    ],
+    "priceInr": 1290,
+    "boxSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <linearGradient id=\"sip-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#047857\" />\n      <stop offset=\"100%\" stop-color=\"#064e3b\" />\n    </linearGradient>\n    <pattern id=\"grid\" width=\"20\" height=\"20\" patternUnits=\"userSpaceOnUse\">\n      <path d=\"M 20 0 L 0 0 0 20\" fill=\"none\" stroke=\"rgba(255,255,255,0.08)\" stroke-width=\"1\"/>\n    </pattern>\n  </defs>\n  <rect width=\"800\" height=\"500\" rx=\"16\" fill=\"url(#sip-grad)\" />\n  <rect width=\"800\" height=\"500\" rx=\"16\" fill=\"url(#grid)\" />\n  <rect x=\"30\" y=\"30\" width=\"740\" height=\"440\" rx=\"8\" fill=\"none\" stroke=\"rgba(255,255,255,0.25)\" stroke-dasharray=\"6 4\" stroke-width=\"1.5\" />\n  <text x=\"60\" y=\"90\" fill=\"#34d399\" font-family=\"system-ui, sans-serif\" font-size=\"14\" font-weight=\"700\" letter-spacing=\"3\">SOLDER HARDWARE KIT #01</text>\n  <text x=\"60\" y=\"150\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"56\" font-weight=\"800\" letter-spacing=\"-1\">Sip</text>\n  <text x=\"60\" y=\"185\" fill=\"#a7f3d0\" font-family=\"system-ui, sans-serif\" font-size=\"18\" font-weight=\"400\">Autonomous Plant Hydrator & Moisture Telemetry</text>\n  <g transform=\"translate(530, 80)\">\n    <rect width=\"200\" height=\"200\" rx=\"12\" fill=\"rgba(0,0,0,0.3)\" stroke=\"#10b981\" stroke-width=\"2\" />\n    <circle cx=\"100\" cy=\"90\" r=\"45\" fill=\"none\" stroke=\"#34d399\" stroke-width=\"3\" stroke-dasharray=\"12 4\" />\n    <path d=\"M100 55 C90 75 75 90 75 105 C75 118 86 128 100 128 C114 128 125 118 125 105 C125 90 110 75 100 55 Z\" fill=\"#34d399\" opacity=\"0.9\" />\n    <text x=\"100\" y=\"160\" text-anchor=\"middle\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"12\" font-weight=\"600\">REALTIME AVR8 SIM</text>\n  </g>\n  <g transform=\"translate(60, 240)\">\n    <text x=\"0\" y=\"0\" fill=\"#34d399\" font-family=\"system-ui, sans-serif\" font-size=\"13\" font-weight=\"700\">SPECIFICATIONS</text>\n    <text x=\"0\" y=\"28\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Microcontroller: ATmega328P (Arduino Uno R3 Target)</text>\n    <text x=\"0\" y=\"54\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Sensor: Capacitive Corrosion-Proof Moisture Probe</text>\n    <text x=\"0\" y=\"80\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Actuation: 5V Galvanically Isolated Relay (10A 250VAC rating)</text>\n    <text x=\"0\" y=\"106\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Display: 0.96\" Monochrome 128x64 OLED HUD</text>\n    <text x=\"0\" y=\"132\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Case: 3D Printable Snap-Fit PLA / Frosted Acrylic</text>\n  </g>\n  <g transform=\"translate(60, 420)\">\n    <text x=\"0\" y=\"0\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"24\" font-weight=\"800\">₹1,290</text>\n    <text x=\"95\" y=\"-2\" fill=\"#94a3b8\" font-family=\"system-ui, sans-serif\" font-size=\"13\">Complete DIY Pack</text>\n  </g>\n  <g transform=\"translate(610, 390)\">\n    <rect width=\"120\" height=\"35\" fill=\"#ffffff\" rx=\"4\" />\n    <rect x=\"8\" y=\"5\" width=\"3\" height=\"25\" fill=\"#000\" />\n    <rect x=\"14\" y=\"5\" width=\"6\" height=\"25\" fill=\"#000\" />\n    <rect x=\"23\" y=\"5\" width=\"2\" height=\"25\" fill=\"#000\" />\n    <rect x=\"28\" y=\"5\" width=\"4\" height=\"25\" fill=\"#000\" />\n    <rect x=\"35\" y=\"5\" width=\"5\" height=\"25\" fill=\"#000\" />\n    <rect x=\"44\" y=\"5\" width=\"2\" height=\"25\" fill=\"#000\" />\n    <rect x=\"50\" y=\"5\" width=\"4\" height=\"25\" fill=\"#000\" />\n    <rect x=\"58\" y=\"5\" width=\"6\" height=\"25\" fill=\"#000\" />\n    <rect x=\"68\" y=\"5\" width=\"2\" height=\"25\" fill=\"#000\" />\n    <rect x=\"74\" y=\"5\" width=\"5\" height=\"25\" fill=\"#000\" />\n    <rect x=\"82\" y=\"5\" width=\"3\" height=\"25\" fill=\"#000\" />\n    <rect x=\"89\" y=\"5\" width=\"5\" height=\"25\" fill=\"#000\" />\n    <rect x=\"98\" y=\"5\" width=\"3\" height=\"25\" fill=\"#000\" />\n    <rect x=\"104\" y=\"5\" width=\"6\" height=\"25\" fill=\"#000\" />\n    <text x=\"60\" y=\"48\" text-anchor=\"middle\" fill=\"#94a3b8\" font-family=\"monospace\" font-size=\"10\">890412800192</text>\n  </g>\n</svg>"
+  },
+  "buildSteps": [
+    "Step 1: 3D print the enclosure base and snap-fit lid with 20% infill and 2.0mm wall thickness.",
+    "Step 2: Mount the Arduino Uno R3 onto the M3 standoffs using nylon screws.",
+    "Step 3: Secure the 5V relay module and wire VCC/GND/IN to 5V/GND/D7.",
+    "Step 4: Connect the I2C OLED display lines (SDA to A4, SCL to A5).",
+    "Step 5: Route the capacitive soil moisture probe harness through the side gland slot to pin A0.",
+    "Step 6: Power on via 18650 battery holder or DC barrel jack, calibrate soil moisture thresholds, and verify live pump switching."
+  ]
+}

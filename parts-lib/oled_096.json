@@ -1,0 +1,28 @@
+{
+  "id": "oled_096",
+  "aliases": ["oled", "oled-096", "ssd1306", "display_oled"],
+  "name": "0.96 inch I2C OLED Display (SSD1306 128x64)",
+  "category": "display",
+  "description": "Monochrome white/blue 128x64 graphic OLED display module with I2C interface (0x3C address).",
+  "dimensions": {
+    "width": 27.0,
+    "length": 27.0,
+    "height": 4.1,
+    "activeArea": { "width": 21.74, "length": 11.2 },
+    "mountingHoles": [
+      { "x": 2.0, "y": 2.0, "diameter": 2.2 },
+      { "x": 25.0, "y": 2.0, "diameter": 2.2 },
+      { "x": 2.0, "y": 25.0, "diameter": 2.2 },
+      { "x": 25.0, "y": 25.0, "diameter": 2.2 }
+    ]
+  },
+  "pins": [
+    { "name": "GND", "type": "ground", "description": "Ground supply", "voltage": 0.0 },
+    { "name": "VCC", "type": "power", "description": "Power supply (3.3V - 5V)", "voltage": 5.0 },
+    { "name": "SCL", "type": "i2c", "description": "I2C Clock Line", "voltage": 5.0 },
+    { "name": "SDA", "type": "i2c", "description": "I2C Data Line", "voltage": 5.0 }
+  ],
+  "priceInr": 220,
+  "operatingVoltage": 3.3,
+  "color": "#121212"
+}

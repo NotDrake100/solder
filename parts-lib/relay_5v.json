@@ -1,0 +1,29 @@
+{
+  "id": "relay_5v",
+  "aliases": ["relay", "relay-5v", "relay_module"],
+  "name": "5V 1-Channel Relay Module with Optocoupler",
+  "category": "actuator",
+  "description": "Electromechanical 10A 250VAC / 30VDC relay switch with optocoupler isolation and status LED.",
+  "dimensions": {
+    "width": 17.0,
+    "length": 43.0,
+    "height": 19.0,
+    "mountingHoles": [
+      { "x": 2.5, "y": 2.5, "diameter": 2.8 },
+      { "x": 14.5, "y": 2.5, "diameter": 2.8 },
+      { "x": 2.5, "y": 40.5, "diameter": 2.8 },
+      { "x": 14.5, "y": 40.5, "diameter": 2.8 }
+    ]
+  },
+  "pins": [
+    { "name": "VCC", "type": "power", "description": "5V Power Supply", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 },
+    { "name": "IN", "type": "digital", "description": "Trigger control signal (Active LOW or HIGH)", "voltage": 5.0 },
+    { "name": "NO", "type": "power", "description": "Normally Open AC/DC contact", "voltage": 250.0 },
+    { "name": "COM", "type": "power", "description": "Common contact terminal", "voltage": 250.0 },
+    { "name": "NC", "type": "power", "description": "Normally Closed AC/DC contact", "voltage": 250.0 }
+  ],
+  "priceInr": 80,
+  "operatingVoltage": 5.0,
+  "color": "#0D47A1"
+}

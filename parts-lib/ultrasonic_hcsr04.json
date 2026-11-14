@@ -1,0 +1,27 @@
+{
+  "id": "ultrasonic_hcsr04",
+  "aliases": ["ultrasonic-hcsr04", "hc-sr04", "hcsr04", "sonar"],
+  "name": "HC-SR04 Ultrasonic Distance Sensor",
+  "category": "sensor",
+  "description": "Non-contact ultrasonic range finder providing 2cm to 400cm measurement with 3mm accuracy.",
+  "dimensions": {
+    "width": 20.0,
+    "length": 45.0,
+    "height": 15.0,
+    "transducerDiameter": 16.0,
+    "transducerSpacing": 26.0,
+    "mountingHoles": [
+      { "x": 1.5, "y": 1.5, "diameter": 2.0 },
+      { "x": 43.5, "y": 1.5, "diameter": 2.0 }
+    ]
+  },
+  "pins": [
+    { "name": "VCC", "type": "power", "description": "5V Power supply", "voltage": 5.0 },
+    { "name": "TRIG", "type": "digital", "description": "Trigger Input: 10µs TTL pulse to start measurement", "voltage": 5.0 },
+    { "name": "ECHO", "type": "digital", "description": "Echo Output: Pulse width represents distance (t / 58 = cm)", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 }
+  ],
+  "priceInr": 110,
+  "operatingVoltage": 5.0,
+  "color": "#1565C0"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "dht11",
+  "aliases": ["dht11-sensor", "dht", "temp_humidity_dht11"],
+  "name": "DHT11 Digital Temperature & Humidity Sensor",
+  "category": "sensor",
+  "description": "Composite digital sensor providing calibrated temperature (0-50°C ±2°C) and relative humidity (20-90% RH ±5%).",
+  "dimensions": {
+    "width": 12.0,
+    "length": 15.5,
+    "height": 5.5,
+    "breakoutDimensions": { "width": 14.0, "length": 28.0, "height": 8.0 },
+    "mountingHoles": [
+      { "x": 7.0, "y": 24.0, "diameter": 3.0 }
+    ]
+  },
+  "pins": [
+    { "name": "VCC", "type": "power", "description": "Power supply (3.3V - 5V)", "voltage": 5.0 },
+    { "name": "DATA", "type": "digital", "description": "Single-wire bidirectional serial data bus", "voltage": 5.0 },
+    { "name": "NC", "type": "ground", "description": "No connection / internal", "voltage": 0.0 },
+    { "name": "GND", "type": "ground", "description": "Ground reference", "voltage": 0.0 }
+  ],
+  "priceInr": 110,
+  "operatingVoltage": 5.0,
+  "color": "#0288D1"
+}

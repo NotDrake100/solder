@@ -1,0 +1,920 @@
+[
+  {
+    "id": "arduino_uno",
+    "aliases": [
+      "uno",
+      "arduino-uno",
+      "arduino_uno_r3"
+    ],
+    "name": "Arduino Uno R3",
+    "category": "mcu",
+    "description": "ATmega328P microcontroller board with 14 digital I/O pins, 6 analog inputs, 16 MHz quartz crystal.",
+    "dimensions": {
+      "width": 53.4,
+      "length": 68.6,
+      "height": 15,
+      "mountingHoles": [
+        {
+          "x": 14,
+          "y": 2.5,
+          "diameter": 3.2
+        },
+        {
+          "x": 15.2,
+          "y": 50.8,
+          "diameter": 3.2
+        },
+        {
+          "x": 66,
+          "y": 7.6,
+          "diameter": 3.2
+        },
+        {
+          "x": 66,
+          "y": 35.5,
+          "diameter": 3.2
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "D0",
+        "type": "uart",
+        "description": "RX (Serial Receive)",
+        "voltage": 5
+      },
+      {
+        "name": "D1",
+        "type": "uart",
+        "description": "TX (Serial Transmit)",
+        "voltage": 5
+      },
+      {
+        "name": "D2",
+        "type": "digital",
+        "description": "Digital Pin 2 / External Interrupt 0",
+        "voltage": 5
+      },
+      {
+        "name": "D3",
+        "type": "pwm",
+        "description": "PWM Pin 3 / External Interrupt 1",
+        "voltage": 5
+      },
+      {
+        "name": "D4",
+        "type": "digital",
+        "description": "Digital Pin 4",
+        "voltage": 5
+      },
+      {
+        "name": "D5",
+        "type": "pwm",
+        "description": "PWM Pin 5",
+        "voltage": 5
+      },
+      {
+        "name": "D6",
+        "type": "pwm",
+        "description": "PWM Pin 6",
+        "voltage": 5
+      },
+      {
+        "name": "D7",
+        "type": "digital",
+        "description": "Digital Pin 7",
+        "voltage": 5
+      },
+      {
+        "name": "D8",
+        "type": "digital",
+        "description": "Digital Pin 8",
+        "voltage": 5
+      },
+      {
+        "name": "D9",
+        "type": "pwm",
+        "description": "PWM Pin 9",
+        "voltage": 5
+      },
+      {
+        "name": "D10",
+        "type": "pwm",
+        "description": "PWM Pin 10 / SPI SS",
+        "voltage": 5
+      },
+      {
+        "name": "D11",
+        "type": "pwm",
+        "description": "PWM Pin 11 / SPI MOSI",
+        "voltage": 5
+      },
+      {
+        "name": "D12",
+        "type": "digital",
+        "description": "Digital Pin 12 / SPI MISO",
+        "voltage": 5
+      },
+      {
+        "name": "D13",
+        "type": "digital",
+        "description": "Digital Pin 13 / SPI SCK / Built-in LED",
+        "voltage": 5
+      },
+      {
+        "name": "A0",
+        "type": "analog",
+        "description": "Analog Input 0 (0-5V)",
+        "voltage": 5
+      },
+      {
+        "name": "A1",
+        "type": "analog",
+        "description": "Analog Input 1 (0-5V)",
+        "voltage": 5
+      },
+      {
+        "name": "A2",
+        "type": "analog",
+        "description": "Analog Input 2 (0-5V)",
+        "voltage": 5
+      },
+      {
+        "name": "A3",
+        "type": "analog",
+        "description": "Analog Input 3 (0-5V)",
+        "voltage": 5
+      },
+      {
+        "name": "A4",
+        "type": "i2c",
+        "description": "Analog Input 4 / I2C SDA",
+        "voltage": 5
+      },
+      {
+        "name": "A5",
+        "type": "i2c",
+        "description": "Analog Input 5 / I2C SCL",
+        "voltage": 5
+      },
+      {
+        "name": "5V",
+        "type": "power",
+        "description": "Regulated 5V output power",
+        "voltage": 5
+      },
+      {
+        "name": "3V3",
+        "type": "power",
+        "description": "Regulated 3.3V output power",
+        "voltage": 3.3
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground supply reference",
+        "voltage": 0
+      },
+      {
+        "name": "VIN",
+        "type": "power",
+        "description": "Raw voltage input (7-12V)",
+        "voltage": 12
+      },
+      {
+        "name": "RESET",
+        "type": "digital",
+        "description": "Reset pin (active LOW)",
+        "voltage": 5
+      }
+    ],
+    "priceInr": 450,
+    "operatingVoltage": 5,
+    "color": "#00979C"
+  },
+  {
+    "id": "esp32_devkit",
+    "aliases": [
+      "esp32",
+      "esp32-devkit",
+      "esp32_nodemcu"
+    ],
+    "name": "ESP32 DevKit V1",
+    "category": "mcu",
+    "description": "Dual-core Xtensa 32-bit LX6 microcontroller with built-in 2.4 GHz Wi-Fi and Bluetooth BLE 4.2.",
+    "dimensions": {
+      "width": 28.5,
+      "length": 51.5,
+      "height": 12,
+      "mountingHoles": [
+        {
+          "x": 2.5,
+          "y": 2.5,
+          "diameter": 2.5
+        },
+        {
+          "x": 26,
+          "y": 2.5,
+          "diameter": 2.5
+        },
+        {
+          "x": 2.5,
+          "y": 49,
+          "diameter": 2.5
+        },
+        {
+          "x": 26,
+          "y": 49,
+          "diameter": 2.5
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "3V3",
+        "type": "power",
+        "description": "3.3V Power Out",
+        "voltage": 3.3
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      },
+      {
+        "name": "D15",
+        "type": "digital",
+        "description": "GPIO 15 / PWM / ADC2_CH3",
+        "voltage": 3.3
+      },
+      {
+        "name": "D2",
+        "type": "digital",
+        "description": "GPIO 2 / Onboard LED / ADC2_CH2",
+        "voltage": 3.3
+      },
+      {
+        "name": "D4",
+        "type": "digital",
+        "description": "GPIO 4 / ADC2_CH0",
+        "voltage": 3.3
+      },
+      {
+        "name": "RX2",
+        "type": "uart",
+        "description": "GPIO 16 / UART2 RX",
+        "voltage": 3.3
+      },
+      {
+        "name": "TX2",
+        "type": "uart",
+        "description": "GPIO 17 / UART2 TX",
+        "voltage": 3.3
+      },
+      {
+        "name": "D5",
+        "type": "digital",
+        "description": "GPIO 5 / VSPI CS",
+        "voltage": 3.3
+      },
+      {
+        "name": "D18",
+        "type": "digital",
+        "description": "GPIO 18 / VSPI SCK",
+        "voltage": 3.3
+      },
+      {
+        "name": "D19",
+        "type": "digital",
+        "description": "GPIO 19 / VSPI MISO",
+        "voltage": 3.3
+      },
+      {
+        "name": "D21",
+        "type": "i2c",
+        "description": "GPIO 21 / I2C SDA",
+        "voltage": 3.3
+      },
+      {
+        "name": "RX0",
+        "type": "uart",
+        "description": "GPIO 3 / UART0 RX",
+        "voltage": 3.3
+      },
+      {
+        "name": "TX0",
+        "type": "uart",
+        "description": "GPIO 1 / UART0 TX",
+        "voltage": 3.3
+      },
+      {
+        "name": "D22",
+        "type": "i2c",
+        "description": "GPIO 22 / I2C SCL",
+        "voltage": 3.3
+      },
+      {
+        "name": "D23",
+        "type": "digital",
+        "description": "GPIO 23 / VSPI MOSI",
+        "voltage": 3.3
+      },
+      {
+        "name": "EN",
+        "type": "digital",
+        "description": "Reset Button / Enable",
+        "voltage": 3.3
+      },
+      {
+        "name": "VP",
+        "type": "analog",
+        "description": "GPIO 36 / ADC1_CH0 (Input only)",
+        "voltage": 3.3
+      },
+      {
+        "name": "VN",
+        "type": "analog",
+        "description": "GPIO 39 / ADC1_CH3 (Input only)",
+        "voltage": 3.3
+      },
+      {
+        "name": "D34",
+        "type": "analog",
+        "description": "GPIO 34 / ADC1_CH6 (Input only)",
+        "voltage": 3.3
+      },
+      {
+        "name": "D35",
+        "type": "analog",
+        "description": "GPIO 35 / ADC1_CH7 (Input only)",
+        "voltage": 3.3
+      },
+      {
+        "name": "D32",
+        "type": "analog",
+        "description": "GPIO 32 / ADC1_CH4 / Touch 9",
+        "voltage": 3.3
+      },
+      {
+        "name": "D33",
+        "type": "analog",
+        "description": "GPIO 33 / ADC1_CH5 / Touch 8",
+        "voltage": 3.3
+      },
+      {
+        "name": "D25",
+        "type": "analog",
+        "description": "GPIO 25 / DAC1 / ADC2_CH8",
+        "voltage": 3.3
+      },
+      {
+        "name": "D26",
+        "type": "analog",
+        "description": "GPIO 26 / DAC2 / ADC2_CH9",
+        "voltage": 3.3
+      },
+      {
+        "name": "D27",
+        "type": "digital",
+        "description": "GPIO 27 / ADC2_CH7",
+        "voltage": 3.3
+      },
+      {
+        "name": "D14",
+        "type": "digital",
+        "description": "GPIO 14 / ADC2_CH6",
+        "voltage": 3.3
+      },
+      {
+        "name": "D12",
+        "type": "digital",
+        "description": "GPIO 12 / ADC2_CH5",
+        "voltage": 3.3
+      },
+      {
+        "name": "D13",
+        "type": "digital",
+        "description": "GPIO 13 / ADC2_CH4",
+        "voltage": 3.3
+      },
+      {
+        "name": "VIN",
+        "type": "power",
+        "description": "External 5V supply input",
+        "voltage": 5
+      }
+    ],
+    "priceInr": 380,
+    "operatingVoltage": 3.3,
+    "color": "#1A1A1A"
+  },
+  {
+    "id": "sg90_servo",
+    "aliases": [
+      "sg90",
+      "servo",
+      "sg90-servo"
+    ],
+    "name": "TowerPro SG90 9g Micro Servo",
+    "category": "actuator",
+    "description": "Miniature 180-degree analog servo motor with 1.8 kg-cm stall torque at 4.8V.",
+    "dimensions": {
+      "width": 11.8,
+      "length": 22.2,
+      "height": 31,
+      "flangeLength": 32.2,
+      "mountingHoles": [
+        {
+          "x": 5.9,
+          "y": 1.5,
+          "diameter": 2
+        },
+        {
+          "x": 5.9,
+          "y": 30.5,
+          "diameter": 2
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "PWM",
+        "type": "pwm",
+        "description": "PWM control signal (Orange wire, 50Hz, 1-2ms pulse)",
+        "voltage": 5
+      },
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "Positive power input (Red wire, 4.8V - 6V)",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground supply (Brown wire)",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 120,
+    "operatingVoltage": 5,
+    "color": "#1E88E5"
+  },
+  {
+    "id": "relay_5v",
+    "aliases": [
+      "relay",
+      "relay-5v",
+      "relay_module"
+    ],
+    "name": "5V 1-Channel Relay Module with Optocoupler",
+    "category": "actuator",
+    "description": "Electromechanical 10A 250VAC / 30VDC relay switch with optocoupler isolation and status LED.",
+    "dimensions": {
+      "width": 17,
+      "length": 43,
+      "height": 19,
+      "mountingHoles": [
+        {
+          "x": 2.5,
+          "y": 2.5,
+          "diameter": 2.8
+        },
+        {
+          "x": 14.5,
+          "y": 2.5,
+          "diameter": 2.8
+        },
+        {
+          "x": 2.5,
+          "y": 40.5,
+          "diameter": 2.8
+        },
+        {
+          "x": 14.5,
+          "y": 40.5,
+          "diameter": 2.8
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "5V Power Supply",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      },
+      {
+        "name": "IN",
+        "type": "digital",
+        "description": "Trigger control signal (Active LOW or HIGH)",
+        "voltage": 5
+      },
+      {
+        "name": "NO",
+        "type": "power",
+        "description": "Normally Open AC/DC contact",
+        "voltage": 250
+      },
+      {
+        "name": "COM",
+        "type": "power",
+        "description": "Common contact terminal",
+        "voltage": 250
+      },
+      {
+        "name": "NC",
+        "type": "power",
+        "description": "Normally Closed AC/DC contact",
+        "voltage": 250
+      }
+    ],
+    "priceInr": 80,
+    "operatingVoltage": 5,
+    "color": "#0D47A1"
+  },
+  {
+    "id": "oled_096",
+    "aliases": [
+      "oled",
+      "oled-096",
+      "ssd1306",
+      "display_oled"
+    ],
+    "name": "0.96 inch I2C OLED Display (SSD1306 128x64)",
+    "category": "display",
+    "description": "Monochrome white/blue 128x64 graphic OLED display module with I2C interface (0x3C address).",
+    "dimensions": {
+      "width": 27,
+      "length": 27,
+      "height": 4.1,
+      "activeArea": {
+        "width": 21.74,
+        "length": 11.2
+      },
+      "mountingHoles": [
+        {
+          "x": 2,
+          "y": 2,
+          "diameter": 2.2
+        },
+        {
+          "x": 25,
+          "y": 2,
+          "diameter": 2.2
+        },
+        {
+          "x": 2,
+          "y": 25,
+          "diameter": 2.2
+        },
+        {
+          "x": 25,
+          "y": 25,
+          "diameter": 2.2
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground supply",
+        "voltage": 0
+      },
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "Power supply (3.3V - 5V)",
+        "voltage": 5
+      },
+      {
+        "name": "SCL",
+        "type": "i2c",
+        "description": "I2C Clock Line",
+        "voltage": 5
+      },
+      {
+        "name": "SDA",
+        "type": "i2c",
+        "description": "I2C Data Line",
+        "voltage": 5
+      }
+    ],
+    "priceInr": 220,
+    "operatingVoltage": 3.3,
+    "color": "#121212"
+  },
+  {
+    "id": "soil_moisture",
+    "aliases": [
+      "soil-moisture",
+      "moisture_sensor",
+      "soil_sensor"
+    ],
+    "name": "Capacitive / Resistive Soil Moisture Sensor",
+    "category": "sensor",
+    "description": "Corrosion-resistant probe measures volumetric water content in soil via analog voltage output.",
+    "dimensions": {
+      "width": 20,
+      "length": 60,
+      "height": 8,
+      "probeLength": 40,
+      "headDimensions": {
+        "width": 20,
+        "length": 20,
+        "height": 8
+      }
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "Power supply (3.3V - 5V)",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground supply reference",
+        "voltage": 0
+      },
+      {
+        "name": "AOUT",
+        "type": "analog",
+        "description": "Analog voltage output proportional to moisture",
+        "voltage": 5
+      },
+      {
+        "name": "DOUT",
+        "type": "digital",
+        "description": "Digital comparator output with onboard threshold potentiometer",
+        "voltage": 5
+      }
+    ],
+    "priceInr": 90,
+    "operatingVoltage": 5,
+    "color": "#2E7D32"
+  },
+  {
+    "id": "dht11",
+    "aliases": [
+      "dht11-sensor",
+      "dht",
+      "temp_humidity_dht11"
+    ],
+    "name": "DHT11 Digital Temperature & Humidity Sensor",
+    "category": "sensor",
+    "description": "Composite digital sensor providing calibrated temperature (0-50°C ±2°C) and relative humidity (20-90% RH ±5%).",
+    "dimensions": {
+      "width": 12,
+      "length": 15.5,
+      "height": 5.5,
+      "breakoutDimensions": {
+        "width": 14,
+        "length": 28,
+        "height": 8
+      },
+      "mountingHoles": [
+        {
+          "x": 7,
+          "y": 24,
+          "diameter": 3
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "Power supply (3.3V - 5V)",
+        "voltage": 5
+      },
+      {
+        "name": "DATA",
+        "type": "digital",
+        "description": "Single-wire bidirectional serial data bus",
+        "voltage": 5
+      },
+      {
+        "name": "NC",
+        "type": "ground",
+        "description": "No connection / internal",
+        "voltage": 0
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground reference",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 110,
+    "operatingVoltage": 5,
+    "color": "#0288D1"
+  },
+  {
+    "id": "mq135",
+    "aliases": [
+      "mq-135",
+      "air_quality_sensor",
+      "gas_sensor"
+    ],
+    "name": "MQ-135 Hazardous Gas & Air Quality Sensor",
+    "category": "sensor",
+    "description": "SnO2 gas sensor for detecting NH3, NOx, alcohol, benzene, smoke, and CO2 in ambient air.",
+    "dimensions": {
+      "width": 20,
+      "length": 35,
+      "height": 21,
+      "mountingHoles": [
+        {
+          "x": 2.5,
+          "y": 2.5,
+          "diameter": 3.2
+        },
+        {
+          "x": 17.5,
+          "y": 2.5,
+          "diameter": 3.2
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "5V Power Supply (Heating element requires 5V)",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      },
+      {
+        "name": "DOUT",
+        "type": "digital",
+        "description": "Digital threshold alarm output",
+        "voltage": 5
+      },
+      {
+        "name": "AOUT",
+        "type": "analog",
+        "description": "Analog voltage output proportional to gas concentration",
+        "voltage": 5
+      }
+    ],
+    "priceInr": 160,
+    "operatingVoltage": 5,
+    "color": "#795548"
+  },
+  {
+    "id": "battery_18650",
+    "aliases": [
+      "battery-18650",
+      "18650_holder",
+      "battery_holder"
+    ],
+    "name": "18650 Single-Cell Li-ion Battery Holder",
+    "category": "power",
+    "description": "Standard 1x 18650 Li-ion cell enclosure with gold-plated spring contacts and 150mm AWG26 lead wires.",
+    "dimensions": {
+      "width": 21,
+      "length": 75,
+      "height": 18,
+      "mountingHoles": [
+        {
+          "x": 10.5,
+          "y": 12,
+          "diameter": 3
+        },
+        {
+          "x": 10.5,
+          "y": 63,
+          "diameter": 3
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "POS",
+        "type": "power",
+        "description": "Positive output lead (Red, 3.7V nominal / 4.2V max)",
+        "voltage": 3.7
+      },
+      {
+        "name": "NEG",
+        "type": "ground",
+        "description": "Negative return lead (Black, 0V)",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 50,
+    "operatingVoltage": 3.7,
+    "color": "#212121"
+  },
+  {
+    "id": "piezo_buzzer",
+    "aliases": [
+      "piezo-buzzer",
+      "buzzer",
+      "active_buzzer",
+      "passive_buzzer"
+    ],
+    "name": "5V Piezoelectric Acoustic Buzzer",
+    "category": "actuator",
+    "description": "Compact audio transducer producing 85dB tone output at 2.3kHz with 7.6mm pin pitch.",
+    "dimensions": {
+      "width": 12,
+      "length": 12,
+      "height": 9.5,
+      "pinPitch": 7.6
+    },
+    "pins": [
+      {
+        "name": "POS",
+        "type": "pwm",
+        "description": "Positive terminal (+) / Tone PWM signal",
+        "voltage": 5
+      },
+      {
+        "name": "NEG",
+        "type": "ground",
+        "description": "Negative return (-)",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 30,
+    "operatingVoltage": 5,
+    "color": "#1B1B1B"
+  },
+  {
+    "id": "ultrasonic_hcsr04",
+    "aliases": [
+      "ultrasonic-hcsr04",
+      "hc-sr04",
+      "hcsr04",
+      "sonar"
+    ],
+    "name": "HC-SR04 Ultrasonic Distance Sensor",
+    "category": "sensor",
+    "description": "Non-contact ultrasonic range finder providing 2cm to 400cm measurement with 3mm accuracy.",
+    "dimensions": {
+      "width": 20,
+      "length": 45,
+      "height": 15,
+      "transducerDiameter": 16,
+      "transducerSpacing": 26,
+      "mountingHoles": [
+        {
+          "x": 1.5,
+          "y": 1.5,
+          "diameter": 2
+        },
+        {
+          "x": 43.5,
+          "y": 1.5,
+          "diameter": 2
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "VCC",
+        "type": "power",
+        "description": "5V Power supply",
+        "voltage": 5
+      },
+      {
+        "name": "TRIG",
+        "type": "digital",
+        "description": "Trigger Input: 10µs TTL pulse to start measurement",
+        "voltage": 5
+      },
+      {
+        "name": "ECHO",
+        "type": "digital",
+        "description": "Echo Output: Pulse width represents distance (t / 58 = cm)",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 110,
+    "operatingVoltage": 5,
+    "color": "#1565C0"
+  }
+]

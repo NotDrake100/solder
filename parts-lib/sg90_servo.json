@@ -1,0 +1,25 @@
+{
+  "id": "sg90_servo",
+  "aliases": ["sg90", "servo", "sg90-servo"],
+  "name": "TowerPro SG90 9g Micro Servo",
+  "category": "actuator",
+  "description": "Miniature 180-degree analog servo motor with 1.8 kg-cm stall torque at 4.8V.",
+  "dimensions": {
+    "width": 11.8,
+    "length": 22.2,
+    "height": 31.0,
+    "flangeLength": 32.2,
+    "mountingHoles": [
+      { "x": 5.9, "y": 1.5, "diameter": 2.0 },
+      { "x": 5.9, "y": 30.5, "diameter": 2.0 }
+    ]
+  },
+  "pins": [
+    { "name": "PWM", "type": "pwm", "description": "PWM control signal (Orange wire, 50Hz, 1-2ms pulse)", "voltage": 5.0 },
+    { "name": "VCC", "type": "power", "description": "Positive power input (Red wire, 4.8V - 6V)", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Ground supply (Brown wire)", "voltage": 0.0 }
+  ],
+  "priceInr": 120,
+  "operatingVoltage": 5.0,
+  "color": "#1E88E5"
+}

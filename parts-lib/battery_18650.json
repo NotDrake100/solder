@@ -1,0 +1,23 @@
+{
+  "id": "battery_18650",
+  "aliases": ["battery-18650", "18650_holder", "battery_holder"],
+  "name": "18650 Single-Cell Li-ion Battery Holder",
+  "category": "power",
+  "description": "Standard 1x 18650 Li-ion cell enclosure with gold-plated spring contacts and 150mm AWG26 lead wires.",
+  "dimensions": {
+    "width": 21.0,
+    "length": 75.0,
+    "height": 18.0,
+    "mountingHoles": [
+      { "x": 10.5, "y": 12.0, "diameter": 3.0 },
+      { "x": 10.5, "y": 63.0, "diameter": 3.0 }
+    ]
+  },
+  "pins": [
+    { "name": "POS", "type": "power", "description": "Positive output lead (Red, 3.7V nominal / 4.2V max)", "voltage": 3.7 },
+    { "name": "NEG", "type": "ground", "description": "Negative return lead (Black, 0V)", "voltage": 0.0 }
+  ],
+  "priceInr": 50,
+  "operatingVoltage": 3.7,
+  "color": "#212121"
+}

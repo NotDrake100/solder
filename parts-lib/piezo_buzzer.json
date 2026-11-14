@@ -1,0 +1,20 @@
+{
+  "id": "piezo_buzzer",
+  "aliases": ["piezo-buzzer", "buzzer", "active_buzzer", "passive_buzzer"],
+  "name": "5V Piezoelectric Acoustic Buzzer",
+  "category": "actuator",
+  "description": "Compact audio transducer producing 85dB tone output at 2.3kHz with 7.6mm pin pitch.",
+  "dimensions": {
+    "width": 12.0,
+    "length": 12.0,
+    "height": 9.5,
+    "pinPitch": 7.6
+  },
+  "pins": [
+    { "name": "POS", "type": "pwm", "description": "Positive terminal (+) / Tone PWM signal", "voltage": 5.0 },
+    { "name": "NEG", "type": "ground", "description": "Negative return (-)", "voltage": 0.0 }
+  ],
+  "priceInr": 30,
+  "operatingVoltage": 5.0,
+  "color": "#1B1B1B"
+}

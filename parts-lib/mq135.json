@@ -1,0 +1,25 @@
+{
+  "id": "mq135",
+  "aliases": ["mq-135", "air_quality_sensor", "gas_sensor"],
+  "name": "MQ-135 Hazardous Gas & Air Quality Sensor",
+  "category": "sensor",
+  "description": "SnO2 gas sensor for detecting NH3, NOx, alcohol, benzene, smoke, and CO2 in ambient air.",
+  "dimensions": {
+    "width": 20.0,
+    "length": 35.0,
+    "height": 21.0,
+    "mountingHoles": [
+      { "x": 2.5, "y": 2.5, "diameter": 3.2 },
+      { "x": 17.5, "y": 2.5, "diameter": 3.2 }
+    ]
+  },
+  "pins": [
+    { "name": "VCC", "type": "power", "description": "5V Power Supply (Heating element requires 5V)", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 },
+    { "name": "DOUT", "type": "digital", "description": "Digital threshold alarm output", "voltage": 5.0 },
+    { "name": "AOUT", "type": "analog", "description": "Analog voltage output proportional to gas concentration", "voltage": 5.0 }
+  ],
+  "priceInr": 160,
+  "operatingVoltage": 5.0,
+  "color": "#795548"
+}

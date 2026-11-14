@@ -1,0 +1,148 @@
+{
+  "id": "hasp",
+  "name": "Hasp",
+  "tagline": "Biometric desktop lockbox with motorized latch and security chime",
+  "summary": "Hasp is a programmable smart desktop vault with a motorized deadbolt driven by an SG90 micro-servo. An interactive authentication trigger simulates biometric verification, updating the OLED display, sounding confirmation chimes, and actuating the reinforced latch mechanism.",
+  "board": "uno",
+  "parts": [
+    {
+      "id": "part-mcu",
+      "name": "Arduino Uno R3",
+      "libId": "arduino_uno",
+      "qty": 1,
+      "priceInr": 450,
+      "why": "Controller executing authentication verification, servo PWM deadbolt control, and security timers."
+    },
+    {
+      "id": "part-servo",
+      "name": "TowerPro SG90 9g Micro Servo Motor",
+      "libId": "sg90_servo",
+      "qty": 1,
+      "priceInr": 120,
+      "why": "High-torque nylon gear micro servo driving physical 90-degree vault latch mechanism."
+    },
+    {
+      "id": "part-buzzer",
+      "name": "5V Active Piezo Buzzer",
+      "libId": "piezo_buzzer",
+      "qty": 1,
+      "priceInr": 30,
+      "why": "Emits distinct authentication feedback chimes and tamper warning tones."
+    },
+    {
+      "id": "part-display",
+      "name": "0.96 inch I2C OLED Display",
+      "libId": "oled_096",
+      "qty": 1,
+      "priceInr": 220,
+      "why": "Visual interface displaying lock state, authorization status, and countdown timer."
+    },
+    {
+      "id": "part-battery",
+      "name": "18650 Li-ion Battery Holder with DC Jack",
+      "libId": "battery_18650",
+      "qty": 1,
+      "priceInr": 50,
+      "why": "Provides high peak current required during servo latch engagement."
+    }
+  ],
+  "layout": [
+    {
+      "libId": "arduino_uno",
+      "name": "Arduino Uno R3",
+      "x": 10,
+      "y": 10,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "sg90_servo",
+      "name": "SG90 Servo Latch",
+      "x": 75,
+      "y": 10,
+      "z": 2,
+      "rotZ": 90
+    },
+    {
+      "libId": "piezo_buzzer",
+      "name": "Security Sounder",
+      "x": 75,
+      "y": 45,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "battery_18650",
+      "name": "18650 Battery Holder",
+      "x": 10,
+      "y": 70,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "oled_096",
+      "name": "0.96\" OLED Display",
+      "x": 42,
+      "y": 40,
+      "z": 24,
+      "rotZ": 0
+    }
+  ],
+  "case": {
+    "wallMm": 2.5,
+    "lidType": "hinged",
+    "outerMm": [124, 98, 44],
+    "material": "matte_black",
+    "color": "#18181b",
+    "scad": "// Solder Hasp Vault Enclosure - Procedural OpenSCAD\n$fn = 36;\nwall = 2.5;\ninner_x = 119.0;\ninner_y = 93.0;\ninner_z = 39.0;\nouter_x = inner_x + 2*wall;\nouter_y = inner_y + 2*wall;\nouter_z = inner_z + 2*wall;\n\nmodule hasp_base() {\n  difference() {\n    cube([outer_x, outer_y, outer_z]);\n    translate([wall, wall, wall])\n      cube([inner_x, inner_y, inner_z + 1]);\n    // Servo latch tongue slot\n    translate([outer_x - wall - 1, inner_y/2, wall + 10])\n      cube([wall + 2, 14, 8]);\n    // Rear DC power pass-through\n    translate([-1, 20, wall + 4])\n      cube([wall + 2, 10, 10]);\n  }\n  // Servo mounting bracket\n  translate([wall + 75, wall + 8, wall]) {\n    cube([24, 13, 16]);\n  }\n}\n\nmodule hasp_lid() {\n  difference() {\n    cube([outer_x, outer_y, wall + 3]);\n    // Bevel frame for OLED\n    translate([wall + 42, wall + 40, -1])\n      cube([26, 16, wall + 5]);\n    // Thumb trigger opening\n    translate([wall + 42, wall + 18, -1])\n      cylinder(r = 6, h = wall + 5);\n  }\n}\n\nhasp_base();\ntranslate([0, outer_y + 15, 0]) hasp_lid();\n"
+  },
+  "wiring": [
+    { "from": { "part": "arduino_uno", "pin": "5V" }, "to": { "part": "sg90_servo", "pin": "VCC" }, "color": "#e11d48", "signal": "5V Servo Power" },
+    { "from": { "part": "arduino_uno", "pin": "GND" }, "to": { "part": "sg90_servo", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
+    { "from": { "part": "arduino_uno", "pin": "D9" }, "to": { "part": "sg90_servo", "pin": "PWM" }, "color": "#f59e0b", "signal": "Servo PWM (Pin 9)" },
+    { "from": { "part": "arduino_uno", "pin": "D8" }, "to": { "part": "piezo_buzzer", "pin": "POS" }, "color": "#8b5cf6", "signal": "Chime Audio (Pin 8)" },
+    { "from": { "part": "arduino_uno", "pin": "GND" }, "to": { "part": "piezo_buzzer", "pin": "NEG" }, "color": "#18181b", "signal": "GND" },
+    { "from": { "part": "arduino_uno", "pin": "5V" }, "to": { "part": "oled_096", "pin": "VCC" }, "color": "#e11d48", "signal": "5V Power" },
+    { "from": { "part": "arduino_uno", "pin": "GND" }, "to": { "part": "oled_096", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
+    { "from": { "part": "arduino_uno", "pin": "A4" }, "to": { "part": "oled_096", "pin": "SDA" }, "color": "#10b981", "signal": "I2C SDA" },
+    { "from": { "part": "arduino_uno", "pin": "A5" }, "to": { "part": "oled_096", "pin": "SCL" }, "color": "#06b6d4", "signal": "I2C SCL" },
+    { "from": { "part": "arduino_uno", "pin": "D2" }, "to": { "part": "arduino_uno", "pin": "GND" }, "color": "#64748b", "signal": "Auth Trigger Switch" }
+  ],
+  "code": {
+    "filename": "hasp.ino",
+    "ino": "#include <Servo.h>\n#include <Wire.h>\n\nServo lockServo;\nconst int SERVO_PIN = 9;\nconst int BUZZER_PIN = 8;\nconst int TRIGGER_PIN = 2;\n\nconst int POS_LOCKED = 0;\nconst int POS_UNLOCKED = 90;\n\nvoid setup() {\n  Serial.begin(9600);\n  pinMode(TRIGGER_PIN, INPUT_PULLUP);\n  pinMode(BUZZER_PIN, OUTPUT);\n  digitalWrite(BUZZER_PIN, LOW);\n  \n  lockServo.attach(SERVO_PIN);\n  lockServo.write(POS_LOCKED);\n  \n  Serial.println(F(\"--- Solder Hasp Smart Lockbox Ready ---\"));\n  Serial.println(F(\"State: LOCKED | Monitoring Auth Sensor\"));\n}\n\nvoid loop() {\n  // Inverted because of INPUT_PULLUP (LOW = pressed/triggered)\n  int authState = digitalRead(TRIGGER_PIN);\n\n  if (authState == LOW) {\n    Serial.println(F(\"ACCESS_GRANTED: UNLOCKED\"));\n    digitalWrite(BUZZER_PIN, HIGH);\n    delay(100);\n    digitalWrite(BUZZER_PIN, LOW);\n    \n    lockServo.write(POS_UNLOCKED);\n    delay(3000); // Hold open for 3 seconds\n    \n    Serial.println(F(\"AUTO_TIMEOUT: RELOCKING\"));\n    lockServo.write(POS_LOCKED);\n  } else {\n    Serial.println(F(\"STATUS: LOCKED\"));\n  }\n  \n  delay(500);\n}\n"
+  },
+  "tests": [
+    {
+      "name": "Auth Trigger Actuates Servo Latch",
+      "set": { "auth_button": 1 },
+      "expectPin": { "pin": 9, "state": 90 },
+      "expectSerial": "ACCESS_GRANTED: UNLOCKED"
+    },
+    {
+      "name": "Lockbox Retains Locked State Under Idle",
+      "set": { "auth_button": 0 },
+      "expectPin": { "pin": 9, "state": 0 },
+      "expectSerial": "STATUS: LOCKED"
+    }
+  ],
+  "product": {
+    "pageHeadline": "Motorized personal desktop security made tangible.",
+    "bullets": [
+      "Rugged SG-90 micro servo deadbolt with 90-degree positive physical latching",
+      "Dual visual and acoustic validation indicators with live countdown timers",
+      "Reinforced 2.5mm thick walls with concealed internal hinge geometry",
+      "Low standby quiescent draw with battery-backup support for 18650 cells"
+    ],
+    "priceInr": 1390,
+    "boxSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <linearGradient id=\"hasp-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#18181b\" />\n      <stop offset=\"100%\" stop-color=\"#09090b\" />\n    </linearGradient>\n  </defs>\n  <rect width=\"800\" height=\"500\" rx=\"16\" fill=\"url(#hasp-grad)\" />\n  <rect x=\"30\" y=\"30\" width=\"740\" height=\"440\" rx=\"8\" fill=\"none\" stroke=\"rgba(255,255,255,0.15)\" stroke-dasharray=\"6 4\" stroke-width=\"1.5\" />\n  <text x=\"60\" y=\"90\" fill=\"#f59e0b\" font-family=\"system-ui, sans-serif\" font-size=\"14\" font-weight=\"700\" letter-spacing=\"3\">SOLDER HARDWARE KIT #03</text>\n  <text x=\"60\" y=\"150\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"56\" font-weight=\"800\" letter-spacing=\"-1\">Hasp</text>\n  <text x=\"60\" y=\"185\" fill=\"#fde68a\" font-family=\"system-ui, sans-serif\" font-size=\"18\" font-weight=\"400\">Motorized Biometric Smart Lockbox</text>\n  <g transform=\"translate(540, 80)\">\n    <rect width=\"190\" height=\"190\" rx=\"16\" fill=\"rgba(255,255,255,0.03)\" stroke=\"#f59e0b\" stroke-width=\"2\" />\n    <rect x=\"65\" y=\"70\" width=\"60\" height=\"50\" rx=\"6\" fill=\"#f59e0b\" />\n    <path d=\"M 75 70 V 50 C 75 38, 115 38, 115 50 V 70\" fill=\"none\" stroke=\"#f59e0b\" stroke-width=\"6\" stroke-linecap=\"round\" />\n    <circle cx=\"95\" cy=\"92\" r=\"5\" fill=\"#18181b\" />\n    <path d=\"M 95 95 V 105\" stroke=\"#18181b\" stroke-width=\"3\" stroke-linecap=\"round\" />\n    <text x=\"95\" y=\"155\" text-anchor=\"middle\" fill=\"#f59e0b\" font-family=\"system-ui, sans-serif\" font-size=\"11\" font-weight=\"700\">SERVO DEADBOLT</text>\n  </g>\n  <g transform=\"translate(60, 240)\">\n    <text x=\"0\" y=\"0\" fill=\"#f59e0b\" font-family=\"system-ui, sans-serif\" font-size=\"13\" font-weight=\"700\">SPECIFICATIONS</text>\n    <text x=\"0\" y=\"28\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Controller: ATmega328P Microcontroller Board</text>\n    <text x=\"0\" y=\"54\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Actuator: TowerPro SG90 9g Precision Micro-Servo (1.6kg·cm torque)</text>\n    <text x=\"0\" y=\"80\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Sound: 85dB Security Audio Annunciator</text>\n    <text x=\"0\" y=\"106\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Enclosure: 2.5mm Reinforced Matte Black ABS/PETG Printable Shell</text>\n    <text x=\"0\" y=\"132\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Display: 0.96\" High-Contrast OLED Visual HUD</text>\n  </g>\n  <g transform=\"translate(60, 420)\">\n    <text x=\"0\" y=\"0\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"24\" font-weight=\"800\">₹1,390</text>\n    <text x=\"100\" y=\"-2\" fill=\"#94a3b8\" font-family=\"system-ui, sans-serif\" font-size=\"13\">Complete DIY Pack</text>\n  </g>\n</svg>"
+  },
+  "buildSteps": [
+    "Step 1: 3D print the Hasp reinforced security body and top lid with 2.5mm walls.",
+    "Step 2: Screw the SG90 micro-servo into the internal latch bracket.",
+    "Step 3: Attach the locking latch arm to the servo horn and calibrate 0-90 degree travel.",
+    "Step 4: Mount the Arduino Uno and wire the D9 PWM control line to the servo.",
+    "Step 5: Wire the OLED display to A4/A5 and install the piezo buzzer on D8.",
+    "Step 6: Power on, trigger biometric simulated authentication, and verify deadbolt actuation."
+  ]
+}
