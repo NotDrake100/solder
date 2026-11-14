@@ -21,7 +21,17 @@ async function getCompileModule() {
 export async function runAgentLoop(buildData, emit) {
   const timestamp = () => Date.now();
 
-  // 1. Generation Step
+  // 1. Reading your idea
+  emit({
+    step: 'reading',
+    stage: 'reading',
+    label: 'Reading your idea',
+    status: 'success',
+    detail: `Analyzing hardware architecture for "${buildData.name}" (${buildData.tagline || 'Custom circuit'})`,
+    timestamp: timestamp()
+  });
+
+  // Backward-compatible generate step
   emit({
     step: 'generate',
     status: 'success',
@@ -29,9 +39,45 @@ export async function runAgentLoop(buildData, emit) {
     timestamp: timestamp()
   });
 
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise(r => setTimeout(r, 400));
 
-  // 2. Compilation Step
+  // 2. Picking parts
+  emit({
+    step: 'parts',
+    stage: 'parts',
+    label: 'Picking parts',
+    status: 'success',
+    detail: `Selected ${buildData.parts?.length || 4} components: ${buildData.parts?.map(p => p.name).slice(0, 3).join(', ')}${(buildData.parts?.length || 0) > 3 ? '...' : ''} (₹${buildData.product?.priceInr || 890} INR)`,
+    parts: buildData.parts,
+    timestamp: timestamp()
+  });
+
+  await new Promise(r => setTimeout(r, 400));
+
+  // 3. Wiring
+  emit({
+    step: 'wiring',
+    stage: 'wiring',
+    label: 'Wiring',
+    status: 'success',
+    detail: `Routed ${buildData.wiring?.length || 8} pin connections (5V, GND, I2C, signals)`,
+    wiring: buildData.wiring,
+    timestamp: timestamp()
+  });
+
+  await new Promise(r => setTimeout(r, 400));
+
+  // 4. Writing firmware
+  emit({
+    step: 'firmware',
+    stage: 'firmware',
+    label: 'Writing firmware',
+    status: 'pending',
+    detail: `Synthesizing and verifying Arduino sketch (${buildData.code?.filename || 'sketch.ino'})...`,
+    code: buildData.code,
+    timestamp: timestamp()
+  });
+
   emit({
     step: 'compile',
     status: 'pending',
@@ -144,6 +190,18 @@ export async function runAgentLoop(buildData, emit) {
   const wall = buildData.case?.wallMm || 2.0;
   const partsCount = buildData.parts?.length || 4;
 
+  // 5. Designing the case
+  emit({
+    step: 'case',
+    stage: 'case',
+    label: 'Designing the case',
+    status: 'success',
+    detail: `Generated parametric translucent shell (${outer[0]}x${outer[1]}x${outer[2]}mm, wall: ${wall}mm, snap-fit lid)`,
+    case: buildData.case,
+    layout: buildData.layout,
+    timestamp: timestamp()
+  });
+
   emit({
     step: 'fitcheck',
     status: 'success',
@@ -151,9 +209,19 @@ export async function runAgentLoop(buildData, emit) {
     timestamp: timestamp()
   });
 
-  await new Promise(r => setTimeout(r, 600));
+  await new Promise(r => setTimeout(r, 400));
 
-  // 5. Completion Step
+  // 6. Done Step
+  emit({
+    step: 'done',
+    stage: 'done',
+    label: 'Done',
+    status: 'success',
+    detail: `Build ready! Total components: ${partsCount} | Bill of Materials: ₹${buildData.product?.priceInr || 890}`,
+    data: buildData,
+    timestamp: timestamp()
+  });
+
   emit({
     step: 'complete',
     status: 'success',

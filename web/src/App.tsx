@@ -3,6 +3,7 @@ import type { SolderBuild, AgentLogStep, ScrapPhotoResult } from './types';
 import { SHOWCASE_BUILDS } from './data/showcases';
 import { Navbar } from './components/Navbar';
 import { HeroInput } from './components/HeroInput';
+import { IdeaChat } from './components/IdeaChat';
 import { AgentLogPanel } from './components/AgentLogPanel';
 import { WorkspaceTabs } from './components/WorkspaceTabs';
 import { ScrapModal } from './components/ScrapModal';
@@ -223,17 +224,16 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Hero & Prompt Input */}
-        <HeroInput
-          onSubmit={handlePromptSubmit}
-          isLoading={isLoading}
-          scrapDrawerSummary={scrapSummary}
-          onClearScrap={handleClearScrap}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 space-y-6 pt-4">
+        {/* Modern Idea Chatbot (ChatGPT/Gemini style) with live streaming build experience */}
+        <IdeaChat
+          onBuildReady={(newBuild) => {
+            setActiveBuild(newBuild);
+          }}
+          onOpenScrapMode={() => setIsScrapOpen(true)}
+          initialBuild={activeBuild}
+          activeBuildId={activeBuild.id}
         />
-
-        {/* Solder Agent Streaming Log Panel */}
-        <AgentLogPanel steps={agentSteps} isStreaming={isStreamingLog} />
 
         {/* Multi-Tab Workspace (Parts, 3D Case, Wiring + Sim, Code) */}
         <WorkspaceTabs
