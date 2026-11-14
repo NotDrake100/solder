@@ -44,14 +44,15 @@ export class BurstAnimationController {
   private targetExplodedProgress = 0;
   private onCompleteCallback?: () => void;
 
-  constructor(camera: THREE.PerspectiveCamera, cameraTarget: THREE.Vector3) {
+  constructor(camera: THREE.PerspectiveCamera, cameraTarget?: THREE.Vector3) {
     this.camera = camera;
-    this.cameraTarget = cameraTarget;
+    this.cameraTarget = cameraTarget ? cameraTarget.clone() : new THREE.Vector3(0, 0, 15);
   }
 
   public registerPart(mesh: THREE.Group): void {
-    const assembledPos = mesh.position.clone();
-    const assembledRot = mesh.rotation.clone();
+    if (!mesh) return;
+    const assembledPos = mesh.position ? mesh.position.clone() : new THREE.Vector3(0, 0, 0);
+    const assembledRot = mesh.rotation ? mesh.rotation.clone() : new THREE.Euler(0, 0, 0);
 
     // Calculate exploded position (dispersed radially in XY and elevated in Z)
     const explodedPos = assembledPos.clone();
@@ -104,7 +105,10 @@ export class BurstAnimationController {
     this.targetExplodedProgress = 0; // ends assembled
 
     // Capture initial camera position relative to target for organic orbit
-    this.cameraBaseOffset.subVectors(this.camera.position, this.cameraTarget);
+    if (this.camera && this.camera.position) {
+      const target = this.cameraTarget || new THREE.Vector3(0, 0, 15);
+      this.cameraBaseOffset.subVectors(this.camera.position, target);
+    }
   }
 
   public setExploded(exploded: boolean): void {
@@ -129,6 +133,7 @@ export class BurstAnimationController {
       (this as any).burstElapsed = ((this as any).burstElapsed || 0) + delta;
       const elapsed = Math.max(now - this.burstStartTime, (this as any).burstElapsed);
       const t = Math.min(1.0, elapsed / this.burstDuration);
+      const target = this.cameraTarget || new THREE.Vector3(0, 0, 15);
 
       // Signature 3-stage choreography:
       // Stage 1: 0.0 - 0.45 (0.0s - 1.8s) -> Staggered easing part flight from scatter into exploded formation
@@ -187,13 +192,13 @@ export class BurstAnimationController {
         }
 
         // Subtle organic camera orbit around the target
-        if (this.cameraBaseOffset.lengthSq() > 1) {
+        if (this.camera && this.cameraBaseOffset.lengthSq() > 1) {
           const orbitAngle = Math.sin(hoverTime * Math.PI) * 0.08;
           const rotatedOffset = this.cameraBaseOffset
             .clone()
             .applyAxisAngle(new THREE.Vector3(0, 0, 1), orbitAngle);
-          this.camera.position.copy(this.cameraTarget).add(rotatedOffset);
-          this.camera.lookAt(this.cameraTarget);
+          this.camera.position.copy(target).add(rotatedOffset);
+          this.camera.lookAt(target);
         }
 
         this.explodedProgress = 1.0;
@@ -223,10 +228,10 @@ export class BurstAnimationController {
         }
 
         // Camera smoothly glides back to original position
-        if (this.cameraBaseOffset.lengthSq() > 1) {
-          const targetCamPos = this.cameraTarget.clone().add(this.cameraBaseOffset);
+        if (this.camera && this.cameraBaseOffset.lengthSq() > 1) {
+          const targetCamPos = target.clone().add(this.cameraBaseOffset);
           this.camera.position.lerp(targetCamPos, Math.min(1.0, delta * 8.0));
-          this.camera.lookAt(this.cameraTarget);
+          this.camera.lookAt(target);
         }
 
         this.explodedProgress = 1.0 - snapProgress;
@@ -238,9 +243,9 @@ export class BurstAnimationController {
         this.targetExplodedProgress = 0;
 
         // Ensure camera perfectly restored
-        if (this.cameraBaseOffset.lengthSq() > 1) {
-          this.camera.position.copy(this.cameraTarget).add(this.cameraBaseOffset);
-          this.camera.lookAt(this.cameraTarget);
+        if (this.camera && this.cameraBaseOffset.lengthSq() > 1) {
+          this.camera.position.copy(target).add(this.cameraBaseOffset);
+          this.camera.lookAt(target);
         }
 
         if (this.onCompleteCallback) {

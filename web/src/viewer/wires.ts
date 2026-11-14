@@ -35,24 +35,28 @@ export function buildWiresAssembly(
   }
 
   // Fallback to layout coordinates if not found in partsGroup
-  for (const item of layout) {
-    const key = (item.id || item.libId).toLowerCase();
-    if (!partMap.has(key)) {
-      partMap.set(key, new THREE.Vector3(item.x, item.y, (item.z || 0) + 10));
+  for (const item of layout || []) {
+    if (!item) continue;
+    const x = Number(item.x) || 0;
+    const y = Number(item.y) || 0;
+    const z = Number(item.z) || 0;
+    const key = String(item.id || item.libId || '').toLowerCase();
+    if (key && !partMap.has(key)) {
+      partMap.set(key, new THREE.Vector3(x, y, z + 10));
     }
-    if (!partMap.has(item.libId.toLowerCase())) {
-      partMap.set(item.libId.toLowerCase(), new THREE.Vector3(item.x, item.y, (item.z || 0) + 10));
+    if (item.libId && !partMap.has(item.libId.toLowerCase())) {
+      partMap.set(item.libId.toLowerCase(), new THREE.Vector3(x, y, z + 10));
     }
   }
 
   // If no explicit wiring provided, generate realistic default connections between MCU and peripherals
   const connections: WireConnection[] = wiring && wiring.length > 0 ? wiring : [];
 
-  if (connections.length === 0 && layout.length > 1) {
+  if (connections.length === 0 && layout && layout.length > 1) {
     // Find MCU (Uno or ESP32)
-    const mcu = layout.find((p) => p.libId.includes('uno') || p.libId.includes('esp32'));
+    const mcu = layout.find((p) => p && (p.libId?.includes('uno') || p.libId?.includes('esp32')));
     if (mcu) {
-      const peripherals = layout.filter((p) => p !== mcu);
+      const peripherals = layout.filter((p) => p && p !== mcu);
       const wireColors = ['#ef4444', '#18181b', '#eab308', '#3b82f6', '#22c55e', '#a855f7'];
 
       peripherals.forEach((peri, idx) => {
@@ -81,8 +85,13 @@ export function buildWiresAssembly(
   const wireUpdaters: Array<(progress: number) => void> = [];
 
   connections.forEach((conn, index) => {
-    const startPos = partMap.get(conn.from.part.toLowerCase()) || new THREE.Vector3(0, 0, 10);
-    const endPos = partMap.get(conn.to.part.toLowerCase()) || new THREE.Vector3(20, 20, 10);
+    if (!conn) return;
+    const fromPart = typeof conn.from === 'object' ? conn.from?.part : conn.from;
+    const toPart = typeof conn.to === 'object' ? conn.to?.part : conn.to;
+    const fromKey = String(fromPart || '').toLowerCase();
+    const toKey = String(toPart || '').toLowerCase();
+    const startPos = partMap.get(fromKey) || new THREE.Vector3(0, 0, 10);
+    const endPos = partMap.get(toKey) || new THREE.Vector3(20, 20, 10);
 
     // Pick material
     let mat = materials.wireMaterials.blue;

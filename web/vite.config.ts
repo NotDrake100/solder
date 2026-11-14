@@ -6,7 +6,9 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    dedupe: ['three', 'react', 'react-dom'],
     alias: {
+      'three': path.resolve(__dirname, 'node_modules/three'),
       'lucide-react': path.resolve(__dirname, 'node_modules/lucide-react'),
       'react': path.resolve(__dirname, 'node_modules/react'),
       'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),

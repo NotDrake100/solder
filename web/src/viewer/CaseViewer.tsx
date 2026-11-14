@@ -325,7 +325,8 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       const partsGroup = new THREE.Group();
       partsGroup.name = 'electronic_parts';
 
-      for (const item of layout) {
+      for (const item of layout || []) {
+        if (!item) continue;
         const mesh = createPartMesh(
           item,
           materials,
@@ -361,14 +362,16 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
 
       // 3. Build Wires
       if (showWires) {
-        const wiresAssembly = buildWiresAssembly(wiring, layout, materials, partsGroup);
+        const wiresAssembly = buildWiresAssembly(wiring || [], layout || [], materials, partsGroup);
         scene.add(wiresAssembly.group);
         wiresAssemblyRef.current = wiresAssembly;
       }
 
       // Fit camera to enclosure assembly
-      const box = new THREE.Box3().setFromObject(enclosure.group);
-      cameraController?.fitToBox(box);
+      if (enclosure?.group && cameraController) {
+        const box = new THREE.Box3().setFromObject(enclosure.group);
+        cameraController.fitToBox(box);
+      }
 
       // Trigger burst reveal if enabled
       if (enableBurstReveal) {

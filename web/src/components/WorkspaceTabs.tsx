@@ -42,11 +42,12 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({
 
   // Auto-trigger signature burst reveal on mount / build change
   useEffect(() => {
+    if (!build || !build.layout || build.layout.length === 0) return;
     const timer = setTimeout(() => {
       setBurstCount((prev) => prev + 1);
     }, 450);
     return () => clearTimeout(timer);
-  }, [build.id]);
+  }, [build?.id]);
 
   const totalPartsCost = build.parts.reduce(
     (sum, p) => sum + (p.owned ? 0 : p.priceInr * p.qty),

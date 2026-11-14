@@ -907,6 +907,9 @@ export function createPartMesh(
   enclosureDims?: [number, number, number],
   wallMm = 2.0
 ): THREE.Group {
+  if (!item) {
+    return new THREE.Group();
+  }
   const libId = (item.libId || '').toLowerCase().trim();
 
   let meshGroup: THREE.Group;
@@ -945,16 +948,16 @@ export function createPartMesh(
 
   // Calculate position in scene coordinates
   const dims = getPartDimensions(item.libId);
-  let posX = item.x || 0;
-  let posY = item.y || 0;
-  let posZ = item.z !== undefined ? item.z : wallMm;
+  let posX = Number(item.x) || 0;
+  let posY = Number(item.y) || 0;
+  let posZ = item.z !== undefined ? Number(item.z) : wallMm;
 
-  if (enclosureDims) {
+  if (enclosureDims && Array.isArray(enclosureDims) && enclosureDims.length >= 2) {
     const [w, d] = enclosureDims;
     // If coordinates are inside the [0, w] and [0, d] box (corner-based layout)
     if (posX >= 0 && posY >= 0) {
-      posX = -w / 2 + wallMm + item.x + dims.width / 2;
-      posY = -d / 2 + wallMm + item.y + dims.length / 2;
+      posX = -w / 2 + wallMm + posX + (dims.width || 30) / 2;
+      posY = -d / 2 + wallMm + posY + (dims.length || 30) / 2;
     }
   }
 

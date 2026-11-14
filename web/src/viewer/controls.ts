@@ -14,7 +14,6 @@ export interface CameraControllerOptions {
 
 export class EnclosureCameraController {
   public camera: THREE.PerspectiveCamera;
-  public target: THREE.Vector3;
   public domElement: HTMLElement;
 
   private isPointerDown = false;
@@ -24,6 +23,16 @@ export class EnclosureCameraController {
   private targetSpherical = new THREE.Spherical(180, Math.PI / 3, Math.PI / 4);
   private currentTarget = new THREE.Vector3(0, 0, 15);
   private desiredTarget = new THREE.Vector3(0, 0, 15);
+
+  public get target(): THREE.Vector3 {
+    return this.currentTarget;
+  }
+  public set target(val: THREE.Vector3) {
+    if (val) {
+      this.currentTarget.copy(val);
+      this.desiredTarget.copy(val);
+    }
+  }
 
   public enableDamping = true;
   public dampingFactor = 0.08;
@@ -93,6 +102,7 @@ export class EnclosureCameraController {
   }
 
   public fitToBox(box: THREE.Box3): void {
+    if (!box || typeof box.isEmpty !== 'function' || box.isEmpty()) return;
     const center = new THREE.Vector3();
     const size = new THREE.Vector3();
     box.getCenter(center);
@@ -101,7 +111,7 @@ export class EnclosureCameraController {
     this.desiredTarget.copy(center);
     this.defaultTarget.copy(center);
 
-    const maxDim = Math.max(size.x, size.y, size.z);
+    const maxDim = Math.max(Number(size.x) || 120, Number(size.y) || 90, Number(size.z) || 45);
     const fov = (this.camera.fov * Math.PI) / 180;
     // Optimal 1.35x bounding sphere framing for studio presentation
     const distance = (maxDim / (2 * Math.tan(fov / 2))) * 1.35;

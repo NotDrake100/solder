@@ -94,6 +94,10 @@ export function computeOptimalEnclosureSize(
   let maxZ = -Infinity;
 
   for (const item of layout) {
+    if (!item) continue;
+    const x = Number(item.x) || 0;
+    const y = Number(item.y) || 0;
+    const z = Number(item.z) || 0;
     const w = item.dimensions?.width || 35;
     const l = item.dimensions?.length || 35;
     const h = item.dimensions?.height || 15;
@@ -101,11 +105,11 @@ export function computeOptimalEnclosureSize(
     const halfW = w / 2;
     const halfL = l / 2;
 
-    minX = Math.min(minX, item.x - halfW);
-    maxX = Math.max(maxX, item.x + halfW);
-    minY = Math.min(minY, item.y - halfL);
-    maxY = Math.max(maxY, item.y + halfL);
-    maxZ = Math.max(maxZ, (item.z || 0) + h);
+    minX = Math.min(minX, x - halfW);
+    maxX = Math.max(maxX, x + halfW);
+    minY = Math.min(minY, y - halfL);
+    maxY = Math.max(maxY, y + halfL);
+    maxZ = Math.max(maxZ, z + h);
   }
 
   const innerWidth = Math.max(80, (maxX - minX) + clearanceMm * 2);
