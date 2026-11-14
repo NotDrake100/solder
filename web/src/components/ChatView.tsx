@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  ArrowUp,
-  Plus,
   RotateCcw,
   Copy,
   Check,
@@ -10,10 +8,11 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
-  Zap,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { HarnessTrace, VerifierCheck } from './HarnessTrace';
+import { ResultPanel } from './ResultPanel';
+import { SolderLogo } from './SolderLogo';
 
 export interface ChatMessage {
   id: string;
@@ -36,44 +35,16 @@ interface ChatViewProps {
   onOpenOrder: () => void;
   onOpenShip?: () => void;
   onOpenAr?: () => void;
+  onOpenShare?: () => void;
   onSelectShowcase: (id: string) => void;
   onSelectTab?: (tab: 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware') => void;
 }
 
-const SUGGESTIONS = [
-  {
-    title: 'Plant waterer',
-    desc: 'Soil moisture sensor + pump relay',
-    prompt:
-      'Automatic plant waterer using Arduino, soil moisture sensor, and a 5V water pump relay with status LED',
-  },
-  {
-    title: 'Motion night light',
-    desc: 'PIR motion sensor + warm LED lamp',
-    prompt:
-      'Motion-activated bedside night light with PIR sensor, smooth PWM dimming LED, and light-dependent resistor (LDR)',
-  },
-  {
-    title: 'Desk fan that turns on when hot',
-    desc: 'Temp sensor + relay fan switch',
-    prompt:
-      'Smart desk fan that turns on automatically when ambient temperature exceeds 28°C with buzzer alert',
-  },
-  {
-    title: 'Distance radar',
-    desc: 'Ultrasonic sensor sweeping on SG90 servo',
-    prompt:
-      'Mini ultrasonic distance radar on SG90 micro servo with 0.96 inch I2C OLED display',
-  },
-];
-
-const EXAMPLE_PLACEHOLDERS = [
-  'Ask Solder: Plant waterer with soil sensor...',
-  'Ask Solder: Motion-activated night light...',
-  'Ask Solder: Desk fan that triggers when hot...',
-  'Ask Solder: Distance radar with servo and OLED...',
-  'Ask Solder: Smart deadbolt lock with RFID...',
-  'Ask Solder: Rain-sensing balcony window closer...',
+const CHIPS = [
+  'Desk fan that starts when it gets hot',
+  'Plant that waters itself when dry',
+  'Night light that fades on at dusk',
+  'Doorbell that flashes a lamp',
 ];
 
 const PROGRESS_STEPS = [
@@ -93,127 +64,67 @@ function FormattedMarkdown({ content }: { content: string }) {
 
   const lines = content.split('\n');
   const elements: React.ReactNode[] = [];
-  let currentList: React.ReactNode[] = [];
-  let inCodeBlock = false;
-  let codeBlockLines: string[] = [];
 
   const parseInline = (text: string): React.ReactNode[] => {
     const parts: React.ReactNode[] = [];
-    const regex = /(\*\*.*?\*\*|`.*?`|\*.*?\*)/g;
+    const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`)/g;
     let lastIdx = 0;
     let match;
 
     while ((match = regex.exec(text)) !== null) {
       if (match.index > lastIdx) {
-        parts.push(text.slice(lastIdx, match.index));
+        parts.push(text.substring(lastIdx, match.index));
       }
       const token = match[0];
       if (token.startsWith('**') && token.endsWith('**')) {
         parts.push(
-          <strong key={match.index} className="font-semibold text-[#f5f5f5]">
+          <strong key={match.index} className="font-semibold text-white">
             {token.slice(2, -2)}
           </strong>
         );
+      } else if (token.startsWith('*') && token.endsWith('*')) {
+        parts.push(<em key={match.index}>{token.slice(1, -1)}</em>);
       } else if (token.startsWith('`') && token.endsWith('`')) {
         parts.push(
           <code
             key={match.index}
-            className="px-1.5 py-0.5 rounded bg-[#2a2a2a] text-[#f5f5f5] font-mono text-[13px]"
+            className="mono px-1 py-0.5 rounded bg-[#202020] text-[#e0e0e0] text-[12px] border border-[#333]"
           >
             {token.slice(1, -1)}
           </code>
         );
-      } else if (token.startsWith('*') && token.endsWith('*')) {
-        parts.push(
-          <em key={match.index} className="italic text-[#a3a3a3]">
-            {token.slice(1, -1)}
-          </em>
-        );
       }
       lastIdx = regex.lastIndex;
     }
+
     if (lastIdx < text.length) {
-      parts.push(text.slice(lastIdx));
+      parts.push(text.substring(lastIdx));
     }
-    return parts.length > 0 ? parts : [text];
+    return parts;
   };
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    // Code block check
-    if (line.trim().startsWith('```')) {
-      if (inCodeBlock) {
-        elements.push(
-          <pre
-            key={`code-${i}`}
-            className="my-2 p-3 rounded-xl bg-[#141414] border border-[#2a2a2a] text-[#f5f5f5] font-mono text-xs overflow-x-auto"
-          >
-            <code>{codeBlockLines.join('\n')}</code>
-          </pre>
-        );
-        codeBlockLines = [];
-        inCodeBlock = false;
-      } else {
-        inCodeBlock = true;
-      }
-      continue;
+  lines.forEach((line, i) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      elements.push(<div key={`br-${i}`} className="h-2" />);
+      return;
     }
-
-    if (inCodeBlock) {
-      codeBlockLines.push(line);
-      continue;
-    }
-
-    // Bullet points
-    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      const itemText = line.trim().slice(2);
-      currentList.push(
-        <li key={`li-${i}`} className="ml-4 list-disc text-[14.5px] text-[#d4d4d4]">
-          {parseInline(itemText)}
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      elements.push(
+        <li key={`li-${i}`} className="ml-4 list-disc text-[#d4d4d4]">
+          {parseInline(trimmed.slice(2))}
         </li>
       );
-      continue;
-    } else if (currentList.length > 0) {
-      elements.push(
-        <ul key={`ul-${i}`} className="my-2 space-y-1">
-          {currentList}
-        </ul>
-      );
-      currentList = [];
+      return;
     }
-
-    // Header 3 or 2
-    if (line.trim().startsWith('### ') || line.trim().startsWith('## ')) {
-      const hText = line.trim().replace(/^#{2,3}\s+/, '');
-      elements.push(
-        <h3 key={`h-${i}`} className="text-sm font-semibold text-[#f5f5f5] mt-3 mb-1">
-          {parseInline(hText)}
-        </h3>
-      );
-      continue;
-    }
-
-    if (line.trim() === '') {
-      elements.push(<div key={`br-${i}`} className="h-2" />);
-    } else {
-      elements.push(
-        <p key={`p-${i}`} className="text-[14.5px] leading-relaxed text-[#d4d4d4]">
-          {parseInline(line)}
-        </p>
-      );
-    }
-  }
-
-  if (currentList.length > 0) {
     elements.push(
-      <ul key="ul-end" className="my-2 space-y-1">
-        {currentList}
-      </ul>
+      <p key={`p-${i}`} className="leading-relaxed text-[#d4d4d4]">
+        {parseInline(line)}
+      </p>
     );
-  }
+  });
 
-  return <div className="space-y-1 select-text">{elements}</div>;
+  return <div className="space-y-1">{elements}</div>;
 }
 
 export const ChatView: React.FC<ChatViewProps> = ({
@@ -224,65 +135,29 @@ export const ChatView: React.FC<ChatViewProps> = ({
   onOpenOrder,
   onOpenShip,
   onOpenAr,
+  onOpenShare,
+  onSelectShowcase,
   onSelectTab,
 }) => {
-  const [input, setInput] = useState('');
+  const [inputText, setInputText] = useState('');
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Cycling Typewriter Placeholder
-  const [placeholderText, setPlaceholderText] = useState(EXAMPLE_PLACEHOLDERS[0]);
+  const isConversationEmpty = messages.length === 0;
 
+  // Auto scroll to bottom when messages update
   useEffect(() => {
-    let index = 0;
-    const interval = setInterval(() => {
-      index = (index + 1) % EXAMPLE_PLACEHOLDERS.length;
-      setPlaceholderText(EXAMPLE_PLACEHOLDERS[index]);
-    }, 4500);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Auto scroll to bottom
-  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isLoading]);
-
-  // Adjust textarea height dynamically
-  const adjustHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      const newHeight = Math.min(textareaRef.current.scrollHeight, 140);
-      textareaRef.current.style.height = `${Math.max(28, newHeight)}px`;
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    adjustHeight();
-  };
+  }, [messages]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const trimmed = input.trim();
+    const trimmed = inputText.trim();
     if (!trimmed || isLoading) return;
-    setInput('');
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-    }
     onSendMessage(trimmed);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
+    setInputText('');
   };
 
   const handleCopyMessage = (id: string, text: string) => {
@@ -291,132 +166,129 @@ export const ChatView: React.FC<ChatViewProps> = ({
     setTimeout(() => setCopiedMsgId(null), 2000);
   };
 
-  const handleRate = (id: string, type: 'up' | 'down') => {
+  const handleRate = (id: string, direction: 'up' | 'down') => {
     setRatings((prev) => ({
       ...prev,
-      [id]: prev[id] === type ? undefined : type,
+      [id]: prev[id] === direction ? (undefined as any) : direction,
     }));
   };
 
-  const isConversationEmpty = messages.length === 0;
-
-  // Render the composer pill component (used in empty state & pinned at bottom)
-  const renderComposer = (isCentered: boolean = false) => {
-    const hasText = input.trim().length > 0;
+  // Square tray composer matching chatgpt-inline.html
+  const renderComposerTray = (autoFocus = false) => {
+    const hasText = inputText.trim().length > 0;
 
     return (
-      <div
-        className={`w-full ${
-          isCentered ? 'max-w-[680px]' : 'max-w-full'
-        } mx-auto px-3 sm:px-4 ${isCentered ? '' : 'pt-2 pb-3'}`}
+      <form
+        onSubmit={handleSubmit}
+        className="composer-tray w-full bg-[#161616] border border-[#333333] focus-within:border-[#555] rounded-xl px-3 py-2.5 flex items-center gap-2.5 transition"
       >
-        <form
-          onSubmit={handleSubmit}
-          className="relative flex items-center bg-[#212121] rounded-[24px] min-h-[50px] px-3 py-1.5 transition-all border border-[#2a2a2a] focus-within:border-[#444] shadow-sm"
+        <span
+          className="composer-dot w-2 h-2 rounded-full bg-[#555] shrink-0"
+          aria-hidden="true"
+        />
+
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder="Describe a device"
+          aria-label="Describe a device"
+          autoFocus={autoFocus}
+          disabled={isLoading}
+          className="bg-transparent text-sm text-[#f5f5f5] placeholder:text-[#666] outline-none flex-1 min-w-0"
+        />
+
+        <button
+          type="submit"
+          disabled={!hasText || isLoading}
+          className={`send w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+            hasText && !isLoading
+              ? 'bg-white text-black hover:bg-neutral-200 cursor-pointer'
+              : 'bg-[#262626] text-[#555] cursor-not-allowed opacity-50'
+          }`}
+          aria-label="Send"
         >
-          {/* + Button for Scrap Mode attachment */}
-          <button
-            type="button"
-            onClick={onOpenScrapMode}
-            className="p-1.5 rounded-full text-[#777] hover:text-[#f5f5f5] hover:bg-[#2a2a2a] transition shrink-0 mr-1.5"
-            title="Attach photo for Scrap Mode"
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            aria-hidden="true"
           >
-            <Plus className="w-4 h-4" />
-          </button>
-
-          {/* Auto-growing Textarea */}
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholderText}
-            disabled={isLoading}
-            className="flex-1 bg-transparent border-0 outline-none resize-none text-[14.5px] text-[#f5f5f5] placeholder-[#777] leading-relaxed max-h-[140px] py-1 selection:bg-[#333]"
-          />
-
-          {/* Clean White Send Button: white bg with black up-arrow */}
-          <button
-            type="submit"
-            disabled={!hasText || isLoading}
-            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ml-1.5 transition-all ${
-              hasText && !isLoading
-                ? 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow-sm'
-                : 'bg-[#2a2a2a] text-[#555] cursor-not-allowed opacity-60'
-            }`}
-            title="Send message"
-          >
-            <ArrowUp className="w-4 h-4 stroke-[2.5]" />
-          </button>
-        </form>
-
-        {/* Clean subtle disclaimer */}
-        <div className="text-center text-[11px] text-[#666] pt-2 select-none">
-          Solder can make mistakes. Check wiring before powering on.
-        </div>
-      </div>
+            <path
+              d="M7 11.25V2.75M7 2.75L3.25 6.5M7 2.75L10.75 6.5"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </form>
     );
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full bg-[#181818]">
+    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full bg-[#0f0f0f]">
       {/* 1. EMPTY STATE (when no messages yet) */}
       {isConversationEmpty ? (
-        <div className="m-auto flex flex-col items-center max-w-[680px] w-full px-4 py-16">
-          {/* Large centered greeting */}
-          <h1 className="text-[30px] font-semibold text-[#f5f5f5] tracking-tight text-center mb-6">
-            What do you want to build?
-          </h1>
+        <div className="empty flex-1 flex flex-col justify-center items-center px-4 py-12">
+          <div className="empty-stack col max-w-[768px] w-full flex flex-col items-center">
+            {/* Heading */}
+            <h1 className="text-[28px] sm:text-[32px] font-semibold text-[#f5f5f5] tracking-tight text-center mb-6">
+              What are we making?
+            </h1>
 
-          {/* Composer directly under heading */}
-          <div className="w-full mb-6">{renderComposer(true)}</div>
+            {/* Composer Tray directly under heading */}
+            <div className="w-full mb-5">{renderComposerTray(true)}</div>
 
-          {/* 4 suggestion chips in a 2x2 grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
-            {SUGGESTIONS.map((item, idx) => (
-              <button
-                key={idx}
-                onClick={() => onSendMessage(item.prompt)}
-                className="p-3.5 rounded-xl bg-[#212121] hover:bg-[#262626] border border-[#2a2a2a] text-left transition group"
-              >
-                <div className="text-xs font-medium text-[#f5f5f5] group-hover:text-white transition-colors">
-                  {item.title}
-                </div>
-                <div className="text-[11px] text-[#777] mt-0.5 line-clamp-1">
-                  {item.desc}
-                </div>
-              </button>
-            ))}
+            {/* Chips matching chatgpt-inline-empty.html */}
+            <div className="chips flex flex-wrap justify-center gap-2 w-full">
+              {CHIPS.map((chip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onSendMessage(chip)}
+                  className="chip px-3 py-1.5 rounded-lg border border-[#333333] hover:border-[#444] bg-[#161616] hover:bg-[#202020] text-xs text-[#a3a3a3] hover:text-white transition cursor-pointer"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ) : (
-        /* 2. CONVERSATION MESSAGES LIST (inside the chat column) */
-        <div className="w-full px-3 sm:px-4 py-4 space-y-4 flex-1">
-          {messages.map((msg) => {
-            const isUser = msg.sender === 'user';
+        /* 2. CONVERSATION THREAD (centered 768px column) */
+        <div className="thread flex-1 overflow-y-auto min-h-0 py-6 px-4">
+          <div className="col max-w-[768px] mx-auto w-full space-y-6">
+            {messages.map((msg) => {
+              const isUser = msg.sender === 'user';
 
-            if (isUser) {
-              return (
-                <div key={msg.id} className="flex justify-end w-full">
-                  <div className="bg-[#262626] border border-[#2a2a2a] text-[#f5f5f5] rounded-[20px] px-3.5 py-2 max-w-[85%] text-[14.5px] leading-relaxed shadow-xs break-words select-text">
-                    {msg.text}
+              if (isUser) {
+                return (
+                  <div key={msg.id} className="flex justify-end w-full">
+                    <div className="msg-user bg-[#262626] border border-[#333] text-[#f5f5f5] rounded-2xl px-4 py-2.5 max-w-[85%] text-[14.5px] leading-relaxed shadow-xs break-words select-text">
+                      {msg.text}
+                    </div>
                   </div>
-                </div>
-              );
-            }
+                );
+              }
 
-            // Assistant message: No bubble, full column width, clean avatar
-            return (
-              <div key={msg.id} className="flex gap-2.5 sm:gap-3 items-start w-full">
-                {/* Clean Neutral Avatar */}
-                <div className="w-6 h-6 rounded-md bg-[#212121] border border-[#2a2a2a] flex items-center justify-center shrink-0 mt-0.5 text-[#f5f5f5]">
-                  <Zap className="w-3.5 h-3.5" />
-                </div>
+              // Assistant message: Lead text + Harness + Tabbed Result Card
+              return (
+                <div key={msg.id} className="msg-assistant w-full space-y-3">
+                  {/* Lead text */}
+                  {msg.text && (
+                    <div className="lead text-[14.5px] leading-relaxed text-[#d4d4d4]">
+                      <FormattedMarkdown content={msg.text} />
+                      {msg.isStreaming && (
+                        <span className="inline-block w-1.5 h-4 bg-[#f5f5f5] ml-1 translate-y-0.5 animate-pulse" />
+                      )}
+                    </div>
+                  )}
 
-                {/* Assistant Content Column */}
-                <div className="flex-1 min-w-0 space-y-2.5">
-                  {/* Typing Indicator */}
+                  {/* Typing / streaming progress indicator */}
                   {msg.isTyping && (
                     <div className="flex items-center gap-1.5 py-1 text-[#a3a3a3]">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse"></span>
@@ -425,19 +297,9 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                   )}
 
-                  {/* Markdown Formatted Text */}
-                  {msg.text && (
-                    <div className="text-[14.5px] leading-relaxed text-[#d4d4d4]">
-                      <FormattedMarkdown content={msg.text} />
-                      {msg.isStreaming && (
-                        <span className="inline-block w-1.5 h-4 bg-[#f5f5f5] ml-1 translate-y-0.5 animate-pulse" />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Live Progress Checklist while building */}
+                  {/* Live Progress Checklist while synthesizing build */}
                   {msg.isStreaming && (
-                    <div className="p-3 rounded-lg bg-[#212121] border border-[#2a2a2a] space-y-2 text-xs">
+                    <div className="p-3 rounded-lg bg-[#161616] border border-[#2a2a2a] space-y-2 text-xs">
                       <div className="font-medium text-[#f5f5f5] flex items-center justify-between">
                         <span>Hardware Co-Design Pipeline</span>
                         <Loader2 className="w-3.5 h-3.5 text-[#a3a3a3] animate-spin" />
@@ -473,23 +335,32 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                   )}
 
-                  {/* Solder Deterministic Harness Trace */}
+                  {/* Solder Deterministic Harness Trace (vertical signal line, nodes, red pin-conflict line, summary) */}
                   {(msg.buildData || !msg.isStreaming) && (
-                    <div className="my-2">
-                      <HarnessTrace
-                        build={msg.buildData}
-                        isStreaming={msg.isStreaming}
-                        checks={msg.harnessChecks}
-                        onSelectTab={onSelectTab}
-                      />
-                    </div>
+                    <HarnessTrace
+                      build={msg.buildData}
+                      isStreaming={msg.isStreaming}
+                      checks={msg.harnessChecks}
+                      onSelectTab={onSelectTab}
+                    />
                   )}
 
-                  {/* Row of ghost icon buttons: copy, regenerate, thumbs */}
-                  <div className="flex items-center gap-1 text-[#666] pt-0.5">
+                  {/* Tabbed Result Card (3D Case, Parts, Wiring, Simulate, Firmware) */}
+                  {msg.buildData && (
+                    <ResultPanel
+                      build={msg.buildData}
+                      onOpenOrder={onOpenOrder}
+                      onOpenShip={onOpenShip}
+                      onOpenAr={onOpenAr}
+                      onOpenShare={onOpenShare}
+                    />
+                  )}
+
+                  {/* Message Actions Row (Copy, Regenerate, Thumbs) */}
+                  <div className="flex items-center gap-1 text-[#666] pt-1">
                     <button
                       onClick={() => handleCopyMessage(msg.id, msg.text)}
-                      className="p-1.5 rounded-md hover:bg-[#212121] hover:text-[#f5f5f5] transition"
+                      className="p-1.5 rounded-md hover:bg-[#1f1f1f] hover:text-[#f5f5f5] transition cursor-pointer"
                       title="Copy reply text"
                     >
                       {copiedMsgId === msg.id ? (
@@ -501,7 +372,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
                     <button
                       onClick={() => onSendMessage(msg.text || 'Rebuild')}
-                      className="p-1.5 rounded-md hover:bg-[#212121] hover:text-[#f5f5f5] transition"
+                      className="p-1.5 rounded-md hover:bg-[#1f1f1f] hover:text-[#f5f5f5] transition cursor-pointer"
                       title="Regenerate build"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -509,7 +380,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
                     <button
                       onClick={() => handleRate(msg.id, 'up')}
-                      className={`p-1.5 rounded-md hover:bg-[#212121] transition ${
+                      className={`p-1.5 rounded-md hover:bg-[#1f1f1f] transition cursor-pointer ${
                         ratings[msg.id] === 'up'
                           ? 'text-[#f5f5f5]'
                           : 'hover:text-[#f5f5f5] text-[#666]'
@@ -521,7 +392,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
                     <button
                       onClick={() => handleRate(msg.id, 'down')}
-                      className={`p-1.5 rounded-md hover:bg-[#212121] transition ${
+                      className={`p-1.5 rounded-md hover:bg-[#1f1f1f] transition cursor-pointer ${
                         ratings[msg.id] === 'down'
                           ? 'text-rose-500'
                           : 'hover:text-[#f5f5f5] text-[#666]'
@@ -532,17 +403,19 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </button>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
       )}
 
       {/* 3. DOCKED BOTTOM COMPOSER (when conversation is active) */}
       {!isConversationEmpty && (
-        <div className="sticky bottom-0 z-20 shrink-0 w-full bg-gradient-to-t from-[#181818] via-[#181818]/95 to-transparent pt-2 pb-safe">
-          {renderComposer(false)}
+        <div className="composer-wrap sticky bottom-0 z-20 shrink-0 w-full bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/95 to-transparent pt-3 pb-4">
+          <div className="col max-w-[768px] mx-auto w-full px-4">
+            {renderComposerTray(false)}
+          </div>
         </div>
       )}
     </div>

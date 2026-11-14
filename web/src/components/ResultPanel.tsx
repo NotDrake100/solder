@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Cpu,
-  Zap,
   Play,
   Code2,
   Copy,
@@ -14,7 +13,7 @@ import {
   Sparkles,
   Layers,
   Share2,
-  CheckCircle2,
+  Activity,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { CaseViewer } from '../viewer';
@@ -32,6 +31,7 @@ interface ResultPanelProps {
   onOpenShip?: () => void;
   onOpenAr?: () => void;
   onOpenShare?: () => void;
+  className?: string;
 }
 
 export const ResultPanel: React.FC<ResultPanelProps> = ({
@@ -43,6 +43,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   onOpenShip,
   onOpenAr,
   onOpenShare,
+  className = '',
 }) => {
   const [internalTab, setInternalTab] = useState<ResultTab>('case');
   const activeTab = controlledTab || internalTab;
@@ -102,67 +103,27 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // 1. Loading State
-  if (!build && isLoading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#181818] text-center select-none">
-        <div className="w-12 h-12 rounded-xl bg-[#212121] border border-[#2a2a2a] flex items-center justify-center text-[#a3a3a3] mb-4">
-          <Box className="w-6 h-6 animate-pulse" />
-        </div>
-        <h3 className="text-sm font-medium text-[#f5f5f5] mb-1">
-          Generating build...
-        </h3>
-        <p className="text-xs text-[#777] max-w-xs">
-          Synthesizing 3D case, circuit netlist, and firmware sketch.
-        </p>
-      </div>
-    );
-  }
+  if (!build) return null;
 
-  // 2. Empty State
-  if (!build) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#181818] text-center select-none">
-        <div className="w-12 h-12 rounded-xl bg-[#212121] border border-[#2a2a2a] flex items-center justify-center text-[#777] mb-4">
-          <Box className="w-6 h-6" />
-        </div>
-        <h3 className="text-sm font-medium text-[#a3a3a3] mb-1">
-          Your 3D Case & Build Will Show Here
-        </h3>
-        <p className="text-xs text-[#666] max-w-xs">
-          Prompt Solder on the left or click a showcase to load an interactive build.
-        </p>
-      </div>
-    );
-  }
+  const outerMm = build.case?.outerMm || [82, 64, 28];
 
-  // 3. Active Workspace Result Panel
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#181818] overflow-hidden select-none">
-      {/* Top Bar (48px, ultra-clean neutral) */}
-      <div className="h-12 shrink-0 bg-[#181818] border-b border-[#2a2a2a] px-4 flex items-center justify-between gap-3">
-        {/* Left: Project Name */}
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-medium text-[#f5f5f5] text-sm tracking-tight truncate">
-            {build.name}
-          </span>
-          <span className="text-[11px] font-mono text-[#777]">
-            {build.board?.toUpperCase() || 'UNO'}
-          </span>
-          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-            Verified
-          </span>
-        </div>
-
-        {/* Center: Segmented Tabs (3D Case, Parts, Wiring, Simulate, Firmware) */}
-        <div className="flex items-center gap-1 p-0.5 bg-[#212121] rounded-lg border border-[#2a2a2a] overflow-x-auto scrollbar-none">
+    <div
+      className={`result rounded-xl border border-[#2a2a2a] bg-[#141414] overflow-hidden my-3 select-none ${className}`}
+    >
+      {/* Result Tabs Bar */}
+      <div
+        className="result-tabs flex items-center justify-between border-b border-[#262626] px-3 bg-[#171717] overflow-x-auto scrollbar-none gap-2"
+        role="tablist"
+      >
+        <div className="flex items-center gap-1">
           <button
+            type="button"
             onClick={() => handleTabClick('case')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
               activeTab === 'case'
-                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
-                : 'text-[#a3a3a3] hover:text-white'
+                ? 'border-white text-white'
+                : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
             <Box className="w-3.5 h-3.5" />
@@ -170,11 +131,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => handleTabClick('parts')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
               activeTab === 'parts'
-                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
-                : 'text-[#a3a3a3] hover:text-white'
+                ? 'border-white text-white'
+                : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
@@ -182,23 +144,25 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => handleTabClick('wiring')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
               activeTab === 'wiring'
-                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
-                : 'text-[#a3a3a3] hover:text-white'
+                ? 'border-white text-white'
+                : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
-            <Zap className="w-3.5 h-3.5" />
+            <Activity className="w-3.5 h-3.5" />
             <span>Wiring</span>
           </button>
 
           <button
+            type="button"
             onClick={() => handleTabClick('simulate')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
               activeTab === 'simulate'
-                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
-                : 'text-[#a3a3a3] hover:text-white'
+                ? 'border-white text-white'
+                : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
             <Play className="w-3.5 h-3.5" />
@@ -206,11 +170,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => handleTabClick('firmware')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+            className={`tab flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition cursor-pointer border-b-2 ${
               activeTab === 'firmware'
-                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
-                : 'text-[#a3a3a3] hover:text-white'
+                ? 'border-white text-white'
+                : 'border-transparent text-[#888] hover:text-white'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -218,58 +183,26 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </button>
         </div>
 
-        {/* Right: Actions (Clean White Order Kit button + neutral secondary) */}
-        <div className="flex items-center gap-2 shrink-0">
-          {onOpenOrder && (
+        {/* Right CTA: Order Kit */}
+        {onOpenOrder && (
+          <div className="shrink-0 py-1">
             <button
               onClick={onOpenOrder}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-black hover:bg-neutral-200 transition shadow-sm cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer"
             >
-              <ShoppingBag className="w-3.5 h-3.5" />
+              <ShoppingBag className="w-3 h-3" />
               <span>Order Kit</span>
-              <span className="font-mono text-[11px] opacity-75">₹{totalCost}</span>
+              <span className="mono text-[11px] opacity-80">Rs {totalCost}</span>
             </button>
-          )}
-
-          {onOpenShip && (
-            <button
-              onClick={onOpenShip}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#212121] hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white border border-[#2a2a2a] transition cursor-pointer"
-              title="Ship 48-Hour Kit"
-            >
-              <Truck className="w-3.5 h-3.5" />
-              <span>Ship</span>
-            </button>
-          )}
-
-          {onOpenAr && (
-            <button
-              onClick={onOpenAr}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#212121] hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white border border-[#2a2a2a] transition cursor-pointer"
-              title="View in Augmented Reality"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>AR</span>
-            </button>
-          )}
-
-          {onOpenShare && (
-            <button
-              onClick={onOpenShare}
-              className="p-1.5 rounded-lg text-[#a3a3a3] hover:text-white hover:bg-[#212121] transition"
-              title="Share Build"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Panel Body: Full-height Tab Contents */}
-      <div className="flex-1 relative overflow-hidden bg-[#181818]">
+      {/* Result Stage Body */}
+      <div className="result-stage relative bg-[#141414] overflow-hidden">
         {/* TAB 1: 3D Case Viewer */}
         {activeTab === 'case' && (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-[360px] sm:h-[400px]">
             <CaseViewer
               caseSpec={build.case}
               layout={build.layout}
@@ -280,73 +213,63 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               className="w-full h-full"
             />
 
-            {/* Floating Neutral Controls Overlay Docked at Bottom */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[#212121]/95 backdrop-blur-md border border-[#2a2a2a] shadow-xl text-xs text-[#a3a3a3]">
+            {/* Bottom-left: Caption & Monospace Dimensions */}
+            <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2 px-2.5 py-1 rounded-lg bg-[#181818]/90 border border-[#262626] text-xs">
+              <span className="iso-caption font-medium text-[#f5f5f5]">3D case</span>
+              <span className="text-[#555]">·</span>
+              <span className="iso-meta mono text-[#888]">
+                {outerMm[0]} × {outerMm[1]} × {outerMm[2]} mm
+              </span>
+            </div>
+
+            {/* Floating Controls Overlay */}
+            <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 p-1 rounded-lg bg-[#181818]/95 border border-[#2a2a2a] text-xs text-[#a3a3a3]">
               {/* Assembled / Exploded Toggle */}
               <button
                 onClick={() => setIsExploded((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition ${
+                className={`px-2 py-0.5 rounded text-xs transition cursor-pointer ${
                   isExploded
                     ? 'bg-[#2a2a2a] text-white font-medium'
-                    : 'text-[#a3a3a3] hover:text-white hover:bg-[#2a2a2a]/60'
+                    : 'text-[#888] hover:text-white'
                 }`}
               >
-                <Layers className="w-3.5 h-3.5" />
-                <span>{isExploded ? 'Assembled' : 'Exploded'}</span>
+                {isExploded ? 'Assembled' : 'Exploded'}
               </button>
 
-              {/* Material Selector */}
-              <div className="flex items-center p-0.5 bg-[#181818] rounded-lg border border-[#2a2a2a]">
-                <button
-                  onClick={() => setMaterialTheme('acrylic')}
-                  className={`px-2 py-0.5 rounded text-[11px] transition ${
-                    materialTheme === 'acrylic'
-                      ? 'bg-[#2a2a2a] text-white font-medium'
-                      : 'text-[#777] hover:text-[#a3a3a3]'
-                  }`}
-                >
-                  Frosted
-                </button>
-                <button
-                  onClick={() => setMaterialTheme('pla')}
-                  className={`px-2 py-0.5 rounded text-[11px] transition ${
-                    materialTheme === 'pla'
-                      ? 'bg-[#2a2a2a] text-white font-medium'
-                      : 'text-[#777] hover:text-[#a3a3a3]'
-                  }`}
-                >
-                  Matte PLA
-                </button>
-                <button
-                  onClick={() => setMaterialTheme('dark')}
-                  className={`px-2 py-0.5 rounded text-[11px] transition ${
-                    materialTheme === 'dark'
-                      ? 'bg-[#2a2a2a] text-white font-medium'
-                      : 'text-[#777] hover:text-[#a3a3a3]'
-                  }`}
-                >
-                  Carbon
-                </button>
-              </div>
+              {/* Material Toggle */}
+              <button
+                onClick={() =>
+                  setMaterialTheme((prev) =>
+                    prev === 'acrylic' ? 'pla' : prev === 'pla' ? 'dark' : 'acrylic'
+                  )
+                }
+                className="px-2 py-0.5 rounded text-xs text-[#888] hover:text-white transition cursor-pointer"
+                title="Cycle material theme"
+              >
+                {materialTheme === 'acrylic'
+                  ? 'Frosted'
+                  : materialTheme === 'pla'
+                  ? 'PLA'
+                  : 'Carbon'}
+              </button>
 
-              {/* Replay Burst Reveal */}
+              {/* Burst Reveal */}
               <button
                 onClick={() => setBurstCount((prev) => prev + 1)}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white transition"
-                title="Replay Burst Reveal"
+                className="flex items-center gap-1 px-2 py-0.5 rounded hover:bg-[#2a2a2a] text-[#888] hover:text-white transition cursor-pointer"
+                title="Burst Reveal"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3 h-3" />
                 <span>Burst</span>
               </button>
 
-              {/* Download STL Button */}
+              {/* Download STL */}
               <button
                 onClick={handleDownloadStl}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white transition"
-                title="Download STL file"
+                className="p-1 rounded hover:bg-[#2a2a2a] text-[#888] hover:text-white transition cursor-pointer"
+                title="Download STL"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>STL</span>
               </button>
             </div>
           </div>
@@ -354,55 +277,28 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
         {/* TAB 2: Parts Table */}
         {activeTab === 'parts' && (
-          <div className="h-full overflow-y-auto p-4 sm:p-6 space-y-4 select-text">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium text-[#f5f5f5]">
-                  Bill of Materials (BOM)
-                </h4>
-                <p className="text-xs text-[#777]">
-                  Maker parts list with INR maker pricing.
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-mono text-[#f5f5f5]">
-                  Total: ₹{totalCost}
-                </div>
-              </div>
+          <div className="p-4 max-h-[380px] overflow-y-auto space-y-3 select-text">
+            <div className="flex items-center justify-between text-xs pb-1 border-b border-[#262626]">
+              <span className="font-medium text-[#f5f5f5]">Parts BOM</span>
+              <span className="mono text-[#f5f5f5]">Kit Total: Rs {totalCost}</span>
             </div>
 
-            <div className="rounded-xl border border-[#2a2a2a] bg-[#212121] overflow-hidden divide-y divide-[#2a2a2a]">
+            <div className="divide-y divide-[#262626] text-xs">
               {build.parts?.map((part) => (
                 <div
                   key={part.id}
-                  className="p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-[#262626] transition-colors"
+                  className="py-2 flex items-center justify-between gap-2"
                 >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-[#f5f5f5] text-sm">
-                        {part.name}
-                      </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#777] border border-[#2a2a2a]">
-                        {part.libId}
-                      </span>
-                      {part.owned && (
-                        <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                          Owned
-                        </span>
-                      )}
+                    <div className="font-medium text-[#f5f5f5] truncate">
+                      {part.name}
                     </div>
-                    <p className="text-xs text-[#777] mt-0.5 line-clamp-1">
-                      {part.why}
-                    </p>
+                    <div className="mono text-[11px] text-[#777]">
+                      Qty {part.qty || 1} · {part.package || 'Module'}
+                    </div>
                   </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="text-xs font-mono text-[#f5f5f5]">
-                      ₹{part.priceInr * (part.qty || 1)}
-                    </div>
-                    <div className="text-[10px] text-[#777] font-mono">
-                      Qty: {part.qty || 1}
-                    </div>
+                  <div className="mono text-right text-xs text-[#d4d4d4] shrink-0">
+                    {part.owned ? 'Owned' : `Rs ${part.priceInr || 60}`}
                   </div>
                 </div>
               ))}
@@ -410,63 +306,75 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         )}
 
-        {/* TAB 3: Interactive Wiring Diagram */}
+        {/* TAB 3: Wiring Netlist */}
         {activeTab === 'wiring' && (
-          <div className="h-full w-full overflow-hidden">
-            <WiringDiagram build={build} />
+          <div className="p-4 max-h-[380px] overflow-y-auto space-y-3 select-text">
+            <div className="text-xs font-medium text-[#f5f5f5] pb-1 border-b border-[#262626]">
+              Pin Netlist Connections
+            </div>
+
+            <div className="divide-y divide-[#262626] text-xs">
+              {build.wiring?.map((wire, idx) => (
+                <div
+                  key={idx}
+                  className="py-1.5 flex items-center justify-between gap-2 font-mono text-[11.5px]"
+                >
+                  <div className="text-[#f5f5f5]">
+                    <span className="text-[#888]">{wire.from?.part || 'MCU'}:</span>{' '}
+                    <span className="text-white font-medium">{wire.from?.pin}</span>
+                  </div>
+                  <span className="text-[#555]">→</span>
+                  <div className="text-[#f5f5f5]">
+                    <span className="text-[#888]">{wire.to?.part}:</span>{' '}
+                    <span className="text-white font-medium">{wire.to?.pin}</span>
+                  </div>
+                  <div className="text-[10px] text-[#666] shrink-0">
+                    {wire.signal || wire.color || '5V/GND'}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* TAB 4: Virtual ATmega328P Simulator */}
+        {/* TAB 4: Simulator */}
         {activeTab === 'simulate' && (
-          <div className="h-full w-full overflow-y-auto p-4 sm:p-6 bg-[#181818]">
-            <Simulator
-              hex={build.hex}
-              ino={build.code?.ino}
-              className="w-full max-w-4xl mx-auto shadow-xl"
-            />
+          <div className="p-4 max-h-[380px] overflow-y-auto">
+            <Simulator build={build} />
           </div>
         )}
 
-        {/* TAB 5: Arduino C++ Firmware Code */}
+        {/* TAB 5: Firmware Code */}
         {activeTab === 'firmware' && (
-          <div className="h-full flex flex-col p-4 sm:p-6 select-text overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-[#2a2a2a] mb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-[#a3a3a3]" />
-                <span className="font-mono text-sm text-[#f5f5f5]">
-                  {build.code?.filename || `${build.id}.ino`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
+          <div className="p-3 max-h-[380px] flex flex-col select-text">
+            <div className="flex items-center justify-between pb-2 border-b border-[#262626] text-xs">
+              <span className="mono text-[#888]">
+                {build.code?.filename || 'sketch.ino'}
+              </span>
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={handleCopyCode}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-[#a3a3a3] hover:text-white bg-[#212121] hover:bg-[#2a2a2a] border border-[#2a2a2a] transition cursor-pointer"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#202020] hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white transition cursor-pointer text-xs"
                 >
                   {copiedCode ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-emerald-400">Copied</span>
-                    </>
+                    <Check className="w-3 h-3 text-emerald-400" />
                   ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      <span>Copy</span>
-                    </>
+                    <Copy className="w-3 h-3" />
                   )}
+                  <span>{copiedCode ? 'Copied' : 'Copy'}</span>
                 </button>
                 <button
                   onClick={handleDownloadCode}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-[#a3a3a3] hover:text-white bg-[#212121] hover:bg-[#2a2a2a] border border-[#2a2a2a] transition cursor-pointer"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#202020] hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white transition cursor-pointer text-xs"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3 h-3" />
                   <span>Download</span>
                 </button>
               </div>
             </div>
 
-            <pre className="flex-1 overflow-auto rounded-xl bg-[#141414] border border-[#2a2a2a] p-4 text-[#a3a3a3] font-mono text-xs leading-relaxed">
-              <code>{build.code?.ino || '// No firmware sketch found'}</code>
+            <pre className="mt-2 p-3 rounded-lg bg-black/60 border border-[#262626] overflow-x-auto text-emerald-400 font-mono text-[11px] leading-relaxed flex-1">
+              <code>{build.code?.ino || '// No firmware sketch'}</code>
             </pre>
           </div>
         )}

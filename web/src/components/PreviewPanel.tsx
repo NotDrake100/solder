@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Box,
   Cpu,
-  Zap,
+  Activity,
   Play,
   Code2,
   Sparkles,
@@ -125,7 +125,7 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 : 'text-[#9c9488] hover:text-white hover:bg-[#201e1b]'
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <Activity className="w-3.5 h-3.5 text-emerald-400" />
             <span>Wiring</span>
           </button>
 

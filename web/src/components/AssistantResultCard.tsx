@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Box,
   Cpu,
-  Zap,
+  Activity,
   Play,
   Code2,
   Sparkles,
@@ -90,7 +90,7 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
                 : 'text-[#8e8e8e] hover:text-[#ececec] hover:bg-[#2a2a2a]'
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <Activity className="w-3.5 h-3.5 text-emerald-400" />
             <span>Wiring</span>
           </button>
 

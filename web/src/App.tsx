@@ -4,31 +4,25 @@ import { SHOWCASE_BUILDS, DESK_FAN_BUILD } from './data/showcases';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ChatView, ChatMessage } from './components/ChatView';
-import { ResultPanel, ResultTab } from './components/ResultPanel';
 import { getDefaultHarnessChecks, VerifierCheck } from './components/HarnessTrace';
 import { ScrapModal } from './components/ScrapModal';
 import { OrderModal, ShipModal, ArModal, ShareModal } from './components/ActionModals';
-import { MessageSquare, Eye } from 'lucide-react';
 
 const RECENT_BUILDS_KEY = 'solder_recent_builds';
 
 export function App() {
-  const [activeBuild, setActiveBuild] = useState<SolderBuild>(SHOWCASE_BUILDS.sip);
+  const [activeBuild, setActiveBuild] = useState<SolderBuild>(DESK_FAN_BUILD);
   const [buildsHistory, setBuildsHistory] = useState<SolderBuild[]>([
+    DESK_FAN_BUILD,
     SHOWCASE_BUILDS.sip,
     SHOWCASE_BUILDS.wisp,
     SHOWCASE_BUILDS.hasp,
     SHOWCASE_BUILDS.eave,
-    DESK_FAN_BUILD,
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-3.8-flash');
 
   // Active tab in ResultPanel
-  const [activeResultTab, setActiveResultTab] = useState<ResultTab>('case');
-
-  // Mobile toggle between chat and preview (for < 768px viewports)
-  const [mobileActiveView, setMobileActiveView] = useState<'chat' | 'preview'>('preview');
+  const [activeResultTab, setActiveResultTab] = useState<any>('case');
 
   // Sidebar visibility
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -77,26 +71,33 @@ export function App() {
     const match = path.match(/\/b\/([a-zA-Z0-9_-]+)/);
     const buildId = match ? match[1] : window.location.hash.replace('#', '');
 
-    if (buildId && SHOWCASE_BUILDS[buildId]) {
-      loadBuildIntoChat(SHOWCASE_BUILDS[buildId]);
+    if (buildId) {
+      if (buildId === 'desk-fan') {
+        loadBuildIntoChat(DESK_FAN_BUILD);
+      } else if (SHOWCASE_BUILDS[buildId]) {
+        loadBuildIntoChat(SHOWCASE_BUILDS[buildId]);
+      }
     }
   }, []);
 
-  // Load a showcase or past build into chat view
+  // Load a showcase or past build into chat view matching chatgpt-inline.html
   const loadBuildIntoChat = (build: SolderBuild) => {
     setActiveBuild(build);
-    setMobileActiveView('preview');
     setMessages([
       {
         id: `user-${build.id}`,
         sender: 'user',
-        text: build.tagline || build.name,
+        text: build.id === 'desk-fan'
+          ? 'A desk fan that turns on when it gets hot'
+          : build.tagline || build.name,
         timestamp: Date.now() - 30000,
       },
       {
         id: `asst-${build.id}`,
         sender: 'assistant',
-        text: `Here is the verified hardware co-design for **${build.name}**!\n\n${build.summary || build.tagline || ''}\n\nExplore parts, 3D case, wiring, and firmware in the workspace panel:`,
+        text: build.id === 'desk-fan'
+          ? 'A temperature sensor switches a relay that powers the fan. Here is the verified build.'
+          : build.summary || build.tagline || `A verified hardware build for ${build.name}.`,
         timestamp: Date.now() - 28000,
         buildData: build,
         completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
@@ -113,19 +114,21 @@ export function App() {
 
   // Switch build from sidebar
   const handleSelectBuild = (id: string) => {
-    const found = buildsHistory.find((b) => b.id === id) || SHOWCASE_BUILDS[id];
+    const found =
+      id === 'desk-fan'
+        ? DESK_FAN_BUILD
+        : buildsHistory.find((b) => b.id === id) || SHOWCASE_BUILDS[id];
     if (found) {
       loadBuildIntoChat(found);
       window.history.pushState(null, '', `/b/${id}`);
     }
   };
 
-  // Send a message from composer or suggestion card
+  // Send a message from composer or suggestion chip
   const handleSendMessage = async (prompt: string) => {
     if (!prompt.trim() || isLoading) return;
 
     setIsLoading(true);
-    setMobileActiveView('chat');
 
     const userMsgId = `user-${Date.now()}`;
     const asstMsgId = `asst-${Date.now()}`;
@@ -195,8 +198,11 @@ export function App() {
               prev.map((m) => {
                 if (m.id !== asstMsgId) return m;
                 const completed = new Set(m.completedSteps || []);
-                let updatedChecks = m.harnessChecks ? [...m.harnessChecks] : getDefaultHarnessChecks(buildData);
+                let updatedChecks = m.harnessChecks
+                  ? [...m.harnessChecks]
+                  : getDefaultHarnessChecks(buildData);
 
+                // Live verifier SSE events
                 if (data.step === 'verifier_check') {
                   updatedChecks = updatedChecks.map((chk) => {
                     if (chk.id === data.id) {
@@ -237,7 +243,7 @@ export function App() {
                           round: data.round || 1,
                           model: data.model || 'Gemini 3.5 Flash-Lite',
                           patchDiff: data.diff || '',
-                          explanation: data.changelog || 'Self-heal patch applied successfully',
+                          explanation: data.changelog || 'Self-healed: buzzer moved D7 to D8',
                         },
                       };
                     }
@@ -293,7 +299,7 @@ export function App() {
                     ...m,
                     currentStep: 'done',
                     completedSteps: Array.from(completed),
-                    text: `Designing the case: Generated frosted snap-fit enclosure (${buildData?.case?.outerMm?.join('x') || '128x96x40'}mm) with 2.0mm wall clearance. Finalizing build...`,
+                    text: `Designing the case: Generated frosted snap-fit enclosure (${buildData?.case?.outerMm?.join('x') || '82x64x28'}mm) with 2.0mm wall clearance. Finalizing build...`,
                   };
                 } else if (stage === 'done' || stage === 'complete') {
                   completed.add('case');
@@ -307,7 +313,9 @@ export function App() {
                     completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
                     buildData: buildData || undefined,
                     harnessChecks: updatedChecks,
-                    text: `I've synthesized **${buildData?.name || 'Custom Build'}** for your idea! ${buildData?.tagline || ''}\n\nExplore the interactive 3D case, circuit wiring, virtual simulator, and firmware on the right:`,
+                    text: isFan
+                      ? 'A temperature sensor switches a relay that powers the fan. Here is the verified build.'
+                      : buildData?.summary || buildData?.tagline || `A verified hardware build for ${buildData?.name || 'custom build'}.`,
                   };
                 }
 
@@ -348,7 +356,7 @@ export function App() {
     const targetBuild = buildData || (isFan ? DESK_FAN_BUILD : SHOWCASE_BUILDS.sip);
 
     // Stage 1: Reading
-    await new Promise((r) => setTimeout(r, 350));
+    await new Promise((r) => setTimeout(r, 300));
     setMessages((prev) =>
       prev.map((m) =>
         m.id === msgId
@@ -364,7 +372,7 @@ export function App() {
     );
 
     // Stage 2: Parts
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 400));
     setMessages((prev) =>
       prev.map((m) =>
         m.id === msgId
@@ -379,7 +387,7 @@ export function App() {
     );
 
     // Stage 3: Wiring
-    await new Promise((r) => setTimeout(r, 550));
+    await new Promise((r) => setTimeout(r, 450));
     setMessages((prev) =>
       prev.map((m) =>
         m.id === msgId
@@ -394,7 +402,7 @@ export function App() {
     );
 
     // Stage 4: Firmware
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 400));
     setMessages((prev) =>
       prev.map((m) =>
         m.id === msgId
@@ -409,7 +417,7 @@ export function App() {
     );
 
     // Stage 5: Case
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 400));
     setMessages((prev) =>
       prev.map((m) =>
         m.id === msgId
@@ -424,7 +432,7 @@ export function App() {
     );
 
     // Stage 6: Done
-    await new Promise((r) => setTimeout(r, 450));
+    await new Promise((r) => setTimeout(r, 350));
     finishLiveBuild(targetBuild, msgId, prompt, isFan);
   };
 
@@ -460,7 +468,9 @@ export function App() {
           completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
           buildData: finalBuild,
           harnessChecks: getDefaultHarnessChecks(finalBuild),
-          text: `I've synthesized **${finalBuild.name}** for your idea! ${finalBuild.tagline || finalBuild.summary}\n\nExplore the interactive 3D case, circuit wiring, virtual simulator, and firmware in the workspace panel:`,
+          text: isFan
+            ? 'A temperature sensor switches a relay that powers the fan. Here is the verified build.'
+            : finalBuild.summary || finalBuild.tagline || `A verified hardware build for ${finalBuild.name}.`,
         };
       })
     );
@@ -486,41 +496,38 @@ export function App() {
     });
   };
 
-  const isConversationEmpty = messages.length === 0;
-
   return (
-    <div className="flex h-screen w-full bg-[#181818] text-[#f5f5f5] font-sans overflow-hidden">
-      {/* Desktop Sidebar (260px, clean neutral) */}
+    <div className="app flex h-screen w-full bg-[#0f0f0f] text-[#f5f5f5] font-sans overflow-hidden">
+      {/* Desktop Slim Sidebar (232px) */}
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen((prev) => !prev)}
         onNewBuild={handleNewBuild}
         builds={buildsHistory}
-        activeBuildId={activeBuild.id}
+        activeBuildId={activeBuild?.id}
         onSelectBuild={handleSelectBuild}
         onOpenScrapMode={() => setIsScrapOpen(true)}
-        ownedCount={activeBuild.parts.filter((p) => p.owned).length}
+        ownedCount={activeBuild?.parts?.filter((p) => p.owned).length || 0}
         savingsInr={scrapSavings}
       />
 
-      {/* Mobile Slide-in Drawer with dim backdrop */}
+      {/* Mobile Slide-in Drawer */}
       <Sidebar
         isOpen={isMobileDrawerOpen}
         onToggle={() => setIsMobileDrawerOpen((prev) => !prev)}
         onNewBuild={handleNewBuild}
         builds={buildsHistory}
-        activeBuildId={activeBuild.id}
+        activeBuildId={activeBuild?.id}
         onSelectBuild={handleSelectBuild}
         onOpenScrapMode={() => setIsScrapOpen(true)}
-        ownedCount={activeBuild.parts.filter((p) => p.owned).length}
+        ownedCount={activeBuild?.parts?.filter((p) => p.owned).length || 0}
         savingsInr={scrapSavings}
         isMobileDrawer={true}
         onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
       />
 
-      {/* Main Workspace Stage */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#181818]">
-        {/* Top Bar (48px, ultra-clean neutral) */}
+      {/* Main Single Column Layout: TopBar + Centered 768px Chat */}
+      <main className="main flex-1 flex flex-col h-full min-w-0 bg-[#0f0f0f] relative overflow-hidden">
         <TopBar
           onToggleSidebar={() => {
             if (window.innerWidth < 768) {
@@ -530,97 +537,23 @@ export function App() {
             }
           }}
           isSidebarOpen={isSidebarOpen}
+          onNewBuild={handleNewBuild}
           onOpenShare={() => setIsShareOpen(true)}
-          selectedModel={selectedModel}
-          onSelectModel={setSelectedModel}
         />
 
-        {/* 1. Empty State (Centered Clean Stage) */}
-        {isConversationEmpty ? (
-          <ChatView
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            isLoading={isLoading}
-            onOpenScrapMode={() => setIsScrapOpen(true)}
-            onOpenOrder={() => setIsOrderOpen(true)}
-            onOpenShip={() => setIsShipOpen(true)}
-            onOpenAr={() => setIsArOpen(true)}
-            onSelectShowcase={(id) => handleSelectBuild(id)}
-            onSelectTab={(tab) => setActiveResultTab(tab)}
-          />
-        ) : (
-          /* 2. Active State: v0/Bolt Split Workspace */
-          <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden relative">
-            {/* Mobile View Switcher Pill (< 768px only) */}
-            <div className="md:hidden flex items-center justify-center p-2 bg-[#181818] border-b border-[#2a2a2a]">
-              <div className="flex items-center p-0.5 rounded-lg bg-[#212121] border border-[#2a2a2a]">
-                <button
-                  onClick={() => setMobileActiveView('chat')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
-                    mobileActiveView === 'chat'
-                      ? 'bg-[#2a2a2a] text-[#f5f5f5]'
-                      : 'text-[#a3a3a3] hover:text-white'
-                  }`}
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Chat & Trace</span>
-                </button>
-                <button
-                  onClick={() => setMobileActiveView('preview')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
-                    mobileActiveView === 'preview'
-                      ? 'bg-[#2a2a2a] text-[#f5f5f5]'
-                      : 'text-[#a3a3a3] hover:text-white'
-                  }`}
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Build Preview</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Left: Chat & Trace Column (~400px clamp 360-448px, shrink-0) */}
-            <div
-              className={`w-full md:w-[400px] md:shrink-0 flex flex-col h-full border-r border-[#2a2a2a] bg-[#181818] overflow-hidden ${
-                mobileActiveView === 'chat' ? 'flex' : 'hidden md:flex'
-              }`}
-            >
-              <ChatView
-                messages={messages}
-                onSendMessage={handleSendMessage}
-                isLoading={isLoading}
-                onOpenScrapMode={() => setIsScrapOpen(true)}
-                onOpenOrder={() => setIsOrderOpen(true)}
-                onOpenShip={() => setIsShipOpen(true)}
-                onOpenAr={() => setIsArOpen(true)}
-                onSelectShowcase={(id) => handleSelectBuild(id)}
-                onSelectTab={(tab) => {
-                  setActiveResultTab(tab);
-                  setMobileActiveView('preview');
-                }}
-              />
-            </div>
-
-            {/* Right: Big Full-Height Result Panel (3D Case, Parts, Wiring, Simulate, Firmware) */}
-            <div
-              className={`flex-1 flex flex-col h-full bg-[#181818] overflow-hidden ${
-                mobileActiveView === 'preview' ? 'flex' : 'hidden md:flex'
-              }`}
-            >
-              <ResultPanel
-                build={activeBuild}
-                activeTab={activeResultTab}
-                onTabChange={(tab) => setActiveResultTab(tab)}
-                isLoading={isLoading}
-                onOpenOrder={() => setIsOrderOpen(true)}
-                onOpenShip={() => setIsShipOpen(true)}
-                onOpenAr={() => setIsArOpen(true)}
-                onOpenShare={() => setIsShareOpen(true)}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+        <ChatView
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          onOpenScrapMode={() => setIsScrapOpen(true)}
+          onOpenOrder={() => setIsOrderOpen(true)}
+          onOpenShip={() => setIsShipOpen(true)}
+          onOpenAr={() => setIsArOpen(true)}
+          onOpenShare={() => setIsShareOpen(true)}
+          onSelectShowcase={(id) => handleSelectBuild(id)}
+          onSelectTab={(tab) => setActiveResultTab(tab)}
+        />
+      </main>
 
       {/* Modals */}
       <ScrapModal

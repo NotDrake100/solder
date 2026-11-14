@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Pause, Zap, Info, Sliders, Cpu, Activity } from 'lucide-react';
+import { Play, Pause, Info, Sliders, Cpu, Activity } from 'lucide-react';
 import type { WireConnection, SolderBuild } from '../types';
 import { ArduinoSimulator } from '../sim';
 import { Simulator } from '../../../sim/Simulator';
@@ -19,7 +19,7 @@ export const WiringDiagram: React.FC<WiringDiagramProps> = ({ build }) => {
       {/* Header bar with Simulate toggle */}
       <div className="px-5 py-3.5 bg-zinc-50/80 border-b border-zinc-200/70 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-amber-500" />
+          <Activity className="w-4 h-4 text-emerald-400" />
           <h3 className="text-sm font-semibold text-zinc-900">
             {isSimulating ? 'Interactive Hardware Simulation (avr8js)' : 'Circuit Schematic & Pinout Netlist'}
           </h3>

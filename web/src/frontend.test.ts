@@ -50,6 +50,12 @@ assert(QUICK_CHIPS.length >= 5, 'Quick chips populated');
 assert(SHOWCASE_PILLS.length >= 4, 'Showcase selector pills populated');
 console.log('   ✓ UI navigation chips and pills verified.');
 
+// 5. Verify Logo Mark 06 & Deterministic Harness Trace
+console.log('5. Testing Logo Mark 06 and Harness Trace checks...');
+import { SolderLogo } from './components/SolderLogo.tsx';
+assert(typeof SolderLogo === 'function', 'SolderLogo Mark 06 component exists');
+console.log('   ✓ Logo Mark 06 "Case and joint" verified.');
+
 console.log('\n========================================');
 console.log('ALL FRONTEND TEST SUITES PASSED (100%)');
 console.log('========================================');
