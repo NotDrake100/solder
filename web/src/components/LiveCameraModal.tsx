@@ -122,14 +122,14 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Scale down to 640px width
-      const targetWidth = 640;
-      const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth) || 360;
+      // Scale down to 512px width for fast Gemini vision detection (q0.6)
+      const targetWidth = 512;
+      const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth) || 288;
       canvas.width = targetWidth;
       canvas.height = targetHeight;
 
       ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
-      const jpegBase64 = canvas.toDataURL('image/jpeg', 0.7);
+      const jpegBase64 = canvas.toDataURL('image/jpeg', 0.6);
 
       inFlight = true;
       setIsDetecting(true);
@@ -158,8 +158,8 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
       }
     };
 
-    // Run first capture after brief settling
-    const initialTimer = setTimeout(captureAndDetect, 600);
+    // Run first capture immediately once stream starts
+    const initialTimer = setTimeout(captureAndDetect, 120);
     intervalRef.current = setInterval(captureAndDetect, 1500);
 
     return () => {
@@ -297,20 +297,17 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              isDetecting ? 'bg-white animate-ping' : 'bg-white'
-            }`}
-          />
           <span className="text-sm font-medium text-white tracking-tight">
             Point at your parts
           </span>
         </div>
 
         <div className="text-right">
-          <span className="text-[11px] font-mono text-white/60">
-            {sessionRemaining} scans left
-          </span>
+          {sessionRemaining < 5 && (
+            <span className="text-[11px] font-mono text-white/60">
+              {sessionRemaining} scans left
+            </span>
+          )}
         </div>
       </div>
 
@@ -367,26 +364,33 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
 
             {/* Tracking Overlay (matches camera-tracking-ref.jpg) */}
             <div className="absolute inset-0 pointer-events-none">
-              {trackedBoxes.map((box) => (
-                <div
-                  key={box.id}
-                  className="absolute border-2 border-white/90 rounded-xl transition-all duration-100 ease-out shadow-[0_0_15px_rgba(255,255,255,0.25)]"
-                  style={{
-                    top: `${box.currentY}%`,
-                    left: `${box.currentX}%`,
-                    height: `${box.currentH}%`,
-                    width: `${box.currentW}%`,
-                  }}
-                >
-                  {/* Floating White Pill Label Chip at Top-Left */}
-                  <div className="absolute -top-3 left-2 bg-white text-black text-[11px] font-semibold tracking-tight px-2 py-0.5 rounded shadow-lg flex items-center gap-1 whitespace-nowrap">
-                    <span>{box.label}</span>
-                    <span className="text-[9.5px] font-mono opacity-60">
-                      {Math.round(box.confidence * 100)}%
-                    </span>
+              {trackedBoxes.map((box) => {
+                const clampedW = Math.max(8, Math.min(box.currentW, 94));
+                const clampedH = Math.max(8, Math.min(box.currentH, 94));
+                const clampedX = Math.max(2, Math.min(box.currentX, 98 - clampedW));
+                const clampedY = Math.max(2, Math.min(box.currentY, 98 - clampedH));
+
+                return (
+                  <div
+                    key={box.id}
+                    className="absolute border-2 border-white rounded-[12px] transition-all duration-300 ease-out shadow-[0_0_15px_rgba(255,255,255,0.25)]"
+                    style={{
+                      top: `${clampedY}%`,
+                      left: `${clampedX}%`,
+                      height: `${clampedH}%`,
+                      width: `${clampedW}%`,
+                    }}
+                  >
+                    {/* Floating White Pill Label Chip INSIDE Top-Left of Box */}
+                    <div className="absolute top-1.5 left-1.5 bg-white text-black text-[11px] font-semibold tracking-tight px-2 py-0.5 rounded-md shadow-md flex items-center gap-1 whitespace-nowrap select-none">
+                      <span>{box.label}</span>
+                      <span className="text-[9.5px] font-mono opacity-60">
+                        {Math.round(box.confidence * 100)}%
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Subtle Crosshairs in center */}
@@ -440,13 +444,12 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
           <button
             onClick={handleUsePartsClick}
             disabled={foundItemsArray.length === 0}
-            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs transition flex items-center justify-center cursor-pointer ${
               foundItemsArray.length > 0
                 ? 'bg-white text-black hover:bg-neutral-200 shadow-lg'
                 : 'bg-[#242424] text-[#666] cursor-not-allowed opacity-60'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
             <span>Use these parts ({totalFoundCount})</span>
           </button>
         </div>

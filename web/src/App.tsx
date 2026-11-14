@@ -34,8 +34,9 @@ export function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
-  // Live Camera state
+  // Live Camera state & active inventory
   const [isLiveCameraOpen, setIsLiveCameraOpen] = useState(false);
+  const [activeInventory, setActiveInventory] = useState<string[]>([]);
 
   // Modals state
   const [isScrapOpen, setIsScrapOpen] = useState(false);
@@ -737,10 +738,10 @@ export function App() {
     );
   };
 
-  // Handler for Live Camera Mode "Use these parts"
+  // Handler for Live Camera Mode "Use these parts" (QA-R2 #4: close camera, populate chips above input)
   const handleUseLiveCameraParts = (parts: string[]) => {
-    const promptText = `Build a verified DIY device using my tracked parts: ${parts.join(', ')}`;
-    handleSendMessage(promptText, undefined, parts);
+    setActiveInventory(parts);
+    setIsLiveCameraOpen(false);
   };
 
   // Handler for file upload fallback from Live Camera
@@ -839,6 +840,8 @@ export function App() {
           onOpenShare={() => setIsShareOpen(true)}
           onSelectShowcase={(id) => handleSelectBuild(id)}
           onSelectTab={(tab) => setActiveResultTab(tab)}
+          activeInventory={activeInventory}
+          onClearInventory={() => setActiveInventory([])}
         />
       </main>
 

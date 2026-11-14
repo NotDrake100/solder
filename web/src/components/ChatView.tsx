@@ -46,6 +46,8 @@ interface ChatViewProps {
   onOpenShare?: () => void;
   onSelectShowcase: (id: string) => void;
   onSelectTab?: (tab: 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware') => void;
+  activeInventory?: string[];
+  onClearInventory?: () => void;
 }
 
 const CHIPS = [
@@ -137,6 +139,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
   onOpenShare,
   onSelectShowcase,
   onSelectTab,
+  activeInventory = [],
+  onClearInventory,
 }) => {
   const [inputText, setInputText] = useState('');
   const [selectedPhotoBase64, setSelectedPhotoBase64] = useState<string | null>(null);
@@ -156,15 +160,28 @@ export const ChatView: React.FC<ChatViewProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Focus input when active inventory is populated from live camera
+  useEffect(() => {
+    if (activeInventory.length > 0) {
+      inputRef.current?.focus();
+    }
+  }, [activeInventory]);
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const trimmed = inputText.trim();
-    if ((!trimmed && !selectedPhotoBase64) || isLoading) return;
+    const hasInventory = activeInventory.length > 0;
+    if ((!trimmed && !selectedPhotoBase64 && !hasInventory) || isLoading) return;
 
-    onSendMessage(trimmed || 'Build with this photo', selectedPhotoBase64 || undefined);
+    onSendMessage(
+      trimmed || (hasInventory ? `Build with ${activeInventory.join(', ')}` : 'Build with this photo'),
+      selectedPhotoBase64 || undefined,
+      hasInventory ? activeInventory : undefined
+    );
     setInputText('');
     setSelectedPhotoBase64(null);
     setShowAttachMenu(false);
+    if (onClearInventory) onClearInventory();
   };
 
   const handlePhotoFile = (file: File) => {
@@ -279,11 +296,31 @@ export const ChatView: React.FC<ChatViewProps> = ({
           className="hidden"
         />
 
+        {/* Tracked parts chip above input (QA-R2 #4) */}
+        {activeInventory && activeInventory.length > 0 && (
+          <div className="mb-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1c1c1c] border border-[#333] text-xs text-[#d4d4d4] animate-fadeIn max-w-full">
+            <span className="text-[#888] font-medium shrink-0">Using:</span>
+            <span className="text-white font-medium truncate">
+              {activeInventory.join(', ')}
+            </span>
+            {onClearInventory && (
+              <button
+                type="button"
+                onClick={onClearInventory}
+                className="p-0.5 rounded text-[#888] hover:text-white hover:bg-[#262626] transition cursor-pointer shrink-0 ml-1"
+                title="Remove tracked parts"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         <form
           onSubmit={handleSubmit}
           className="composer-tray w-full bg-[#161616] border border-[#333333] focus-within:border-[#555] rounded-xl px-2.5 py-2 flex items-center gap-2 transition shadow-xs"
         >
-          {/* Plus Button for Photos */}
+          {/* ONE Plus button for Photo & Camera (QA-R2 #6) */}
           <button
             type="button"
             onClick={() => setShowAttachMenu((prev) => !prev)}
@@ -293,27 +330,16 @@ export const ChatView: React.FC<ChatViewProps> = ({
             <Plus className="w-4 h-4" />
           </button>
 
-          {/* Camera Button for Live Camera Tracking */}
-          <button
-            type="button"
-            onClick={onOpenLiveCamera}
-            className="p-1.5 rounded-lg text-[#888] hover:text-white hover:bg-[#242424] transition cursor-pointer shrink-0"
-            title="Point at your parts (Live tracking)"
-          >
-            <Camera className="w-4 h-4" />
-          </button>
-
-          <span
-            className="composer-dot w-1.5 h-1.5 rounded-full bg-[#555] shrink-0"
-            aria-hidden="true"
-          />
-
           <input
             ref={inputRef}
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Describe a device or ask Solder..."
+            placeholder={
+              activeInventory.length > 0
+                ? "What should these parts do?"
+                : "Describe a device or ask Solder..."
+            }
             aria-label="Describe a device"
             autoFocus={autoFocus}
             disabled={isLoading}
@@ -406,72 +432,77 @@ export const ChatView: React.FC<ChatViewProps> = ({
               }
 
               // Assistant message: Avatar + Lead text + Harness + Tabbed Result Card
+              const hasLeadContent = Boolean(msg.text || (msg.detectedParts && msg.detectedParts.length > 0));
+              const showTypingDots = msg.isTyping && !msg.text && (!msg.harnessChecks || msg.harnessChecks.length === 0);
+
               return (
                 <div key={msg.id} className="msg-assistant w-full space-y-3.5 animate-fadeIn">
-                  {/* Assistant Avatar + Lead text row */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-[#1c1c1c] border border-[#2c2c2c] flex items-center justify-center shrink-0 mt-0.5 text-white shadow-xs">
-                      <SolderLogo className="w-4 h-4" />
-                    </div>
+                  {/* Assistant Avatar + Lead text row (only when content or typing dots exist) */}
+                  {(hasLeadContent || showTypingDots) && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-[#1c1c1c] border border-[#2c2c2c] flex items-center justify-center shrink-0 mt-0.5 text-white shadow-xs">
+                        <SolderLogo className="w-4 h-4" />
+                      </div>
 
-                    <div className="flex-1 min-w-0 space-y-2">
-                      {/* Lead text */}
-                      {msg.text && (
-                        <div className="lead text-[16px] leading-[1.7] text-[#d4d4d4]">
-                          <FormattedMarkdown content={msg.text} />
-                          {msg.isStreaming && (
-                            <span className="inline-block w-1.5 h-4 bg-[#f5f5f5] ml-1 translate-y-0.5 animate-pulse" />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Vision Detected Parts list & "Build with these" chip */}
-                      {msg.detectedParts && msg.detectedParts.length > 0 && (
-                        <div className="p-3 rounded-xl bg-[#161616] border border-[#2c2c2c] space-y-2.5 text-xs">
-                          <div className="font-semibold text-white flex items-center gap-1.5">
-                            <Camera className="w-3.5 h-3.5 text-white" />
-                            <span>Identified Hardware Components</span>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        {/* Lead text */}
+                        {msg.text && (
+                          <div className="lead text-[16px] leading-[1.7] text-[#d4d4d4]">
+                            <FormattedMarkdown content={msg.text} />
+                            {msg.isStreaming && (
+                              <span className="inline-block w-1.5 h-4 bg-[#f5f5f5] ml-1 translate-y-0.5 animate-pulse" />
+                            )}
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {msg.detectedParts.map((p, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#222] border border-[#333] text-white"
+                        )}
+
+                        {/* Vision Detected Parts list & "Build with these" chip */}
+                        {msg.detectedParts && msg.detectedParts.length > 0 && (
+                          <div className="p-3 rounded-xl bg-[#161616] border border-[#2c2c2c] space-y-2.5 text-xs">
+                            <div className="font-semibold text-white flex items-center gap-1.5">
+                              <Camera className="w-3.5 h-3.5 text-white" />
+                              <span>Identified Hardware Components</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {msg.detectedParts.map((p, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#222] border border-[#333] text-white"
+                                >
+                                  <Check className="w-3 h-3 text-white" />
+                                  <span>{p.name}</span>
+                                </span>
+                              ))}
+                            </div>
+
+                            <div className="pt-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onSendMessage(
+                                    msg.suggestedPrompt || `Build device using ${msg.detectedParts?.map((p) => p.name).join(', ')}`,
+                                    undefined,
+                                    msg.detectedParts?.map((p) => p.name)
+                                  )
+                                }
+                                className="px-3.5 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition cursor-pointer shadow-sm flex items-center gap-1.5"
                               >
-                                <Check className="w-3 h-3 text-white" />
-                                <span>{p.name}</span>
-                              </span>
-                            ))}
+                                <span>Build with these parts</span>
+                              </button>
+                            </div>
                           </div>
+                        )}
 
-                          <div className="pt-1">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                onSendMessage(
-                                  msg.suggestedPrompt || `Build device using ${msg.detectedParts?.map((p) => p.name).join(', ')}`,
-                                  undefined,
-                                  msg.detectedParts?.map((p) => p.name)
-                                )
-                              }
-                              className="px-3.5 py-1.5 rounded-lg bg-white text-black font-semibold text-xs hover:bg-neutral-200 transition cursor-pointer shadow-sm flex items-center gap-1.5"
-                            >
-                              <span>Build with these parts</span>
-                            </button>
+                        {/* Typing dots: only when waiting and no checks or text */}
+                        {showTypingDots && (
+                          <div className="flex items-center gap-1.5 py-1 text-[#a3a3a3]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:150ms]"></span>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:300ms]"></span>
                           </div>
-                        </div>
-                      )}
-
-                      {/* Typing / streaming progress indicator */}
-                      {msg.isTyping && (
-                        <div className="flex items-center gap-1.5 py-1 text-[#a3a3a3]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse"></span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:150ms]"></span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:300ms]"></span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Solder Deterministic Harness Trace: Only HarnessTrace signal-line rows while building and done */}
                   {(msg.buildData || msg.isStreaming || (msg.harnessChecks && msg.harnessChecks.length > 0)) && (
