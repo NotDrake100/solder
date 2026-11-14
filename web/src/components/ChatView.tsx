@@ -11,7 +11,6 @@ import {
   Circle,
   Loader2,
   Zap,
-  Sparkles,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { HarnessTrace, VerifierCheck } from './HarnessTrace';
@@ -38,7 +37,7 @@ interface ChatViewProps {
   onOpenShip?: () => void;
   onOpenAr?: () => void;
   onSelectShowcase: (id: string) => void;
-  onSelectTab?: (tab: 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware' | 'harness') => void;
+  onSelectTab?: (tab: 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware') => void;
 }
 
 const SUGGESTIONS = [
@@ -111,7 +110,7 @@ function FormattedMarkdown({ content }: { content: string }) {
       const token = match[0];
       if (token.startsWith('**') && token.endsWith('**')) {
         parts.push(
-          <strong key={match.index} className="font-semibold text-stone-100">
+          <strong key={match.index} className="font-semibold text-[#f5f5f5]">
             {token.slice(2, -2)}
           </strong>
         );
@@ -119,14 +118,14 @@ function FormattedMarkdown({ content }: { content: string }) {
         parts.push(
           <code
             key={match.index}
-            className="px-1.5 py-0.5 rounded bg-[#191816] text-orange-300 font-mono text-[13px] border border-[#383430]"
+            className="px-1.5 py-0.5 rounded bg-[#2a2a2a] text-[#f5f5f5] font-mono text-[13px]"
           >
             {token.slice(1, -1)}
           </code>
         );
       } else if (token.startsWith('*') && token.endsWith('*')) {
         parts.push(
-          <em key={match.index} className="italic text-stone-300">
+          <em key={match.index} className="italic text-[#a3a3a3]">
             {token.slice(1, -1)}
           </em>
         );
@@ -148,7 +147,7 @@ function FormattedMarkdown({ content }: { content: string }) {
         elements.push(
           <pre
             key={`code-${i}`}
-            className="my-2 p-3 rounded-xl bg-[#141312] border border-[#383430] text-emerald-400 font-mono text-xs overflow-x-auto"
+            className="my-2 p-3 rounded-xl bg-[#141414] border border-[#2a2a2a] text-[#f5f5f5] font-mono text-xs overflow-x-auto"
           >
             <code>{codeBlockLines.join('\n')}</code>
           </pre>
@@ -170,7 +169,7 @@ function FormattedMarkdown({ content }: { content: string }) {
     if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
       const itemText = line.trim().slice(2);
       currentList.push(
-        <li key={`li-${i}`} className="ml-4 list-disc text-[14.5px] text-stone-200">
+        <li key={`li-${i}`} className="ml-4 list-disc text-[14.5px] text-[#d4d4d4]">
           {parseInline(itemText)}
         </li>
       );
@@ -188,7 +187,7 @@ function FormattedMarkdown({ content }: { content: string }) {
     if (line.trim().startsWith('### ') || line.trim().startsWith('## ')) {
       const hText = line.trim().replace(/^#{2,3}\s+/, '');
       elements.push(
-        <h3 key={`h-${i}`} className="text-base font-semibold text-stone-100 mt-3 mb-1">
+        <h3 key={`h-${i}`} className="text-sm font-semibold text-[#f5f5f5] mt-3 mb-1">
           {parseInline(hText)}
         </h3>
       );
@@ -199,7 +198,7 @@ function FormattedMarkdown({ content }: { content: string }) {
       elements.push(<div key={`br-${i}`} className="h-2" />);
     } else {
       elements.push(
-        <p key={`p-${i}`} className="text-[14.5px] leading-relaxed text-stone-200">
+        <p key={`p-${i}`} className="text-[14.5px] leading-relaxed text-[#d4d4d4]">
           {parseInline(line)}
         </p>
       );
@@ -306,16 +305,20 @@ export const ChatView: React.FC<ChatViewProps> = ({
     const hasText = input.trim().length > 0;
 
     return (
-      <div className={`w-full ${isCentered ? 'max-w-[680px]' : 'max-w-full'} mx-auto px-3 sm:px-4 ${isCentered ? '' : 'pt-2 pb-3'}`}>
+      <div
+        className={`w-full ${
+          isCentered ? 'max-w-[680px]' : 'max-w-full'
+        } mx-auto px-3 sm:px-4 ${isCentered ? '' : 'pt-2 pb-3'}`}
+      >
         <form
           onSubmit={handleSubmit}
-          className="relative flex items-center bg-[#262422] rounded-[24px] min-h-[52px] px-3 py-1.5 transition-all border border-[#383430] focus-within:border-orange-500/50 focus-within:ring-1 focus-within:ring-orange-500/20 shadow-lg"
+          className="relative flex items-center bg-[#212121] rounded-[24px] min-h-[50px] px-3 py-1.5 transition-all border border-[#2a2a2a] focus-within:border-[#444] shadow-sm"
         >
           {/* + Button for Scrap Mode attachment */}
           <button
             type="button"
             onClick={onOpenScrapMode}
-            className="p-1.5 rounded-full text-stone-400 hover:text-white hover:bg-[#34302c] transition shrink-0 mr-1.5"
+            className="p-1.5 rounded-full text-[#777] hover:text-[#f5f5f5] hover:bg-[#2a2a2a] transition shrink-0 mr-1.5"
             title="Attach photo for Scrap Mode"
           >
             <Plus className="w-4 h-4" />
@@ -330,17 +333,17 @@ export const ChatView: React.FC<ChatViewProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={placeholderText}
             disabled={isLoading}
-            className="flex-1 bg-transparent border-0 outline-none resize-none text-[14.5px] text-stone-100 placeholder-stone-500 leading-relaxed max-h-[140px] py-1 selection:bg-orange-500/20"
+            className="flex-1 bg-transparent border-0 outline-none resize-none text-[14.5px] text-[#f5f5f5] placeholder-[#777] leading-relaxed max-h-[140px] py-1 selection:bg-[#333]"
           />
 
-          {/* Round 34px Send button: warm copper bg with dark up-arrow; disabled = #423d38 */}
+          {/* Clean White Send Button: white bg with black up-arrow */}
           <button
             type="submit"
             disabled={!hasText || isLoading}
             className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ml-1.5 transition-all ${
               hasText && !isLoading
-                ? 'bg-orange-500 text-stone-950 hover:bg-orange-400 cursor-pointer shadow-md shadow-orange-500/20'
-                : 'bg-[#383430] text-stone-600 cursor-not-allowed opacity-60'
+                ? 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow-sm'
+                : 'bg-[#2a2a2a] text-[#555] cursor-not-allowed opacity-60'
             }`}
             title="Send message"
           >
@@ -348,8 +351,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
           </button>
         </form>
 
-        {/* Grey disclaimer */}
-        <div className="text-center text-[11px] text-stone-500 pt-2 select-none">
+        {/* Clean subtle disclaimer */}
+        <div className="text-center text-[11px] text-[#666] pt-2 select-none">
           Solder can make mistakes. Check wiring before powering on.
         </div>
       </div>
@@ -357,19 +360,17 @@ export const ChatView: React.FC<ChatViewProps> = ({
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full bg-[#1f1e1c]">
+    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto select-text relative w-full bg-[#181818]">
       {/* 1. EMPTY STATE (when no messages yet) */}
       {isConversationEmpty ? (
-        <div className="m-auto flex flex-col items-center max-w-[680px] w-full px-4 py-12">
+        <div className="m-auto flex flex-col items-center max-w-[680px] w-full px-4 py-16">
           {/* Large centered greeting */}
-          <h1 className="text-[32px] font-semibold text-stone-100 tracking-[-1.2px] text-center mb-6">
+          <h1 className="text-[30px] font-semibold text-[#f5f5f5] tracking-tight text-center mb-6">
             What do you want to build?
           </h1>
 
           {/* Composer directly under heading */}
-          <div className="w-full mb-6">
-            {renderComposer(true)}
-          </div>
+          <div className="w-full mb-6">{renderComposer(true)}</div>
 
           {/* 4 suggestion chips in a 2x2 grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
@@ -377,12 +378,12 @@ export const ChatView: React.FC<ChatViewProps> = ({
               <button
                 key={idx}
                 onClick={() => onSendMessage(item.prompt)}
-                className="p-3.5 rounded-2xl bg-[#262422] hover:bg-[#2e2a27] border border-[#383430] text-left transition group"
+                className="p-3.5 rounded-xl bg-[#212121] hover:bg-[#262626] border border-[#2a2a2a] text-left transition group"
               >
-                <div className="text-xs font-semibold text-stone-200 group-hover:text-orange-400 transition-colors">
+                <div className="text-xs font-medium text-[#f5f5f5] group-hover:text-white transition-colors">
                   {item.title}
                 </div>
-                <div className="text-[11px] text-stone-400 mt-0.5 line-clamp-1">
+                <div className="text-[11px] text-[#777] mt-0.5 line-clamp-1">
                   {item.desc}
                 </div>
               </button>
@@ -391,55 +392,55 @@ export const ChatView: React.FC<ChatViewProps> = ({
         </div>
       ) : (
         /* 2. CONVERSATION MESSAGES LIST (inside the chat column) */
-        <div className="w-full px-3 sm:px-4 py-4 space-y-5 flex-1">
+        <div className="w-full px-3 sm:px-4 py-4 space-y-4 flex-1">
           {messages.map((msg) => {
             const isUser = msg.sender === 'user';
 
             if (isUser) {
               return (
                 <div key={msg.id} className="flex justify-end w-full">
-                  <div className="bg-[#262422] border border-[#383430] text-stone-100 rounded-[20px] px-3.5 py-2 max-w-[85%] text-[14.5px] leading-relaxed shadow-sm break-words select-text">
+                  <div className="bg-[#262626] border border-[#2a2a2a] text-[#f5f5f5] rounded-[20px] px-3.5 py-2 max-w-[85%] text-[14.5px] leading-relaxed shadow-xs break-words select-text">
                     {msg.text}
                   </div>
                 </div>
               );
             }
 
-            // Assistant message: No bubble, full column width, warm Solder avatar on left
+            // Assistant message: No bubble, full column width, clean avatar
             return (
               <div key={msg.id} className="flex gap-2.5 sm:gap-3 items-start w-full">
-                {/* Round Solder Copper Avatar */}
-                <div className="w-6 h-6 rounded-lg bg-orange-500/15 border border-orange-500/30 flex items-center justify-center shrink-0 mt-0.5 text-orange-400">
-                  <Zap className="w-3.5 h-3.5 fill-orange-400/20" />
+                {/* Clean Neutral Avatar */}
+                <div className="w-6 h-6 rounded-md bg-[#212121] border border-[#2a2a2a] flex items-center justify-center shrink-0 mt-0.5 text-[#f5f5f5]">
+                  <Zap className="w-3.5 h-3.5" />
                 </div>
 
                 {/* Assistant Content Column */}
-                <div className="flex-1 min-w-0 space-y-3">
-                  {/* Typing Indicator (3 pulsing dots) */}
+                <div className="flex-1 min-w-0 space-y-2.5">
+                  {/* Typing Indicator */}
                   {msg.isTyping && (
-                    <div className="flex items-center gap-1.5 py-1 text-orange-400">
-                      <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
-                      <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse [animation-delay:150ms]"></span>
-                      <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse [animation-delay:300ms]"></span>
+                    <div className="flex items-center gap-1.5 py-1 text-[#a3a3a3]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:150ms]"></span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#a3a3a3] animate-pulse [animation-delay:300ms]"></span>
                     </div>
                   )}
 
-                  {/* Markdown Formatted Text & Blinking Caret */}
+                  {/* Markdown Formatted Text */}
                   {msg.text && (
-                    <div className="text-[14.5px] leading-relaxed text-stone-200">
+                    <div className="text-[14.5px] leading-relaxed text-[#d4d4d4]">
                       <FormattedMarkdown content={msg.text} />
                       {msg.isStreaming && (
-                        <span className="inline-block w-1.5 h-4 bg-orange-400 ml-1 translate-y-0.5 animate-pulse" />
+                        <span className="inline-block w-1.5 h-4 bg-[#f5f5f5] ml-1 translate-y-0.5 animate-pulse" />
                       )}
                     </div>
                   )}
 
                   {/* Live Progress Checklist while building */}
                   {msg.isStreaming && (
-                    <div className="p-3 rounded-xl bg-[#262422] border border-[#383430] space-y-2 text-xs">
-                      <div className="font-medium text-stone-200 flex items-center justify-between">
+                    <div className="p-3 rounded-lg bg-[#212121] border border-[#2a2a2a] space-y-2 text-xs">
+                      <div className="font-medium text-[#f5f5f5] flex items-center justify-between">
                         <span>Hardware Co-Design Pipeline</span>
-                        <Loader2 className="w-3.5 h-3.5 text-orange-400 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 text-[#a3a3a3] animate-spin" />
                       </div>
                       <div className="space-y-1.5 pt-1">
                         {PROGRESS_STEPS.map((step) => {
@@ -451,18 +452,18 @@ export const ChatView: React.FC<ChatViewProps> = ({
                               key={step.key}
                               className={`flex items-center gap-2 transition-colors ${
                                 isDone
-                                  ? 'text-emerald-400 font-medium'
+                                  ? 'text-emerald-500 font-medium'
                                   : isCurrent
-                                  ? 'text-stone-100 font-medium'
-                                  : 'text-stone-500'
+                                  ? 'text-white font-medium'
+                                  : 'text-[#666]'
                               }`}
                             >
                               {isDone ? (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                               ) : isCurrent ? (
-                                <Loader2 className="w-3.5 h-3.5 text-orange-400 animate-spin shrink-0" />
+                                <Loader2 className="w-3.5 h-3.5 text-[#a3a3a3] animate-spin shrink-0" />
                               ) : (
-                                <Circle className="w-3.5 h-3.5 text-stone-600 shrink-0" />
+                                <Circle className="w-3.5 h-3.5 text-[#444] shrink-0" />
                               )}
                               <span>{step.label}</span>
                             </div>
@@ -472,7 +473,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                   )}
 
-                  {/* Solder Deterministic Harness Trace (Hero of the demo!) */}
+                  {/* Solder Deterministic Harness Trace */}
                   {(msg.buildData || !msg.isStreaming) && (
                     <div className="my-2">
                       <HarnessTrace
@@ -484,15 +485,15 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     </div>
                   )}
 
-                  {/* Row of ghost icon buttons under each reply: copy, regenerate, thumbs */}
-                  <div className="flex items-center gap-1 text-stone-500 pt-0.5">
+                  {/* Row of ghost icon buttons: copy, regenerate, thumbs */}
+                  <div className="flex items-center gap-1 text-[#666] pt-0.5">
                     <button
                       onClick={() => handleCopyMessage(msg.id, msg.text)}
-                      className="p-1.5 rounded-lg hover:bg-[#262422] hover:text-stone-200 transition"
+                      className="p-1.5 rounded-md hover:bg-[#212121] hover:text-[#f5f5f5] transition"
                       title="Copy reply text"
                     >
                       {copiedMsgId === msg.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}
@@ -500,7 +501,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
                     <button
                       onClick={() => onSendMessage(msg.text || 'Rebuild')}
-                      className="p-1.5 rounded-lg hover:bg-[#262422] hover:text-stone-200 transition"
+                      className="p-1.5 rounded-md hover:bg-[#212121] hover:text-[#f5f5f5] transition"
                       title="Regenerate build"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
@@ -508,10 +509,10 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
                     <button
                       onClick={() => handleRate(msg.id, 'up')}
-                      className={`p-1.5 rounded-lg hover:bg-[#262422] transition ${
+                      className={`p-1.5 rounded-md hover:bg-[#212121] transition ${
                         ratings[msg.id] === 'up'
-                          ? 'text-orange-400'
-                          : 'hover:text-stone-200 text-stone-500'
+                          ? 'text-[#f5f5f5]'
+                          : 'hover:text-[#f5f5f5] text-[#666]'
                       }`}
                       title="Good response"
                     >
@@ -520,10 +521,10 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
                     <button
                       onClick={() => handleRate(msg.id, 'down')}
-                      className={`p-1.5 rounded-lg hover:bg-[#262422] transition ${
+                      className={`p-1.5 rounded-md hover:bg-[#212121] transition ${
                         ratings[msg.id] === 'down'
-                          ? 'text-rose-400'
-                          : 'hover:text-stone-200 text-stone-500'
+                          ? 'text-rose-500'
+                          : 'hover:text-[#f5f5f5] text-[#666]'
                       }`}
                       title="Poor response"
                     >
@@ -540,7 +541,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
       {/* 3. DOCKED BOTTOM COMPOSER (when conversation is active) */}
       {!isConversationEmpty && (
-        <div className="sticky bottom-0 z-20 shrink-0 w-full bg-gradient-to-t from-[#1f1e1c] via-[#1f1e1c]/95 to-transparent pt-2 pb-safe">
+        <div className="sticky bottom-0 z-20 shrink-0 w-full bg-gradient-to-t from-[#181818] via-[#181818]/95 to-transparent pt-2 pb-safe">
           {renderComposer(false)}
         </div>
       )}

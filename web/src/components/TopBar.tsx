@@ -5,7 +5,6 @@ import {
   ChevronDown,
   Share2,
   Check,
-  Zap,
 } from 'lucide-react';
 
 interface TopBarProps {
@@ -34,13 +33,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   const currentModel = MODELS.find((m) => m.id === selectedModel) || MODELS[0];
 
   return (
-    <header className="h-[48px] shrink-0 bg-[#1f1e1c] border-b border-[#383430]/60 px-3 sm:px-4 flex items-center justify-between select-none z-20">
+    <header className="h-[48px] shrink-0 bg-[#181818] border-b border-[#2a2a2a] px-3 sm:px-4 flex items-center justify-between select-none z-20">
       {/* Left: Mobile hamburger or collapsed sidebar toggle + Model dropdown */}
       <div className="flex items-center gap-1.5 sm:gap-2">
-        {/* Toggle icon button (visible on mobile, or on desktop when sidebar collapsed) */}
         <button
           onClick={onToggleSidebar}
-          className={`p-2 rounded-lg text-stone-400 hover:text-white hover:bg-[#262422] transition ${
+          className={`p-2 rounded-md text-[#777] hover:text-[#f5f5f5] hover:bg-[#212121] transition ${
             isSidebarOpen ? 'md:hidden' : 'block'
           }`}
           title="Open sidebar"
@@ -49,19 +47,19 @@ export const TopBar: React.FC<TopBarProps> = ({
           <PanelLeft className="w-4 h-4 hidden md:block" />
         </button>
 
-        {/* Model-style dropdown: "Solder" + small chevron (like model picker) */}
+        {/* Model dropdown */}
         <div className="relative">
           <button
             onClick={() => setIsModelDropdownOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-[#262422] text-stone-200 transition group"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-[#212121] text-[#f5f5f5] transition group"
           >
-            <span className="text-[16px] font-semibold tracking-tight text-stone-100">
+            <span className="text-[15px] font-medium tracking-tight">
               Solder
             </span>
-            <span className="text-[11px] font-mono text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20">
+            <span className="text-[11px] font-mono text-[#777] bg-[#212121] px-1.5 py-0.5 rounded border border-[#2a2a2a]">
               {currentModel.name.replace('Solder ', '')}
             </span>
-            <ChevronDown className="w-3.5 h-3.5 text-stone-400 group-hover:text-stone-200 transition" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#777] group-hover:text-[#a3a3a3] transition" />
           </button>
 
           {isModelDropdownOpen && (
@@ -70,8 +68,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                 className="fixed inset-0 z-30"
                 onClick={() => setIsModelDropdownOpen(false)}
               />
-              <div className="absolute left-0 mt-1.5 w-72 rounded-2xl bg-[#201e1c] border border-[#383430] shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
-                <div className="px-3 py-1.5 text-[11px] font-medium text-stone-400 uppercase tracking-wider border-b border-[#383430]">
+              <div className="absolute left-0 mt-1.5 w-72 rounded-xl bg-[#212121] border border-[#2a2a2a] shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-3 py-1.5 text-[11px] font-medium text-[#777] uppercase tracking-wider border-b border-[#2a2a2a]">
                   Model Architecture
                 </div>
                 <div className="p-1 space-y-1">
@@ -82,23 +80,23 @@ export const TopBar: React.FC<TopBarProps> = ({
                         onSelectModel(m.id);
                         setIsModelDropdownOpen(false);
                       }}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#282623] flex items-start justify-between gap-2 transition"
+                      className="w-full text-left p-2.5 rounded-lg hover:bg-[#262626] flex items-start justify-between gap-2 transition"
                     >
                       <div>
-                        <div className="text-sm font-medium text-stone-100 flex items-center gap-2">
+                        <div className="text-sm font-medium text-[#f5f5f5] flex items-center gap-2">
                           <span>{m.name}</span>
                           {m.id === 'gemini-3.8-flash' && (
-                            <span className="text-[10px] text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-0.2 rounded font-mono">
+                            <span className="text-[10px] text-[#777] bg-[#181818] border border-[#2a2a2a] px-1.5 py-0.2 rounded font-mono">
                               Default
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-stone-400 mt-0.5 leading-snug">
+                        <div className="text-xs text-[#777] mt-0.5 leading-snug">
                           {m.tag}
                         </div>
                       </div>
                       {selectedModel === m.id && (
-                        <Check className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                       )}
                     </button>
                   ))}
@@ -112,10 +110,10 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* Right: Share Button */}
       <button
         onClick={onOpenShare}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-stone-300 hover:text-white bg-[#262422] hover:bg-[#2c2825] border border-[#383430] transition"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#a3a3a3] hover:text-[#f5f5f5] bg-[#212121] hover:bg-[#262626] border border-[#2a2a2a] transition"
         title="Share workspace link"
       >
-        <Share2 className="w-3.5 h-3.5 text-orange-400" />
+        <Share2 className="w-3.5 h-3.5" />
         <span>Share</span>
       </button>
     </header>

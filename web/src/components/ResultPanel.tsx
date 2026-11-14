@@ -5,28 +5,23 @@ import {
   Zap,
   Play,
   Code2,
-  Sparkles,
   Copy,
   Check,
   ShoppingBag,
   Truck,
   Eye,
   Download,
-  RotateCcw,
-  Sliders,
-  ShieldCheck,
+  Sparkles,
   Layers,
   Share2,
   CheckCircle2,
-  AlertCircle,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { CaseViewer } from '../viewer';
 import { WiringDiagram } from './WiringDiagram';
 import { Simulator } from '../../../sim/Simulator';
-import { HarnessTrace, getDefaultHarnessChecks } from './HarnessTrace';
 
-export type ResultTab = 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware' | 'harness';
+export type ResultTab = 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware';
 
 interface ResultPanelProps {
   build?: SolderBuild | null;
@@ -71,15 +66,11 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     return () => clearTimeout(timer);
   }, [build?.id]);
 
-  const totalCost = build?.parts?.reduce(
-    (sum, p) => sum + (p.owned ? 0 : (p.priceInr || 0) * (p.qty || 1)),
-    0
-  ) || build?.product?.priceInr || 890;
-
-  const totalOwnedSavings = build?.parts?.reduce(
-    (sum, p) => sum + (p.owned ? (p.priceInr || 0) * (p.qty || 1) : 0),
-    0
-  ) || 0;
+  const totalCost =
+    build?.parts?.reduce(
+      (sum, p) => sum + (p.owned ? 0 : (p.priceInr || 0) * (p.qty || 1)),
+      0
+    ) || build?.product?.priceInr || 890;
 
   const handleCopyCode = () => {
     if (build?.code?.ino) {
@@ -111,70 +102,67 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // 1. Empty / Loading State before build is ready
+  // 1. Loading State
   if (!build && isLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#161514] text-center select-none">
-        <div className="relative w-16 h-16 mb-4">
-          <div className="absolute inset-0 rounded-full border-2 border-orange-500/20 animate-ping [animation-duration:2s]" />
-          <div className="w-16 h-16 rounded-2xl bg-[#262422] border border-orange-500/40 flex items-center justify-center text-orange-400 shadow-lg shadow-orange-500/10">
-            <Box className="w-8 h-8 animate-pulse" />
-          </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#181818] text-center select-none">
+        <div className="w-12 h-12 rounded-xl bg-[#212121] border border-[#2a2a2a] flex items-center justify-center text-[#a3a3a3] mb-4">
+          <Box className="w-6 h-6 animate-pulse" />
         </div>
-        <h3 className="text-lg font-semibold text-stone-100 mb-1 tracking-tight">
-          Synthesizing Hardware Co-Design...
+        <h3 className="text-sm font-medium text-[#f5f5f5] mb-1">
+          Generating build...
         </h3>
-        <p className="text-sm text-stone-400 max-w-sm">
-          Generating 3D parametric enclosure, circuit netlist, and deterministic verification trace.
+        <p className="text-xs text-[#777] max-w-xs">
+          Synthesizing 3D case, circuit netlist, and firmware sketch.
         </p>
       </div>
     );
   }
 
-  // 2. Default Welcome / Clean Empty state
+  // 2. Empty State
   if (!build) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#161514] text-center select-none">
-        <div className="w-14 h-14 rounded-2xl bg-[#262422] border border-[#383430] flex items-center justify-center text-stone-400 mb-4 shadow-inner">
-          <Box className="w-7 h-7" />
+      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#181818] text-center select-none">
+        <div className="w-12 h-12 rounded-xl bg-[#212121] border border-[#2a2a2a] flex items-center justify-center text-[#777] mb-4">
+          <Box className="w-6 h-6" />
         </div>
-        <h3 className="text-base font-semibold text-stone-300 mb-1">
-          Your 3D Case & Build Will Appear Here
+        <h3 className="text-sm font-medium text-[#a3a3a3] mb-1">
+          Your 3D Case & Build Will Show Here
         </h3>
-        <p className="text-xs text-stone-400 max-w-xs">
-          Describe an idea on the left or select a showcase to explore the interactive 3D model, wiring diagram, and firmware.
+        <p className="text-xs text-[#666] max-w-xs">
+          Prompt Solder on the left or click a showcase to load an interactive build.
         </p>
       </div>
     );
   }
 
-  // 3. Full Active Workspace Result Panel
+  // 3. Active Workspace Result Panel
   return (
-    <div className="flex-1 flex flex-col h-full bg-[#161514] overflow-hidden select-none">
-      {/* Top Bar (48px, warm crafted aesthetic) */}
-      <div className="h-12 shrink-0 bg-[#1f1e1c] border-b border-[#383430] px-4 flex items-center justify-between gap-3">
-        {/* Left: Project Name & Verified Badge */}
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="font-semibold text-stone-100 text-sm tracking-tight truncate">
+    <div className="flex-1 flex flex-col h-full bg-[#181818] overflow-hidden select-none">
+      {/* Top Bar (48px, ultra-clean neutral) */}
+      <div className="h-12 shrink-0 bg-[#181818] border-b border-[#2a2a2a] px-4 flex items-center justify-between gap-3">
+        {/* Left: Project Name */}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-medium text-[#f5f5f5] text-sm tracking-tight truncate">
             {build.name}
           </span>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-[#262422] text-stone-400 border border-[#383430] uppercase">
-            {build.board || 'Uno'}
+          <span className="text-[11px] font-mono text-[#777]">
+            {build.board?.toUpperCase() || 'UNO'}
           </span>
-          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
             Verified
           </span>
         </div>
 
-        {/* Center: Segmented Tabs (3D Case, Parts, Wiring, Simulate, Firmware, Harness) */}
-        <div className="flex items-center gap-1 p-0.5 bg-[#161514] rounded-xl border border-[#383430] overflow-x-auto scrollbar-none">
+        {/* Center: Segmented Tabs (3D Case, Parts, Wiring, Simulate, Firmware) */}
+        <div className="flex items-center gap-1 p-0.5 bg-[#212121] rounded-lg border border-[#2a2a2a] overflow-x-auto scrollbar-none">
           <button
             onClick={() => handleTabClick('case')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'case'
-                ? 'bg-[#262422] text-orange-400 shadow-xs border border-orange-500/30 font-semibold'
-                : 'text-stone-400 hover:text-stone-200 hover:bg-[#262422]/50'
+                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
+                : 'text-[#a3a3a3] hover:text-white'
             }`}
           >
             <Box className="w-3.5 h-3.5" />
@@ -183,25 +171,22 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
           <button
             onClick={() => handleTabClick('parts')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'parts'
-                ? 'bg-[#262422] text-orange-400 shadow-xs border border-orange-500/30 font-semibold'
-                : 'text-stone-400 hover:text-stone-200 hover:bg-[#262422]/50'
+                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
+                : 'text-[#a3a3a3] hover:text-white'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
             <span>Parts</span>
-            <span className="text-[10px] font-mono text-stone-400">
-              ({build.parts?.length || 0})
-            </span>
           </button>
 
           <button
             onClick={() => handleTabClick('wiring')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'wiring'
-                ? 'bg-[#262422] text-orange-400 shadow-xs border border-orange-500/30 font-semibold'
-                : 'text-stone-400 hover:text-stone-200 hover:bg-[#262422]/50'
+                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
+                : 'text-[#a3a3a3] hover:text-white'
             }`}
           >
             <Zap className="w-3.5 h-3.5" />
@@ -210,10 +195,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
           <button
             onClick={() => handleTabClick('simulate')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'simulate'
-                ? 'bg-[#262422] text-orange-400 shadow-xs border border-orange-500/30 font-semibold'
-                : 'text-stone-400 hover:text-stone-200 hover:bg-[#262422]/50'
+                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
+                : 'text-[#a3a3a3] hover:text-white'
             }`}
           >
             <Play className="w-3.5 h-3.5" />
@@ -222,60 +207,48 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
           <button
             onClick={() => handleTabClick('firmware')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
               activeTab === 'firmware'
-                ? 'bg-[#262422] text-orange-400 shadow-xs border border-orange-500/30 font-semibold'
-                : 'text-stone-400 hover:text-stone-200 hover:bg-[#262422]/50'
+                ? 'bg-[#2a2a2a] text-[#f5f5f5]'
+                : 'text-[#a3a3a3] hover:text-white'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
             <span>Firmware</span>
           </button>
-
-          <button
-            onClick={() => handleTabClick('harness')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'harness'
-                ? 'bg-[#262422] text-orange-400 shadow-xs border border-orange-500/30 font-semibold'
-                : 'text-stone-400 hover:text-stone-200 hover:bg-[#262422]/50'
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Harness</span>
-          </button>
         </div>
 
-        {/* Right: Action Buttons (Order It, Ship It, AR, Share) */}
+        {/* Right: Actions (Clean White Order Kit button + neutral secondary) */}
         <div className="flex items-center gap-2 shrink-0">
           {onOpenOrder && (
             <button
               onClick={onOpenOrder}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-orange-500 hover:bg-orange-600 text-stone-950 transition shadow-sm hover:shadow-orange-500/20 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-black hover:bg-neutral-200 transition shadow-sm cursor-pointer"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              <span>Order It</span>
-              <span className="font-mono opacity-90 text-[11px]">₹{totalCost}</span>
+              <span>Order Kit</span>
+              <span className="font-mono text-[11px] opacity-75">₹{totalCost}</span>
             </button>
           )}
 
           {onOpenShip && (
             <button
               onClick={onOpenShip}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#262422] hover:bg-[#2e2a27] text-stone-300 border border-[#383430] transition cursor-pointer"
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#212121] hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white border border-[#2a2a2a] transition cursor-pointer"
               title="Ship 48-Hour Kit"
             >
-              <Truck className="w-3.5 h-3.5 text-stone-400" />
-              <span>Ship It</span>
+              <Truck className="w-3.5 h-3.5" />
+              <span>Ship</span>
             </button>
           )}
 
           {onOpenAr && (
             <button
               onClick={onOpenAr}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#262422] hover:bg-[#2e2a27] text-stone-300 border border-[#383430] transition cursor-pointer"
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#212121] hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white border border-[#2a2a2a] transition cursor-pointer"
               title="View in Augmented Reality"
             >
-              <Eye className="w-3.5 h-3.5 text-stone-400" />
+              <Eye className="w-3.5 h-3.5" />
               <span>AR</span>
             </button>
           )}
@@ -283,7 +256,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           {onOpenShare && (
             <button
               onClick={onOpenShare}
-              className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-[#262422] transition"
+              className="p-1.5 rounded-lg text-[#a3a3a3] hover:text-white hover:bg-[#212121] transition"
               title="Share Build"
             >
               <Share2 className="w-4 h-4" />
@@ -293,7 +266,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
       </div>
 
       {/* Panel Body: Full-height Tab Contents */}
-      <div className="flex-1 relative overflow-hidden bg-[#161514]">
+      <div className="flex-1 relative overflow-hidden bg-[#181818]">
         {/* TAB 1: 3D Case Viewer */}
         {activeTab === 'case' && (
           <div className="relative w-full h-full">
@@ -307,15 +280,15 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               className="w-full h-full"
             />
 
-            {/* Floating Dark-Glass Controls Overlay Docked at Bottom */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-[#1f1e1c]/90 backdrop-blur-md border border-[#383430] shadow-xl">
+            {/* Floating Neutral Controls Overlay Docked at Bottom */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[#212121]/95 backdrop-blur-md border border-[#2a2a2a] shadow-xl text-xs text-[#a3a3a3]">
               {/* Assembled / Exploded Toggle */}
               <button
                 onClick={() => setIsExploded((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition ${
                   isExploded
-                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
-                    : 'text-stone-300 hover:bg-[#262422]'
+                    ? 'bg-[#2a2a2a] text-white font-medium'
+                    : 'text-[#a3a3a3] hover:text-white hover:bg-[#2a2a2a]/60'
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
@@ -323,33 +296,33 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               </button>
 
               {/* Material Selector */}
-              <div className="flex items-center p-0.5 bg-[#161514] rounded-xl border border-[#383430]/70">
+              <div className="flex items-center p-0.5 bg-[#181818] rounded-lg border border-[#2a2a2a]">
                 <button
                   onClick={() => setMaterialTheme('acrylic')}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition ${
+                  className={`px-2 py-0.5 rounded text-[11px] transition ${
                     materialTheme === 'acrylic'
-                      ? 'bg-orange-500/20 text-orange-400'
-                      : 'text-stone-400 hover:text-stone-200'
+                      ? 'bg-[#2a2a2a] text-white font-medium'
+                      : 'text-[#777] hover:text-[#a3a3a3]'
                   }`}
                 >
                   Frosted
                 </button>
                 <button
                   onClick={() => setMaterialTheme('pla')}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition ${
+                  className={`px-2 py-0.5 rounded text-[11px] transition ${
                     materialTheme === 'pla'
-                      ? 'bg-orange-500/20 text-orange-400'
-                      : 'text-stone-400 hover:text-stone-200'
+                      ? 'bg-[#2a2a2a] text-white font-medium'
+                      : 'text-[#777] hover:text-[#a3a3a3]'
                   }`}
                 >
                   Matte PLA
                 </button>
                 <button
                   onClick={() => setMaterialTheme('dark')}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition ${
+                  className={`px-2 py-0.5 rounded text-[11px] transition ${
                     materialTheme === 'dark'
-                      ? 'bg-orange-500/20 text-orange-400'
-                      : 'text-stone-400 hover:text-stone-200'
+                      ? 'bg-[#2a2a2a] text-white font-medium'
+                      : 'text-[#777] hover:text-[#a3a3a3]'
                   }`}
                 >
                   Carbon
@@ -359,20 +332,20 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               {/* Replay Burst Reveal */}
               <button
                 onClick={() => setBurstCount((prev) => prev + 1)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-stone-300 hover:bg-[#262422] transition"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white transition"
                 title="Replay Burst Reveal"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <Sparkles className="w-3.5 h-3.5" />
                 <span>Burst</span>
               </button>
 
               {/* Download STL Button */}
               <button
                 onClick={handleDownloadStl}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium text-stone-300 hover:bg-[#262422] transition"
-                title="Download 3D printable STL enclosure"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[#2a2a2a] text-[#a3a3a3] hover:text-white transition"
+                title="Download STL file"
               >
-                <Download className="w-3.5 h-3.5 text-stone-400" />
+                <Download className="w-3.5 h-3.5" />
                 <span>STL</span>
               </button>
             </div>
@@ -384,63 +357,50 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           <div className="h-full overflow-y-auto p-4 sm:p-6 space-y-4 select-text">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-base font-semibold text-stone-100">
+                <h4 className="text-sm font-medium text-[#f5f5f5]">
                   Bill of Materials (BOM)
                 </h4>
-                <p className="text-xs text-stone-400">
-                  Exact maker library components with real INR pricing and Scrap Mode deductions.
+                <p className="text-xs text-[#777]">
+                  Maker parts list with INR maker pricing.
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold text-orange-400 font-mono">
+                <div className="text-sm font-mono text-[#f5f5f5]">
                   Total: ₹{totalCost}
                 </div>
-                {totalOwnedSavings > 0 && (
-                  <div className="text-[11px] text-emerald-400 font-medium">
-                    Saved ₹{totalOwnedSavings} from Scrap
-                  </div>
-                )}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#383430] bg-[#1f1e1c] overflow-hidden divide-y divide-[#383430]">
+            <div className="rounded-xl border border-[#2a2a2a] bg-[#212121] overflow-hidden divide-y divide-[#2a2a2a]">
               {build.parts?.map((part) => (
                 <div
                   key={part.id}
-                  className={`p-3 sm:p-4 flex items-center justify-between gap-3 transition-colors ${
-                    part.owned ? 'bg-emerald-500/5' : 'hover:bg-[#262422]/40'
-                  }`}
+                  className="p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-[#262626] transition-colors"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-stone-200 text-sm">
+                      <span className="font-medium text-[#f5f5f5] text-sm">
                         {part.name}
                       </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#161514] text-stone-400 border border-[#383430]">
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#181818] text-[#777] border border-[#2a2a2a]">
                         {part.libId}
                       </span>
                       {part.owned && (
-                        <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                          Owned from Scrap
+                        <span className="text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                          Owned
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-stone-400 mt-1 line-clamp-1">
+                    <p className="text-xs text-[#777] mt-0.5 line-clamp-1">
                       {part.why}
                     </p>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <div className="text-xs font-mono font-medium text-stone-200">
-                      {part.owned ? (
-                        <span className="line-through text-stone-500">
-                          ₹{part.priceInr * (part.qty || 1)}
-                        </span>
-                      ) : (
-                        `₹${part.priceInr * (part.qty || 1)}`
-                      )}
+                    <div className="text-xs font-mono text-[#f5f5f5]">
+                      ₹{part.priceInr * (part.qty || 1)}
                     </div>
-                    <div className="text-[10px] text-stone-400 font-mono">
+                    <div className="text-[10px] text-[#777] font-mono">
                       Qty: {part.qty || 1}
                     </div>
                   </div>
@@ -459,11 +419,11 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
         {/* TAB 4: Virtual ATmega328P Simulator */}
         {activeTab === 'simulate' && (
-          <div className="h-full w-full overflow-y-auto p-4 sm:p-6 bg-[#161514]">
+          <div className="h-full w-full overflow-y-auto p-4 sm:p-6 bg-[#181818]">
             <Simulator
               hex={build.hex}
               ino={build.code?.ino}
-              className="w-full max-w-4xl mx-auto shadow-2xl"
+              className="w-full max-w-4xl mx-auto shadow-xl"
             />
           </div>
         )}
@@ -471,24 +431,21 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         {/* TAB 5: Arduino C++ Firmware Code */}
         {activeTab === 'firmware' && (
           <div className="h-full flex flex-col p-4 sm:p-6 select-text overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-[#383430] mb-3 shrink-0">
+            <div className="flex items-center justify-between pb-3 border-b border-[#2a2a2a] mb-3 shrink-0">
               <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-orange-400" />
-                <span className="font-semibold text-sm text-stone-100 font-mono">
+                <Code2 className="w-4 h-4 text-[#a3a3a3]" />
+                <span className="font-mono text-sm text-[#f5f5f5]">
                   {build.code?.filename || `${build.id}.ino`}
-                </span>
-                <span className="text-[11px] text-stone-400">
-                  (Arduino C++ Sketch)
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCopyCode}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#262422] hover:bg-[#2e2a27] text-stone-300 border border-[#383430] transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-[#a3a3a3] hover:text-white bg-[#212121] hover:bg-[#2a2a2a] border border-[#2a2a2a] transition cursor-pointer"
                 >
                   {copiedCode ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
                       <span className="text-emerald-400">Copied</span>
                     </>
                   ) : (
@@ -500,7 +457,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                 </button>
                 <button
                   onClick={handleDownloadCode}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#262422] hover:bg-[#2e2a27] text-stone-300 border border-[#383430] transition cursor-pointer"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-[#a3a3a3] hover:text-white bg-[#212121] hover:bg-[#2a2a2a] border border-[#2a2a2a] transition cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" />
                   <span>Download</span>
@@ -508,21 +465,9 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               </div>
             </div>
 
-            <pre className="flex-1 overflow-auto rounded-2xl bg-[#121110] border border-[#383430] p-4 text-emerald-400 font-mono text-xs leading-relaxed">
+            <pre className="flex-1 overflow-auto rounded-xl bg-[#141414] border border-[#2a2a2a] p-4 text-[#a3a3a3] font-mono text-xs leading-relaxed">
               <code>{build.code?.ino || '// No firmware sketch found'}</code>
             </pre>
-          </div>
-        )}
-
-        {/* TAB 6: Deep Harness Verification Trace */}
-        {activeTab === 'harness' && (
-          <div className="h-full overflow-y-auto p-4 sm:p-6 bg-[#161514]">
-            <div className="max-w-3xl mx-auto space-y-4">
-              <HarnessTrace
-                build={build}
-                onSelectTab={(tab) => handleTabClick(tab)}
-              />
-            </div>
           </div>
         )}
       </div>

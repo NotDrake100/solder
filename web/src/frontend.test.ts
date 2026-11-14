@@ -1,4 +1,4 @@
-import { SHOWCASE_BUILDS, SHOWCASE_PILLS, QUICK_CHIPS } from './data/showcases';
+import { SHOWCASE_BUILDS, SHOWCASE_PILLS, QUICK_CHIPS } from './data/showcases.ts';
 
 function assert(condition: boolean, msg: string) {
   if (!condition) {

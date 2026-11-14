@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --test src/frontend.test.ts || bun test src/frontend.test.ts || bun run src/frontend.test.ts"
+    "test": "bun test src/frontend.test.ts || bun run src/frontend.test.ts || node --test src/frontend.test.ts"
   },
   "dependencies": {
     "react": "^18.3.1",

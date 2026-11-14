@@ -489,8 +489,8 @@ export function App() {
   const isConversationEmpty = messages.length === 0;
 
   return (
-    <div className="flex h-screen w-full bg-[#161514] text-stone-100 font-sans overflow-hidden">
-      {/* Desktop Sidebar (260px, warm crafted aesthetic) */}
+    <div className="flex h-screen w-full bg-[#181818] text-[#f5f5f5] font-sans overflow-hidden">
+      {/* Desktop Sidebar (260px, clean neutral) */}
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen((prev) => !prev)}
@@ -519,8 +519,8 @@ export function App() {
       />
 
       {/* Main Workspace Stage */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#1f1e1c]">
-        {/* Top Bar (48px, warm aesthetic) */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#181818]">
+        {/* Top Bar (48px, ultra-clean neutral) */}
         <TopBar
           onToggleSidebar={() => {
             if (window.innerWidth < 768) {
@@ -535,7 +535,7 @@ export function App() {
           onSelectModel={setSelectedModel}
         />
 
-        {/* 1. Empty State (Centered Maker Stage) */}
+        {/* 1. Empty State (Centered Clean Stage) */}
         {isConversationEmpty ? (
           <ChatView
             messages={messages}
@@ -552,14 +552,14 @@ export function App() {
           /* 2. Active State: v0/Bolt Split Workspace */
           <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden relative">
             {/* Mobile View Switcher Pill (< 768px only) */}
-            <div className="md:hidden flex items-center justify-center p-2 bg-[#161514] border-b border-[#383430]">
-              <div className="flex items-center p-0.5 rounded-xl bg-[#262422] border border-[#383430]">
+            <div className="md:hidden flex items-center justify-center p-2 bg-[#181818] border-b border-[#2a2a2a]">
+              <div className="flex items-center p-0.5 rounded-lg bg-[#212121] border border-[#2a2a2a]">
                 <button
                   onClick={() => setMobileActiveView('chat')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
                     mobileActiveView === 'chat'
-                      ? 'bg-orange-500 text-stone-950 font-semibold'
-                      : 'text-stone-400 hover:text-stone-200'
+                      ? 'bg-[#2a2a2a] text-[#f5f5f5]'
+                      : 'text-[#a3a3a3] hover:text-white'
                   }`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
@@ -567,10 +567,10 @@ export function App() {
                 </button>
                 <button
                   onClick={() => setMobileActiveView('preview')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
                     mobileActiveView === 'preview'
-                      ? 'bg-orange-500 text-stone-950 font-semibold'
-                      : 'text-stone-400 hover:text-stone-200'
+                      ? 'bg-[#2a2a2a] text-[#f5f5f5]'
+                      : 'text-[#a3a3a3] hover:text-white'
                   }`}
                 >
                   <Eye className="w-3.5 h-3.5" />
@@ -581,7 +581,7 @@ export function App() {
 
             {/* Left: Chat & Trace Column (~400px clamp 360-448px, shrink-0) */}
             <div
-              className={`w-full md:w-[400px] md:shrink-0 flex flex-col h-full border-r border-[#383430] bg-[#1f1e1c] overflow-hidden ${
+              className={`w-full md:w-[400px] md:shrink-0 flex flex-col h-full border-r border-[#2a2a2a] bg-[#181818] overflow-hidden ${
                 mobileActiveView === 'chat' ? 'flex' : 'hidden md:flex'
               }`}
             >
@@ -601,9 +601,9 @@ export function App() {
               />
             </div>
 
-            {/* Right: Big Full-Height Result Panel (3D Case, Parts, Wiring, Simulate, Firmware, Harness) */}
+            {/* Right: Big Full-Height Result Panel (3D Case, Parts, Wiring, Simulate, Firmware) */}
             <div
-              className={`flex-1 flex flex-col h-full bg-[#161514] overflow-hidden ${
+              className={`flex-1 flex flex-col h-full bg-[#181818] overflow-hidden ${
                 mobileActiveView === 'preview' ? 'flex' : 'hidden md:flex'
               }`}
             >
