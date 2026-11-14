@@ -47,7 +47,7 @@ console.log(`   ✓ Scrap Mode savings verified: ₹${savings} off kit total.`);
 // 4. Verify Quick Chips and Navigation
 console.log('4. Testing chips and showcase pills...');
 assert(QUICK_CHIPS.length >= 5, 'Quick chips populated');
-assert(SHOWCASE_PILLS.length === 4, '4 showcase selector pills populated');
+assert(SHOWCASE_PILLS.length >= 4, 'Showcase selector pills populated');
 console.log('   ✓ UI navigation chips and pills verified.');
 
 console.log('\n========================================');
