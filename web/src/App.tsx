@@ -7,6 +7,8 @@ import { ChatView, ChatMessage } from './components/ChatView';
 import { ScrapModal } from './components/ScrapModal';
 import { OrderModal, ShipModal, ArModal, ShareModal } from './components/ActionModals';
 
+const RECENT_BUILDS_KEY = 'solder_recent_builds';
+
 export function App() {
   const [activeBuild, setActiveBuild] = useState<SolderBuild>(SHOWCASE_BUILDS.sip);
   const [buildsHistory, setBuildsHistory] = useState<SolderBuild[]>([
@@ -33,8 +35,31 @@ export function App() {
   const [scrapSummary, setScrapSummary] = useState<string | null>(null);
   const [scrapSavings, setScrapSavings] = useState(0);
 
-  // Conversation messages state (empty state by default until user types or picks a suggestion)
+  // Conversation messages state (empty state by default)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  // Load past builds from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(RECENT_BUILDS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setBuildsHistory((prev) => {
+            const combined = [...parsed, ...prev];
+            const seen = new Set<string>();
+            return combined.filter((b) => {
+              if (seen.has(b.id)) return false;
+              seen.add(b.id);
+              return true;
+            });
+          });
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Permalink routing (/b/:id or #id)
   useEffect(() => {
@@ -60,7 +85,7 @@ export function App() {
       {
         id: `asst-${build.id}`,
         sender: 'assistant',
-        text: `Here is the verified architecture for **${build.name}**! ${build.summary}`,
+        text: `Here is the verified hardware co-design for **${build.name}**!\n\n${build.summary || build.tagline || ''}\n\nExplore parts, 3D case, wiring, and firmware below:`,
         timestamp: Date.now() - 28000,
         buildData: build,
         completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case', 'done'],
@@ -338,8 +363,14 @@ export function App() {
 
     setActiveBuild(finalBuild);
     setBuildsHistory((prev) => {
-      if (prev.some((b) => b.id === finalBuild.id)) return prev;
-      return [finalBuild, ...prev];
+      const updated = [finalBuild, ...prev.filter((b) => b.id !== finalBuild.id)];
+      try {
+        const toSave = updated.filter((b) => !['sip', 'wisp', 'hasp', 'eave'].includes(b.id));
+        localStorage.setItem(RECENT_BUILDS_KEY, JSON.stringify(toSave));
+      } catch {
+        // ignore
+      }
+      return updated;
     });
 
     setMessages((prev) =>
@@ -379,8 +410,8 @@ export function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans overflow-hidden">
-      {/* Desktop Sidebar (Collapsible) */}
+    <div className="flex h-screen w-full bg-[#212121] text-[#ececec] font-sans overflow-hidden">
+      {/* Desktop Sidebar (260px, collapsible) */}
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen((prev) => !prev)}
@@ -393,7 +424,7 @@ export function App() {
         savingsInr={scrapSavings}
       />
 
-      {/* Mobile Slide-in Drawer */}
+      {/* Mobile Slide-in Drawer with dim backdrop */}
       <Sidebar
         isOpen={isMobileDrawerOpen}
         onToggle={() => setIsMobileDrawerOpen((prev) => !prev)}
@@ -408,9 +439,9 @@ export function App() {
         onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
       />
 
-      {/* Main Column */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Thin Top Bar */}
+      {/* Main Area (bg #212121) */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-[#212121]">
+        {/* Main Top Bar (52px, transparent, no border) */}
         <TopBar
           onToggleSidebar={() => {
             if (window.innerWidth < 768) {
@@ -420,15 +451,12 @@ export function App() {
             }
           }}
           isSidebarOpen={isSidebarOpen}
-          onNewBuild={handleNewBuild}
           onOpenShare={() => setIsShareOpen(true)}
-          onOpenScrapMode={() => setIsScrapOpen(true)}
           selectedModel={selectedModel}
           onSelectModel={setSelectedModel}
-          activeBuildName={activeBuild.name}
         />
 
-        {/* ChatGPT / Gemini Style Chat View */}
+        {/* ChatGPT Style Chat View */}
         <ChatView
           messages={messages}
           onSendMessage={handleSendMessage}
