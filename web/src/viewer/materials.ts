@@ -140,6 +140,11 @@ export interface MaterialLibrary {
   ledGreen: THREE.MeshStandardMaterial;
   oledBezel: THREE.MeshStandardMaterial;
   oledScreen: THREE.MeshStandardMaterial;
+  pirDome: THREE.MeshPhysicalMaterial;
+  ledLampGlow: THREE.MeshStandardMaterial;
+  ldrCeramic: THREE.MeshStandardMaterial;
+  ldrTrack: THREE.MeshStandardMaterial;
+  potOrange: THREE.MeshStandardMaterial;
   wireMaterials: Record<string, THREE.MeshStandardMaterial>;
 }
 
@@ -156,26 +161,35 @@ export function createMaterialLibrary(
 
   switch (theme) {
     case 'acrylic':
+      // Signature frosted translucent acrylic (clean white b4/b6 aesthetic)
       enclosure = new THREE.MeshPhysicalMaterial({
-        color: 0xf1f5f9,
-        transmission: 0.88,
-        opacity: 0.95,
+        color: 0xf8fafc,
+        transmission: 0.72,
+        opacity: 0.88,
         transparent: true,
-        roughness: 0.18,
-        ior: 1.49,
-        thickness: 2.2,
+        roughness: 0.22,
+        ior: 1.48,
+        thickness: 2.0,
         specularIntensity: 1.0,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.15,
+        depthWrite: false, // ensures internal parts are clearly visible without depth occlusion
+        side: THREE.DoubleSide,
         wireframe,
       });
       enclosureLid = new THREE.MeshPhysicalMaterial({
-        color: 0xe2e8f0,
-        transmission: 0.92,
-        opacity: 0.9,
+        color: 0xf1f5f9,
+        transmission: 0.75,
+        opacity: 0.88,
         transparent: true,
-        roughness: 0.12,
-        ior: 1.49,
-        thickness: 2.0,
-        specularIntensity: 1.2,
+        roughness: 0.20,
+        ior: 1.48,
+        thickness: 1.8,
+        specularIntensity: 1.1,
+        clearcoat: 0.4,
+        clearcoatRoughness: 0.12,
+        depthWrite: false,
+        side: THREE.DoubleSide,
         wireframe,
       });
       break;
@@ -204,6 +218,8 @@ export function createMaterialLibrary(
         roughness: 0.12,
         ior: 1.54,
         thickness: 2.5,
+        depthWrite: false,
+        side: THREE.DoubleSide,
         wireframe,
       });
       enclosureLid = new THREE.MeshPhysicalMaterial({
@@ -214,23 +230,43 @@ export function createMaterialLibrary(
         roughness: 0.15,
         ior: 1.54,
         thickness: 2.0,
+        depthWrite: false,
+        side: THREE.DoubleSide,
         wireframe,
       });
       break;
 
     case 'pla':
     default:
-      // High quality matte 3D printed PLA
-      enclosure = new THREE.MeshStandardMaterial({
-        color: hexColor,
-        roughness: 0.82,
-        metalness: 0.05,
+      // Default frosted translucent enclosure so Uno, sensors, and wiring are clearly visible inside
+      enclosure = new THREE.MeshPhysicalMaterial({
+        color: 0xf8fafc,
+        transmission: 0.72,
+        opacity: 0.88,
+        transparent: true,
+        roughness: 0.22,
+        ior: 1.48,
+        thickness: 2.0,
+        specularIntensity: 1.0,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.15,
+        depthWrite: false,
+        side: THREE.DoubleSide,
         wireframe,
       });
-      enclosureLid = new THREE.MeshStandardMaterial({
-        color: hexColor,
-        roughness: 0.8,
-        metalness: 0.05,
+      enclosureLid = new THREE.MeshPhysicalMaterial({
+        color: 0xf1f5f9,
+        transmission: 0.75,
+        opacity: 0.88,
+        transparent: true,
+        roughness: 0.20,
+        ior: 1.48,
+        thickness: 1.8,
+        specularIntensity: 1.1,
+        clearcoat: 0.4,
+        clearcoatRoughness: 0.12,
+        depthWrite: false,
+        side: THREE.DoubleSide,
         wireframe,
       });
       break;
@@ -356,6 +392,43 @@ export function createMaterialLibrary(
     metalness: 0.1,
   });
 
+  // Sensor & Actuator Specialized Materials
+  const pirDome = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    roughness: 0.35,
+    transmission: 0.45,
+    transparent: true,
+    opacity: 0.92,
+    ior: 1.45,
+    thickness: 1.2,
+  });
+
+  const ledLampGlow = new THREE.MeshStandardMaterial({
+    color: 0xfffbeb,
+    emissive: 0xf59e0b,
+    emissiveIntensity: 0.95,
+    roughness: 0.15,
+    metalness: 0.1,
+  });
+
+  const ldrCeramic = new THREE.MeshStandardMaterial({
+    color: 0xd97706,
+    roughness: 0.55,
+    metalness: 0.1,
+  });
+
+  const ldrTrack = new THREE.MeshStandardMaterial({
+    color: 0xb45309,
+    roughness: 0.3,
+    metalness: 0.6,
+  });
+
+  const potOrange = new THREE.MeshStandardMaterial({
+    color: 0xf97316,
+    roughness: 0.4,
+    metalness: 0.1,
+  });
+
   // Wire insulation materials
   const wireColors: Record<string, number> = {
     red: 0xef4444,
@@ -398,6 +471,11 @@ export function createMaterialLibrary(
     ledGreen,
     oledBezel,
     oledScreen,
+    pirDome,
+    ledLampGlow,
+    ldrCeramic,
+    ldrTrack,
+    potOrange,
     wireMaterials,
   };
 }

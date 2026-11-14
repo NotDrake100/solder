@@ -36,9 +36,10 @@ export class BurstAnimationController {
   private enclosure: EnclosureAssembly | null = null;
   private camera: THREE.PerspectiveCamera;
   private cameraTarget: THREE.Vector3;
+  private cameraBaseOffset: THREE.Vector3 = new THREE.Vector3();
   private isRunningBurst = false;
   private burstStartTime = 0;
-  private burstDuration = 3.8; // total seconds
+  private burstDuration = 4.0; // total seconds (smooth cinematic timing)
   private explodedProgress = 0; // 0 = assembled, 1 = exploded
   private targetExplodedProgress = 0;
   private onCompleteCallback?: () => void;
@@ -101,6 +102,9 @@ export class BurstAnimationController {
     (this as any).burstElapsed = 0;
     this.onCompleteCallback = onComplete;
     this.targetExplodedProgress = 0; // ends assembled
+
+    // Capture initial camera position relative to target for organic orbit
+    this.cameraBaseOffset.subVectors(this.camera.position, this.cameraTarget);
   }
 
   public setExploded(exploded: boolean): void {
@@ -127,53 +131,76 @@ export class BurstAnimationController {
       const t = Math.min(1.0, elapsed / this.burstDuration);
 
       // Signature 3-stage choreography:
-      // Stage 1: 0.0 - 0.45 (0.0s - 1.7s) -> Scatter smoothly eases into Exploded view
-      // Stage 2: 0.45 - 0.65 (1.7s - 2.5s) -> Hold & hover in Exploded view
-      // Stage 3: 0.65 - 1.0 (2.5s - 3.8s) -> Snap together into Assembled case with subtle camera dolly
+      // Stage 1: 0.0 - 0.45 (0.0s - 1.8s) -> Staggered easing part flight from scatter into exploded formation
+      // Stage 2: 0.45 - 0.65 (1.8s - 2.6s) -> Gentle breathing hover & subtle cinematic camera orbit
+      // Stage 3: 0.65 - 1.0  (2.6s - 4.0s) -> Smooth settling back into assembled enclosure
 
       if (t < 0.45) {
-        // Easing from scatter to exploded
+        // Stage 1: Staggered part flight
         const stageProgress = easeOutCubic(t / 0.45);
+        const count = Math.max(1, this.parts.length);
 
-        for (const item of this.parts) {
-          item.mesh.position.lerpVectors(item.scatterPos, item.explodedPos, stageProgress);
-          item.mesh.rotation.x = THREE.MathUtils.lerp(item.scatterRot.x, item.explodedRot.x, stageProgress);
-          item.mesh.rotation.y = THREE.MathUtils.lerp(item.scatterRot.y, item.explodedRot.y, stageProgress);
-          item.mesh.rotation.z = THREE.MathUtils.lerp(item.scatterRot.z, item.explodedRot.z, stageProgress);
+        for (let i = 0; i < this.parts.length; i++) {
+          const item = this.parts[i];
+          const stagger = (i / count) * 0.16;
+          const partT = Math.min(1.0, Math.max(0, (t - stagger) / (0.45 - 0.16)));
+          const partProgress = easeOutCubic(partT);
+
+          item.mesh.position.lerpVectors(item.scatterPos, item.explodedPos, partProgress);
+          item.mesh.rotation.x = THREE.MathUtils.lerp(item.scatterRot.x, item.explodedRot.x, partProgress);
+          item.mesh.rotation.y = THREE.MathUtils.lerp(item.scatterRot.y, item.explodedRot.y, partProgress);
+          item.mesh.rotation.z = THREE.MathUtils.lerp(item.scatterRot.z, item.explodedRot.z, partProgress);
         }
 
         if (this.enclosure) {
           const lid = this.enclosure.lidMesh;
           lid.position.lerpVectors(
-            this.enclosure.assembledLidPos.clone().add(new THREE.Vector3(0, 0, 120)),
+            this.enclosure.assembledLidPos.clone().add(new THREE.Vector3(0, 0, 110)),
             this.enclosure.explodedLidPos,
             stageProgress
           );
-          lid.rotation.x = THREE.MathUtils.lerp(0.5, this.enclosure.explodedLidRot.x, stageProgress);
+          lid.rotation.x = THREE.MathUtils.lerp(0.35, this.enclosure.explodedLidRot.x, stageProgress);
         }
 
         this.explodedProgress = 1.0;
       } else if (t < 0.65) {
-        // Hold & hover in exploded position
+        // Stage 2: Gentle hover & subtle cinematic camera orbit
         const hoverTime = (t - 0.45) / 0.2;
-        const hoverBob = Math.sin(hoverTime * Math.PI * 2) * 1.2;
+        const count = Math.max(1, this.parts.length);
 
-        for (const item of this.parts) {
+        for (let i = 0; i < this.parts.length; i++) {
+          const item = this.parts[i];
+          const staggerBob = Math.sin(hoverTime * Math.PI * 2 + (i / count) * Math.PI) * 1.4;
+          const subtleTilt = Math.cos(hoverTime * Math.PI * 2 + i) * 0.03;
+
           item.mesh.position.copy(item.explodedPos);
-          item.mesh.position.z += hoverBob;
+          item.mesh.position.z += staggerBob;
           item.mesh.rotation.copy(item.explodedRot);
+          item.mesh.rotation.z += subtleTilt;
         }
 
         if (this.enclosure) {
+          const lidBob = Math.sin(hoverTime * Math.PI * 2) * 1.6;
           this.enclosure.lidMesh.position.copy(this.enclosure.explodedLidPos);
-          this.enclosure.lidMesh.position.z += hoverBob;
+          this.enclosure.lidMesh.position.z += lidBob;
           this.enclosure.lidMesh.rotation.copy(this.enclosure.explodedLidRot);
+        }
+
+        // Subtle organic camera orbit around the target
+        if (this.cameraBaseOffset.lengthSq() > 1) {
+          const orbitAngle = Math.sin(hoverTime * Math.PI) * 0.08;
+          const rotatedOffset = this.cameraBaseOffset
+            .clone()
+            .applyAxisAngle(new THREE.Vector3(0, 0, 1), orbitAngle);
+          this.camera.position.copy(this.cameraTarget).add(rotatedOffset);
+          this.camera.lookAt(this.cameraTarget);
         }
 
         this.explodedProgress = 1.0;
       } else {
-        // Snap down into assembled enclosure
-        const snapProgress = easeOutBack((t - 0.65) / 0.35, 1.2);
+        // Stage 3: Smooth settling back into assembled enclosure
+        const settleT = (t - 0.65) / 0.35;
+        const snapProgress = easeInOutCubic(settleT);
 
         for (const item of this.parts) {
           item.mesh.position.lerpVectors(item.explodedPos, item.assembledPos, snapProgress);
@@ -195,13 +222,27 @@ export class BurstAnimationController {
           );
         }
 
-        this.explodedProgress = 1.0 - Math.min(1.0, (t - 0.65) / 0.35);
+        // Camera smoothly glides back to original position
+        if (this.cameraBaseOffset.lengthSq() > 1) {
+          const targetCamPos = this.cameraTarget.clone().add(this.cameraBaseOffset);
+          this.camera.position.lerp(targetCamPos, Math.min(1.0, delta * 8.0));
+          this.camera.lookAt(this.cameraTarget);
+        }
+
+        this.explodedProgress = 1.0 - snapProgress;
       }
 
       if (t >= 1.0) {
         this.isRunningBurst = false;
         this.explodedProgress = 0;
         this.targetExplodedProgress = 0;
+
+        // Ensure camera perfectly restored
+        if (this.cameraBaseOffset.lengthSq() > 1) {
+          this.camera.position.copy(this.cameraTarget).add(this.cameraBaseOffset);
+          this.camera.lookAt(this.cameraTarget);
+        }
+
         if (this.onCompleteCallback) {
           this.onCompleteCallback();
           this.onCompleteCallback = undefined;

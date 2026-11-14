@@ -22,6 +22,15 @@ export const PART_DIMENSIONS: Record<string, { width: number; length: number; he
   buzzer: { width: 12.0, length: 12.0, height: 9.5 },
   ultrasonic_hcsr04: { width: 45.0, length: 20.0, height: 15.0 },
   hcsr04: { width: 45.0, length: 20.0, height: 15.0 },
+  pir_motion: { width: 24.0, length: 32.0, height: 18.0 },
+  pir: { width: 24.0, length: 32.0, height: 18.0 },
+  motion_sensor: { width: 24.0, length: 32.0, height: 18.0 },
+  led_lamp: { width: 15.0, length: 25.0, height: 12.0 },
+  lamp: { width: 15.0, length: 25.0, height: 12.0 },
+  led_module: { width: 15.0, length: 25.0, height: 12.0 },
+  ldr_sensor: { width: 14.0, length: 32.0, height: 8.5 },
+  ldr: { width: 14.0, length: 32.0, height: 8.5 },
+  light_sensor: { width: 14.0, length: 32.0, height: 8.5 },
 };
 
 export function getPartDimensions(libId: string): { width: number; length: number; height: number } {
@@ -625,6 +634,229 @@ export function buildUltrasonicMesh(materials: MaterialLibrary): THREE.Group {
 }
 
 /**
+ * Builds a high-fidelity 3D model for HC-SR501 PIR Motion Sensor
+ * Features: Green PCB base, white faceted Fresnel dome lens, dual adjustment potentiometers, 3-pin header.
+ */
+export function buildPirMotionSensorMesh(materials: MaterialLibrary): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'pir_motion_sensor';
+
+  // 1. PCB (32 x 24 x 1.6 mm)
+  const pcbGeom = new THREE.BoxGeometry(32, 24, 1.6);
+  const pcb = new THREE.Mesh(pcbGeom, materials.pcbGreen);
+  pcb.position.set(0, 0, 0.8);
+  pcb.castShadow = true;
+  pcb.receiveShadow = true;
+  group.add(pcb);
+
+  // 2. Pyroelectric sensor metal can underneath dome (dia 9.2mm, height 4mm)
+  const canGeom = new THREE.CylinderGeometry(4.6, 4.6, 4.0, 20);
+  const can = new THREE.Mesh(canGeom, materials.metalShield);
+  can.rotation.x = Math.PI / 2;
+  can.position.set(0, 0, 1.6 + 2.0);
+  group.add(can);
+
+  // 3. Faceted Fresnel Lens Dome (white translucent dome, 22mm dia x 10mm height)
+  const domeGeom = new THREE.SphereGeometry(11, 20, 14, 0, Math.PI * 2, 0, Math.PI / 2);
+  const dome = new THREE.Mesh(domeGeom, materials.pirDome);
+  dome.rotation.x = Math.PI / 2;
+  dome.position.set(0, 0, 1.6 + 1.0);
+  dome.castShadow = true;
+  group.add(dome);
+
+  // Stepped ring base of the Fresnel lens
+  const ringGeom = new THREE.CylinderGeometry(11.4, 11.4, 2.5, 24);
+  const ring = new THREE.Mesh(ringGeom, materials.plasticWhite);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(0, 0, 1.6 + 1.25);
+  group.add(ring);
+
+  // 4. Dual Adjustment Potentiometers (Sensitivity & Delay) - Orange/Yellow trimpots
+  for (let i = -1; i <= 1; i += 2) {
+    const potBodyGeom = new THREE.BoxGeometry(4.8, 4.8, 4.0);
+    const pot = new THREE.Mesh(potBodyGeom, materials.potOrange);
+    pot.position.set(i * 10, -8, 1.6 + 2.0);
+    pot.castShadow = true;
+    group.add(pot);
+
+    // Cross adjustment dial
+    const dialGeom = new THREE.CylinderGeometry(1.5, 1.5, 0.6, 12);
+    const dial = new THREE.Mesh(dialGeom, materials.plasticWhite);
+    dial.rotation.x = Math.PI / 2;
+    dial.position.set(i * 10, -8, 1.6 + 4.1);
+    group.add(dial);
+  }
+
+  // 5. 3-pin connection header (VCC, OUT, GND)
+  const headerGeom = new THREE.BoxGeometry(7.62, 2.54, 8.5);
+  const header = new THREE.Mesh(headerGeom, materials.plasticBlack);
+  header.position.set(0, 9.5, 1.6 + 4.25);
+  header.castShadow = true;
+  group.add(header);
+
+  // 3 gold contact pins
+  for (let i = -1; i <= 1; i++) {
+    const pinGeom = new THREE.BoxGeometry(0.64, 0.64, 11);
+    const pin = new THREE.Mesh(pinGeom, materials.metalGold);
+    pin.position.set(i * 2.54, 9.5, 1.6 + 5.5);
+    group.add(pin);
+  }
+
+  return group;
+}
+
+/**
+ * Builds a high-fidelity 3D model for High-Power LED Lamp Module
+ * Features: Dark breakout PCB, aluminum star heat sink, glowing warm emissive dome, 3-pin control header.
+ */
+export function buildLedLampModuleMesh(materials: MaterialLibrary): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'led_lamp_module';
+
+  // 1. Base PCB (25 x 18 x 1.6 mm)
+  const pcbGeom = new THREE.BoxGeometry(25, 18, 1.6);
+  const pcb = new THREE.Mesh(pcbGeom, materials.pcbEsp32);
+  pcb.position.set(0, 0, 0.8);
+  pcb.castShadow = true;
+  pcb.receiveShadow = true;
+  group.add(pcb);
+
+  // 2. Aluminum Star Heat Sink Plate
+  const sinkGeom = new THREE.CylinderGeometry(7.2, 7.6, 1.4, 8);
+  const sink = new THREE.Mesh(sinkGeom, materials.metalSilver);
+  sink.rotation.x = Math.PI / 2;
+  sink.position.set(-2, 0, 1.6 + 0.7);
+  sink.castShadow = true;
+  group.add(sink);
+
+  // 3. Glowing LED Diffuser Dome (emissive warm amber/white glow)
+  const ledDomeGeom = new THREE.SphereGeometry(5.2, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+  const ledDome = new THREE.Mesh(ledDomeGeom, materials.ledLampGlow);
+  ledDome.rotation.x = Math.PI / 2;
+  ledDome.position.set(-2, 0, 1.6 + 1.4);
+  ledDome.castShadow = true;
+  group.add(ledDome);
+
+  // Inner bright emissive point source element
+  const coreGeom = new THREE.CylinderGeometry(1.6, 1.6, 0.8, 12);
+  const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const core = new THREE.Mesh(coreGeom, coreMat);
+  core.rotation.x = Math.PI / 2;
+  core.position.set(-2, 0, 1.6 + 2.0);
+  group.add(core);
+
+  // 4. Current Limiting Resistor / S8050 NPN Transistor
+  const transistorGeom = new THREE.BoxGeometry(4.2, 3.2, 2.5);
+  const transistor = new THREE.Mesh(transistorGeom, materials.plasticBlack);
+  transistor.position.set(7, 3, 1.6 + 1.25);
+  group.add(transistor);
+
+  // 5. 3-pin connection header (SIG, VCC, GND)
+  const headerGeom = new THREE.BoxGeometry(2.54, 7.62, 8.5);
+  const header = new THREE.Mesh(headerGeom, materials.plasticBlack);
+  header.position.set(9.5, -2, 1.6 + 4.25);
+  header.castShadow = true;
+  group.add(header);
+
+  for (let i = -1; i <= 1; i++) {
+    const pinGeom = new THREE.BoxGeometry(0.64, 0.64, 11);
+    const pin = new THREE.Mesh(pinGeom, materials.metalSilver);
+    pin.position.set(9.5, -2 + i * 2.54, 1.6 + 5.5);
+    group.add(pin);
+  }
+
+  return group;
+}
+
+/**
+ * Builds a high-fidelity 3D model for LDR Light Sensor Module
+ * Features: Dark blue PCB, CdS photoresistor cell with serpentine track, LM393 comparator chip, blue sensitivity trimpot, 4-pin header.
+ */
+export function buildLdrLightSensorMesh(materials: MaterialLibrary): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'ldr_light_sensor';
+
+  // 1. Base PCB (32 x 14 x 1.6 mm)
+  const pcbGeom = new THREE.BoxGeometry(32, 14, 1.6);
+  const pcb = new THREE.Mesh(pcbGeom, materials.pcbBlue);
+  pcb.position.set(0, 0, 0.8);
+  pcb.castShadow = true;
+  pcb.receiveShadow = true;
+  group.add(pcb);
+
+  // 2. LDR Sensor Head (CdS Photoresistor cell on front tip)
+  // Two metal lead wires extending from PCB
+  for (let i = -1; i <= 1; i += 2) {
+    const wireGeom = new THREE.CylinderGeometry(0.4, 0.4, 5.0, 8);
+    const wire = new THREE.Mesh(wireGeom, materials.metalSilver);
+    wire.rotation.z = Math.PI / 2;
+    wire.position.set(-14.5, i * 2.0, 1.6 + 2.5);
+    group.add(wire);
+  }
+
+  // Ceramic photoresistor disc
+  const discGeom = new THREE.CylinderGeometry(2.6, 2.6, 1.8, 16);
+  const disc = new THREE.Mesh(discGeom, materials.ldrCeramic);
+  disc.rotation.z = Math.PI / 2;
+  disc.position.set(-17.5, 0, 1.6 + 2.5);
+  disc.castShadow = true;
+  group.add(disc);
+
+  // Serpentine track accent face
+  const trackFaceGeom = new THREE.CylinderGeometry(2.4, 2.4, 0.2, 16);
+  const trackFace = new THREE.Mesh(trackFaceGeom, materials.ldrTrack);
+  trackFace.rotation.z = Math.PI / 2;
+  trackFace.position.set(-18.5, 0, 1.6 + 2.5);
+  group.add(trackFace);
+
+  // 3. LM393 Dual Comparator IC Chip
+  const chipGeom = new THREE.BoxGeometry(6.5, 5.0, 2.0);
+  const chip = new THREE.Mesh(chipGeom, materials.plasticBlack);
+  chip.position.set(-4, 0, 1.6 + 1.0);
+  chip.castShadow = true;
+  group.add(chip);
+
+  // 4. Blue Precision Potentiometer with brass screw (Sensitivity adjuster)
+  const potGeom = new THREE.BoxGeometry(6.5, 6.5, 4.5);
+  const potMat = materials.pcbBlue;
+  const pot = new THREE.Mesh(potGeom, potMat);
+  pot.position.set(4, 0, 1.6 + 2.25);
+  pot.castShadow = true;
+  group.add(pot);
+
+  // Brass adjuster screw on top
+  const screwGeom = new THREE.CylinderGeometry(1.2, 1.2, 0.8, 12);
+  const screw = new THREE.Mesh(screwGeom, materials.metalGold);
+  screw.position.set(4, 0, 1.6 + 4.6);
+  group.add(screw);
+
+  // 5. Dual SMD Status LEDs (Power green, DO trigger red)
+  const pwrLed = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.8), materials.ledGreen);
+  pwrLed.position.set(-1, -4, 1.6 + 0.4);
+  group.add(pwrLed);
+
+  const outLed = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.0, 0.8), materials.ledRed);
+  outLed.position.set(-1, 4, 1.6 + 0.4);
+  group.add(outLed);
+
+  // 6. 4-pin male connection header (VCC, GND, DO, AO) at back edge
+  const headerGeom = new THREE.BoxGeometry(2.54, 10.16, 8.5);
+  const header = new THREE.Mesh(headerGeom, materials.plasticBlack);
+  header.position.set(13.5, 0, 1.6 + 4.25);
+  header.castShadow = true;
+  group.add(header);
+
+  for (let i = 0; i < 4; i++) {
+    const pinGeom = new THREE.BoxGeometry(0.64, 0.64, 11);
+    const pin = new THREE.Mesh(pinGeom, materials.metalGold);
+    pin.position.set(13.5, -3.81 + i * 2.54, 1.6 + 5.5);
+    group.add(pin);
+  }
+
+  return group;
+}
+
+/**
  * Builds generic fallback module with clean aesthetic for any unrecognized part
  */
 export function buildGenericModuleMesh(
@@ -701,6 +933,12 @@ export function createPartMesh(
     meshGroup = buildPiezoBuzzerMesh(materials);
   } else if (libId.includes('ultrasonic') || libId.includes('hcsr04') || libId.includes('distance')) {
     meshGroup = buildUltrasonicMesh(materials);
+  } else if (libId.includes('pir') || libId.includes('motion')) {
+    meshGroup = buildPirMotionSensorMesh(materials);
+  } else if (libId.includes('lamp') || libId.includes('led_lamp') || libId.includes('bulb') || libId.includes('led_module')) {
+    meshGroup = buildLedLampModuleMesh(materials);
+  } else if (libId.includes('ldr') || libId.includes('light_sensor') || libId.includes('photoresistor')) {
+    meshGroup = buildLdrLightSensorMesh(materials);
   } else {
     meshGroup = buildGenericModuleMesh(item, materials);
   }

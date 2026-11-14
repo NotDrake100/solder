@@ -177,11 +177,11 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       renderer.toneMappingExposure = 1.1;
       rendererRef.current = renderer;
 
-      // 4. Lighting Setup (Clean studio aesthetic)
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+      // 4. Studio Lighting Setup (Clean b4/b6 white aesthetic with soft shadows & frosted rim highlights)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
 
-      // Key light with sharp shadow
+      // Key light with soft PCF shadow
       const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
       keyLight.position.set(90, -100, 160);
       keyLight.castShadow = true;
@@ -189,35 +189,41 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       keyLight.shadow.mapSize.height = 2048;
       keyLight.shadow.camera.near = 10;
       keyLight.shadow.camera.far = 500;
-      const d = 100;
+      const d = 110;
       keyLight.shadow.camera.left = -d;
       keyLight.shadow.camera.right = d;
       keyLight.shadow.camera.top = d;
       keyLight.shadow.camera.bottom = -d;
-      keyLight.shadow.bias = -0.0008;
+      keyLight.shadow.bias = -0.0004;
+      keyLight.shadow.radius = 3.2; // soft shadow penumbra
       scene.add(keyLight);
 
-      // Soft blue fill bounce
-      const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.5);
-      fillLight.position.set(-100, 80, 80);
+      // Soft blue-tinted studio fill bounce
+      const fillLight = new THREE.DirectionalLight(0xe0f2fe, 0.55);
+      fillLight.position.set(-100, 80, 90);
       scene.add(fillLight);
 
-      // Subtle warm rim light
-      const rimLight = new THREE.DirectionalLight(0xfef08a, 0.35);
-      rimLight.position.set(0, 120, -50);
+      // High-angle cool rim light to catch frosted enclosure edges
+      const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.65);
+      rimLight.position.set(-30, 140, 60);
       scene.add(rimLight);
 
-      // 5. Studio Ground Grid Floor
-      const gridHelper = new THREE.GridHelper(300, 30, 0xe2e8f0, 0xf1f5f9);
+      // Subtle warm secondary rim light for component depth
+      const warmRimLight = new THREE.DirectionalLight(0xfef08a, 0.3);
+      warmRimLight.position.set(40, 120, -40);
+      scene.add(warmRimLight);
+
+      // 5. Studio Ground Grid Floor & Soft Contact Shadow
+      const gridHelper = new THREE.GridHelper(320, 32, 0xe2e8f0, 0xf1f5f9);
       gridHelper.rotation.x = Math.PI / 2;
       gridHelper.position.set(0, 0, -2);
       scene.add(gridHelper);
 
-      // Subtle shadow-catching ground disc
-      const shadowPlaneGeom = new THREE.PlaneGeometry(350, 350);
-      const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.12 });
+      // Soft shadow-catching contact ground disc
+      const shadowPlaneGeom = new THREE.PlaneGeometry(360, 360);
+      const shadowPlaneMat = new THREE.ShadowMaterial({ opacity: 0.18 });
       const shadowPlane = new THREE.Mesh(shadowPlaneGeom, shadowPlaneMat);
-      shadowPlane.position.set(0, 0, -2.1);
+      shadowPlane.position.set(0, 0, -1.95);
       shadowPlane.receiveShadow = true;
       scene.add(shadowPlane);
 

@@ -23,13 +23,22 @@ for (const theme of ['pla', 'acrylic', 'dark', 'resin'] as const) {
   assert(!!mats.enclosureLid, `Enclosure lid material exists for theme ${theme}`);
   assert(!!mats.pcbUno, 'PCB Uno material exists');
   assert(!!mats.oledScreen, 'OLED screen material exists');
+  assert(!!mats.pirDome, 'PIR dome material exists');
+  assert(!!mats.ledLampGlow, 'LED lamp glow material exists');
+  assert(!!mats.ldrCeramic, 'LDR ceramic material exists');
   assert(!!mats.wireMaterials.red, 'Red wire material exists');
-}
-console.log('   ✓ Material themes validated successfully.');
 
-// 2. Test Part Meshes for all 11 library parts
-console.log('2. Testing procedural 3D meshes for all 11 parts...');
-const testMaterials = createMaterialLibrary('pla');
+  if (theme === 'acrylic' || theme === 'pla') {
+    const encPhys = mats.enclosure as THREE.MeshPhysicalMaterial;
+    assert(encPhys.transparent === true, `Enclosure must be transparent for theme ${theme}`);
+    assert(encPhys.transmission >= 0.7, `Enclosure transmission >= 0.7 for theme ${theme} (was ${encPhys.transmission})`);
+  }
+}
+console.log('   ✓ Material themes & translucency validated successfully.');
+
+// 2. Test Part Meshes for all 14 library parts
+console.log('2. Testing procedural 3D meshes for all 14 parts...');
+const testMaterials = createMaterialLibrary('acrylic');
 const partIds = [
   'arduino_uno',
   'esp32_devkit',
@@ -42,6 +51,9 @@ const partIds = [
   'battery_18650',
   'piezo_buzzer',
   'ultrasonic_hcsr04',
+  'pir_motion',
+  'led_lamp',
+  'ldr_sensor',
   'unknown_sensor_module', // tests generic fallback
 ];
 
@@ -60,7 +72,7 @@ for (const libId of partIds) {
   assert(mesh.userData.libId === libId, `userData.libId preserved for ${libId}`);
   assert(mesh.position.z === 2, `Mesh Z position correctly set for ${libId}`);
 }
-console.log('   ✓ All 11 hardware part meshes generated successfully.');
+console.log('   ✓ All 14 hardware part meshes generated successfully.');
 
 // 3. Test Enclosure Assembly
 console.log('3. Testing procedural enclosure generation...');
