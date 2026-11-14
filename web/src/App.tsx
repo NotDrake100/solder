@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { SolderBuild, ScrapPhotoResult } from './types';
 import { SHOWCASE_BUILDS, DESK_FAN_BUILD } from './data/showcases';
+import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
 import { ChatView, ChatMessage } from './components/ChatView';
@@ -46,6 +47,16 @@ export function App() {
   // Conversation messages state (empty state by default)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+  // Page routing: landing page at /, app workspace at /app or /b/:id
+  const [view, setView] = useState<'landing' | 'app'>(() => {
+    if (typeof window === 'undefined') return 'landing';
+    const path = window.location.pathname;
+    if (path.startsWith('/app') || path.startsWith('/b/') || window.location.hash) {
+      return 'app';
+    }
+    return 'landing';
+  });
+
   // Load past builds from localStorage on mount
   useEffect(() => {
     try {
@@ -69,20 +80,42 @@ export function App() {
     }
   }, []);
 
-  // Permalink routing (/b/:id or #id)
+  // Permalink routing (/b/:id, /app, or /)
   useEffect(() => {
-    const path = window.location.pathname;
-    const match = path.match(/\/b\/([a-zA-Z0-9_-]+)/);
-    const buildId = match ? match[1] : window.location.hash.replace('#', '');
+    const handleLocation = () => {
+      const path = window.location.pathname;
+      const match = path.match(/\/b\/([a-zA-Z0-9_-]+)/);
+      const buildId = match ? match[1] : window.location.hash.replace('#', '');
 
-    if (buildId) {
-      if (buildId === 'desk-fan') {
-        loadBuildIntoChat(DESK_FAN_BUILD);
-      } else if (SHOWCASE_BUILDS[buildId]) {
-        loadBuildIntoChat(SHOWCASE_BUILDS[buildId]);
+      if (buildId) {
+        setView('app');
+        if (buildId === 'desk-fan') {
+          loadBuildIntoChat(DESK_FAN_BUILD);
+        } else if (SHOWCASE_BUILDS[buildId]) {
+          loadBuildIntoChat(SHOWCASE_BUILDS[buildId]);
+        }
+      } else if (path.startsWith('/app')) {
+        setView('app');
+      } else if (path === '/') {
+        setView('landing');
       }
-    }
+    };
+
+    handleLocation();
+    window.addEventListener('popstate', handleLocation);
+    return () => window.removeEventListener('popstate', handleLocation);
   }, []);
+
+  // Navigation handlers
+  const handleGoToApp = () => {
+    window.history.pushState(null, '', '/app');
+    setView('app');
+  };
+
+  const handleGoHome = () => {
+    window.history.pushState(null, '', '/');
+    setView('landing');
+  };
 
   // Load a showcase or past build into chat view matching chatgpt-inline.html
   const loadBuildIntoChat = (build: SolderBuild) => {
@@ -113,7 +146,8 @@ export function App() {
   // Start fresh empty build conversation ("New build" button)
   const handleNewBuild = () => {
     setMessages([]);
-    window.history.pushState(null, '', '/');
+    window.history.pushState(null, '', '/app');
+    setView('app');
   };
 
   // Switch build from sidebar
@@ -125,6 +159,7 @@ export function App() {
     if (found) {
       loadBuildIntoChat(found);
       window.history.pushState(null, '', `/b/${id}`);
+      setView('app');
     }
   };
 
@@ -589,6 +624,10 @@ export function App() {
     });
   };
 
+  if (view === 'landing') {
+    return <LandingPage onTryIt={handleGoToApp} />;
+  }
+
   return (
     <div className="app flex h-screen w-full bg-[#0f0f0f] text-[#f5f5f5] font-sans overflow-hidden">
       {/* Desktop Slim Sidebar (232px) */}
@@ -602,6 +641,7 @@ export function App() {
         onOpenScrapMode={() => setIsScrapOpen(true)}
         ownedCount={activeBuild?.parts?.filter((p) => p.owned).length || 0}
         savingsInr={scrapSavings}
+        onGoHome={handleGoHome}
       />
 
       {/* Mobile Slide-in Drawer */}
@@ -617,6 +657,7 @@ export function App() {
         savingsInr={scrapSavings}
         isMobileDrawer={true}
         onCloseMobileDrawer={() => setIsMobileDrawerOpen(false)}
+        onGoHome={handleGoHome}
       />
 
       {/* Main Single Column Layout: TopBar + Centered 768px Chat */}
@@ -632,6 +673,7 @@ export function App() {
           isSidebarOpen={isSidebarOpen}
           onNewBuild={handleNewBuild}
           onOpenShare={() => setIsShareOpen(true)}
+          onGoHome={handleGoHome}
         />
 
         <ChatView

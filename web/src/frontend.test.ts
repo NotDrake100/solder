@@ -62,6 +62,12 @@ import { LiveCameraModal } from './components/LiveCameraModal.tsx';
 assert(typeof LiveCameraModal === 'function', 'LiveCameraModal component exists and exported');
 console.log('   ✓ Live Camera tracking modal verified.');
 
+// 7. Verify Minimal Landing Page
+console.log('7. Testing Minimal Landing Page at / ...');
+import { LandingPage } from './components/LandingPage.tsx';
+assert(typeof LandingPage === 'function', 'LandingPage component exists and exported');
+console.log('   ✓ Minimal Landing Page component verified.');
+
 console.log('\n========================================');
 console.log('ALL FRONTEND TEST SUITES PASSED (100%)');
 console.log('========================================');
