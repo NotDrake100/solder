@@ -178,7 +178,18 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     downloadBuildKit(build);
   };
 
-  const totalCost = getBomTotal(build);
+  const totalCost = useMemo(() => {
+    if (!build?.parts?.length) return build?.product?.priceInr || 890;
+    return Math.round(
+      build.parts.reduce((sum, p) => {
+        if (p.owned) return sum;
+        const offers = getOffersForPart(p);
+        const cheapest = offers ? getCheapestInStockPrice(offers) : null;
+        const price = cheapest !== null ? cheapest : (p.priceInr || 0);
+        return sum + price * (p.qty || 1);
+      }, 0)
+    );
+  }, [build]);
 
   const handleCopyCode = () => {
     if (currentFirmwareCode) {
@@ -290,9 +301,17 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </button>
         </div>
 
-        {/* Right CTA: Order Kit on Desktop */}
-        {onOpenOrder && (
-          <div className="shrink-0 py-1 hidden sm:block">
+        {/* Right CTA: Download Kit & Order Kit on Desktop */}
+        <div className="shrink-0 py-1 hidden sm:flex items-center gap-2">
+          <button
+            onClick={handleDownloadKit}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium border border-[#333] bg-[#222] text-[#f5f5f5] hover:bg-[#2e2e2e] hover:text-white transition cursor-pointer whitespace-nowrap"
+            title="Download complete kit (ZIP of code, wiring, case STL, parts CSV)"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Download kit</span>
+          </button>
+          {onOpenOrder && (
             <button
               onClick={onOpenOrder}
               className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer whitespace-nowrap"
@@ -301,8 +320,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               <span>Order Kit</span>
               <span className="mono text-[11px] opacity-80">Rs {totalCost}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Result Stage Body */}
@@ -364,24 +383,76 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             </div>
 
             <div className="divide-y divide-[#262626] text-xs">
-              {build.parts?.map((part) => (
-                <div
-                  key={part.id}
-                  className="py-2 flex items-center justify-between gap-2"
-                >
-                  <div className="min-w-0">
-                    <div className="font-medium text-[#f5f5f5] truncate">
-                      {part.name}
+              {build.parts?.map((part) => {
+                const offers = getOffersForPart(part);
+                const cheapest = offers ? getCheapestInStockPrice(offers) : null;
+                const effectivePrice = cheapest !== null ? cheapest : (part.priceInr || 60);
+                const searchLinks = getSearchLinks(part.name || part.libId || part.id || '');
+
+                return (
+                  <div
+                    key={part.id}
+                    className="py-2.5 flex flex-col gap-1.5"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium text-[#f5f5f5] truncate">
+                          {part.name}
+                        </div>
+                        <div className="mono text-[11px] text-[#777]">
+                          Qty {part.qty || 1} · {part.package || 'Module'}
+                        </div>
+                      </div>
+                      <div className="mono text-right text-xs text-[#d4d4d4] shrink-0">
+                        {part.owned ? 'Owned' : `Rs ${Math.round(effectivePrice)}`}
+                      </div>
                     </div>
-                    <div className="mono text-[11px] text-[#777]">
-                      Qty {part.qty || 1} · {part.package || 'Module'}
+
+                    {/* Offers or Search Links */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {offers && offers.length > 0 ? (
+                        offers.map((offer, oIdx) => (
+                          <a
+                            key={oIdx}
+                            href={offer.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border border-[#333] bg-[#1a1a1a] text-[#ccc] hover:text-white hover:border-white transition select-none"
+                          >
+                            <span>Buy {offer.seller}</span>
+                            <span className="text-[#666]">·</span>
+                            <span className="text-white font-medium">Rs {offer.priceInr}</span>
+                            {!offer.inStock && (
+                              <span className="text-[#777] text-[10px] ml-0.5">(out of stock)</span>
+                            )}
+                          </a>
+                        ))
+                      ) : (
+                        <>
+                          <a
+                            href={searchLinks.robu}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border border-[#333] bg-[#1a1a1a] text-[#aaa] hover:text-white hover:border-white transition select-none"
+                          >
+                            <span>Robu.in search</span>
+                            <span className="text-[#666]">↗</span>
+                          </a>
+                          <a
+                            href={searchLinks.amazon}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border border-[#333] bg-[#1a1a1a] text-[#aaa] hover:text-white hover:border-white transition select-none"
+                          >
+                            <span>Amazon.in search</span>
+                            <span className="text-[#666]">↗</span>
+                          </a>
+                        </>
+                      )}
                     </div>
                   </div>
-                  <div className="mono text-right text-xs text-[#d4d4d4] shrink-0">
-                    {part.owned ? 'Owned' : `Rs ${part.priceInr || 60}`}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -602,19 +673,26 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         )}
       </div>
 
-      {/* Mobile CTA: Order Kit Below the Card (QA-R3 #7) */}
-      {onOpenOrder && (
-        <div className="sm:hidden p-2.5 border-t border-[#262626] bg-[#171717]">
+      {/* Mobile CTA: Download Kit & Order Kit Below the Card */}
+      <div className="sm:hidden p-2.5 border-t border-[#262626] bg-[#171717] flex items-center gap-2">
+        <button
+          onClick={handleDownloadKit}
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-[#333] bg-[#222] text-[#f5f5f5] hover:bg-[#2e2e2e] hover:text-white transition cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Download kit</span>
+        </button>
+        {onOpenOrder && (
           <button
             onClick={onOpenOrder}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>Order Kit</span>
             <span className="mono text-[11px] opacity-80">· Rs {totalCost}</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

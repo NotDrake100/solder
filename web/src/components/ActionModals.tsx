@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, ShoppingBag, Truck, Box, Check, Copy, ExternalLink, QrCode, Sparkles, Download } from 'lucide-react';
-const confetti = (_opts?: any) => {};
+import { X, ShoppingBag, Box, Check, Copy, ExternalLink, QrCode, Sparkles, Download } from 'lucide-react';
 import type { SolderBuild } from '../types';
+import { downloadBuildKit } from '../utils/kitDownloader';
+import { getOffersForPart, getCheapestInStockPrice } from '../data/partPrices';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -16,129 +17,98 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   build,
   savingsInr = 0,
 }) => {
-  const [isOrdered, setIsOrdered] = useState(false);
-
   if (!isOpen) return null;
 
-  const partsTotal = build.parts.reduce((sum, p) => sum + (p.owned ? 0 : p.priceInr * p.qty), 0);
-  const printServiceEstimate = 280; // INR for 3D printed PETG/PLA enclosure
-  const shippingInr = 50;
-  const grandTotal = partsTotal + printServiceEstimate + shippingInr;
+  const grandTotal = Math.round(
+    build.parts.reduce((sum, p) => {
+      if (p.owned) return sum;
+      const offers = getOffersForPart(p);
+      const cheapest = offers ? getCheapestInStockPrice(offers) : null;
+      const price = cheapest !== null ? cheapest : (p.priceInr || 0);
+      return sum + price * (p.qty || 1);
+    }, 0)
+  );
 
-  const handleCheckout = () => {
-    setIsOrdered(true);
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    } catch (e) {
-      // ignore
-    }
+  const handleDownload = () => {
+    downloadBuildKit(build);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl max-w-lg w-full border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="bg-[#141414] text-[#f5f5f5] rounded-2xl max-w-lg w-full border border-[#2a2a2a] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-100 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-[#262626] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center">
               <ShoppingBag className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-zinc-900">Order Maker Kit</h2>
-              <p className="text-xs text-zinc-500">Components + custom 3D printed enclosure</p>
+              <h2 className="text-base font-semibold text-white">Maker Kit</h2>
+              <p className="text-xs text-[#888]">Bill of materials & component kit</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 transition">
+          <button onClick={onClose} className="p-1 rounded-lg text-[#888] hover:text-white transition cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-6 overflow-y-auto space-y-4">
-          {isOrdered ? (
-            <div className="py-8 text-center space-y-3">
-              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                <Check className="w-6 h-6 stroke-[3]" />
-              </div>
-              <h3 className="text-lg font-bold text-zinc-900">Kit Order Dispatched!</h3>
-              <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                Components routed to nearest partner hub (MakerBazaar / Robu Pune). Tracking details sent.
-              </p>
-              <button
-                onClick={onClose}
-                className="mt-4 px-5 py-2 rounded-xl bg-zinc-900 text-white text-xs font-medium hover:bg-zinc-800 transition"
-              >
-                Close
-              </button>
+          {/* Parts Breakdown */}
+          <div className="border border-[#262626] rounded-xl divide-y divide-[#262626] text-xs">
+            <div className="p-3 bg-[#1a1a1a] font-semibold text-[#ccc] flex justify-between">
+              <span>Component Bill of Materials</span>
+              <span>Price</span>
             </div>
-          ) : (
-            <>
-              {/* Parts Breakdown */}
-              <div className="border border-zinc-200 rounded-xl divide-y divide-zinc-100 text-xs">
-                <div className="p-3 bg-zinc-50 font-semibold text-zinc-700 flex justify-between">
-                  <span>Component Bill of Materials</span>
-                  <span>Unit Price</span>
-                </div>
-                {build.parts.map((p) => (
-                  <div key={p.id} className="p-3 flex items-center justify-between">
-                    <div>
-                      <span className="font-medium text-zinc-900">{p.name}</span>
-                      <span className="text-zinc-400 ml-1">× {p.qty}</span>
-                      {p.owned && (
-                        <span className="ml-2 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-semibold">
-                          Owned (Free)
-                        </span>
-                      )}
-                    </div>
-                    <span className={`font-semibold ${p.owned ? 'line-through text-zinc-400' : 'text-zinc-900'}`}>
-                      ₹{p.priceInr * p.qty}
-                    </span>
-                  </div>
-                ))}
-
-                {/* 3D Print Quote */}
-                <div className="p-3 flex items-center justify-between bg-zinc-50/50">
+            {build.parts.map((p) => {
+              const offers = getOffersForPart(p);
+              const cheapest = offers ? getCheapestInStockPrice(offers) : null;
+              const price = cheapest !== null ? cheapest : (p.priceInr || 0);
+              return (
+                <div key={p.id} className="p-3 flex items-center justify-between">
                   <div>
-                    <span className="font-medium text-zinc-900">3D Printed Enclosure (PLA/PETG)</span>
-                    <div className="text-[10px] text-zinc-500">Local print hub quote (Pune/Bengaluru 48h dispatch)</div>
+                    <span className="font-medium text-white">{p.name}</span>
+                    <span className="text-[#888] ml-1">× {p.qty || 1}</span>
+                    {p.owned && (
+                      <span className="ml-2 text-[10px] bg-white text-black px-1.5 py-0.5 rounded font-mono font-medium">
+                        Owned
+                      </span>
+                    )}
                   </div>
-                  <span className="font-semibold text-zinc-900">₹{printServiceEstimate}</span>
+                  <span className={`font-mono ${p.owned ? 'line-through text-[#666]' : 'text-white'}`}>
+                    ₹{Math.round(price * (p.qty || 1))}
+                  </span>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Standard Shipping */}
-                <div className="p-3 flex items-center justify-between bg-zinc-50/50">
-                  <span className="text-zinc-600">Standard Express Shipping (Bluedart/DTDC)</span>
-                  <span className="font-semibold text-zinc-900">₹{shippingInr}</span>
+          {/* Kit Total Summary */}
+          <div className="p-4 rounded-xl bg-[#1a1a1a] border border-[#262626] flex items-center justify-between">
+            <div>
+              <div className="text-xs text-[#888]">Kit Total (INR)</div>
+              {savingsInr > 0 && (
+                <div className="text-[11px] font-mono text-[#aaa]">
+                  Saved ₹{savingsInr} with Scrap Mode
                 </div>
-              </div>
+              )}
+            </div>
+            <div className="text-2xl font-bold font-mono text-white">₹{grandTotal}</div>
+          </div>
 
-              {/* Total Summary */}
-              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-zinc-500">Estimated Total (INR)</div>
-                  {savingsInr > 0 && (
-                    <div className="text-[11px] font-semibold text-emerald-600">
-                      You saved ₹{savingsInr} with Scrap Mode
-                    </div>
-                  )}
-                </div>
-                <div className="text-2xl font-bold text-zinc-900">₹{grandTotal}</div>
-              </div>
-
-              {/* Checkout Button */}
-              <button
-                onClick={handleCheckout}
-                className="w-full py-3 rounded-xl bg-zinc-900 text-white text-sm font-semibold hover:bg-zinc-800 transition shadow-sm flex items-center justify-center gap-2"
-              >
-                <span>Confirm Maker Kit Order</span>
-                <Truck className="w-4 h-4" />
-              </button>
-            </>
-          )}
+          {/* Download kit + Buy note */}
+          <div className="space-y-2 pt-1">
+            <button
+              onClick={handleDownload}
+              className="w-full py-3 rounded-xl bg-white text-black text-sm font-semibold hover:bg-neutral-200 transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download kit</span>
+            </button>
+            <p className="text-center text-xs text-[#888]">
+              Buy each part from the links in the Parts tab
+            </p>
+          </div>
         </div>
       </div>
     </div>
