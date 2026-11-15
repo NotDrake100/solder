@@ -984,14 +984,17 @@ export function buildSpeakerMesh(materials: MaterialLibrary): THREE.Group {
 /**
  * Builds solid LiPo battery block
  */
-export function buildLiPoMesh(): THREE.Group {
+export function buildLiPoMesh(isLandscape = false): THREE.Group {
   const group = new THREE.Group();
   group.name = 'lipo_battery';
 
-  // Flat block (52 x 34 x 7 mm)
-  const bodyGeom = new THREE.BoxGeometry(52, 34, 7);
+  const w = isLandscape ? 52 : 34;
+  const l = isLandscape ? 34 : 52;
+
+  // Flat block (34 x 52 x 7 mm or 52 x 34 x 7 mm)
+  const bodyGeom = new THREE.BoxGeometry(w, l, 7);
   const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0x334155, // slate blue metallic battery wrap
+    color: 0x27272a, // Neutral dark grey metallic battery wrap
     roughness: 0.4,
     metalness: 0.3,
   });
@@ -1000,15 +1003,17 @@ export function buildLiPoMesh(): THREE.Group {
   body.castShadow = true;
   group.add(body);
 
-  // Gold protection circuit tape
-  const tapeGeom = new THREE.BoxGeometry(10, 34, 7.2);
+  // Protection circuit connector collar (neutral black/dark grey, no orange)
+  const tapeGeom = isLandscape
+    ? new THREE.BoxGeometry(8, l, 7.2)
+    : new THREE.BoxGeometry(w, 8, 7.2);
   const tapeMat = new THREE.MeshStandardMaterial({
-    color: 0xd97706,
-    roughness: 0.3,
-    metalness: 0.5,
+    color: 0x18181b, // Neutral black/dark grey
+    roughness: 0.5,
+    metalness: 0.2,
   });
   const tape = new THREE.Mesh(tapeGeom, tapeMat);
-  tape.position.set(-21, 0, 3.5);
+  tape.position.set(isLandscape ? -w / 2 + 4 : 0, isLandscape ? 0 : -l / 2 + 4, 3.5);
   group.add(tape);
 
   return group;
@@ -1024,7 +1029,7 @@ export function buildMicMesh(): THREE.Group {
   // Small square (14 x 14 x 3 mm)
   const boardGeom = new THREE.BoxGeometry(14, 14, 3);
   const boardMat = new THREE.MeshStandardMaterial({
-    color: 0x1e293b,
+    color: 0x18181b,
     roughness: 0.5,
     metalness: 0.1,
   });
@@ -1033,10 +1038,10 @@ export function buildMicMesh(): THREE.Group {
   board.castShadow = true;
   group.add(board);
 
-  // Gold MEMS acoustic port
+  // Silver MEMS acoustic port (monochrome)
   const portGeom = new THREE.CylinderGeometry(2, 2, 1, 16);
   const portMat = new THREE.MeshStandardMaterial({
-    color: 0xd4af37,
+    color: 0xd1d5db,
     roughness: 0.2,
     metalness: 0.8,
   });
@@ -1184,7 +1189,7 @@ export function createPartMesh(
   } else if (libId.includes('speaker') || libId.includes('audio_3w')) {
     meshGroup = buildSpeakerMesh(materials);
   } else if (libId.includes('lipo') || libId.includes('battery_2000') || libId.includes('cell')) {
-    meshGroup = buildLiPoMesh();
+    meshGroup = buildLiPoMesh(isLandscape);
   } else if (libId.includes('mic') || libId.includes('inmp441')) {
     meshGroup = buildMicMesh();
   } else if (libId.includes('button') || libId.includes('tactile')) {
@@ -1210,7 +1215,7 @@ export function createPartMesh(
   } else if (libId.includes('mq135') || libId.includes('gas') || libId.includes('air')) {
     meshGroup = buildMq135Mesh(materials);
   } else if (libId.includes('18650') || libId.includes('battery')) {
-    meshGroup = buildLiPoMesh();
+    meshGroup = buildLiPoMesh(isLandscape);
   } else if (libId.includes('buzzer') || libId.includes('piezo')) {
     meshGroup = buildPiezoBuzzerMesh(materials);
   } else if (libId.includes('ultrasonic') || libId.includes('hcsr04') || libId.includes('distance')) {
@@ -1294,6 +1299,31 @@ export function createPartMesh(
   }
   if (item.rotY) {
     meshGroup.rotation.y = (item.rotY * Math.PI) / 180;
+  }
+
+  // Ensure every part (including connectors/headers/rotated bounds) stays strictly inside inner side walls
+  if (enclosureDims && Array.isArray(enclosureDims) && enclosureDims.length >= 2) {
+    const [w, d] = enclosureDims;
+    const minAllowX = -w / 2 + wallMm;
+    const maxAllowX = w / 2 - wallMm;
+    const minAllowY = -d / 2 + wallMm;
+    const maxAllowY = d / 2 - wallMm;
+
+    meshGroup.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(meshGroup);
+
+    if (box.max.x > maxAllowX) {
+      meshGroup.position.x -= (box.max.x - maxAllowX);
+    }
+    if (box.min.x < minAllowX) {
+      meshGroup.position.x += (minAllowX - box.min.x);
+    }
+    if (box.max.y > maxAllowY) {
+      meshGroup.position.y -= (box.max.y - maxAllowY);
+    }
+    if (box.min.y < minAllowY) {
+      meshGroup.position.y += (minAllowY - box.min.y);
+    }
   }
 
   // Store metadata on userData for raycasting and inspection
