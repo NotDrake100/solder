@@ -1,6 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { SolderLogo } from './SolderLogo';
+import { SHOWCASE_BUILDS } from '../data/showcases';
+import { getBomTotal } from './HarnessTrace';
+
+function formatBoard(board?: string): string {
+  if (!board) return 'Arduino Uno';
+  const b = board.toLowerCase();
+  if (b.includes('esp32')) return 'ESP32';
+  if (b.includes('uno')) return 'Arduino Uno';
+  if (b.includes('rpi') || b.includes('pi')) return 'Raspberry Pi';
+  return board;
+}
+
+const FEATURED_BUILDS = [
+  SHOWCASE_BUILDS.sip,
+  SHOWCASE_BUILDS.wisp,
+  SHOWCASE_BUILDS.hasp,
+  SHOWCASE_BUILDS.eave,
+];
 
 interface LandingPageProps {
   onTryIt: (buildId?: string) => void;
@@ -88,7 +106,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
           </div>
         </section>
 
-        {/* SECTION 2: FEATURED BUILDS (3 plain cards, 1px border, no icons) */}
+        {/* SECTION 2: FEATURED BUILDS (4 plain cards, responsive 2 cols phone, 4 desktop) */}
         <section className="w-full py-16 sm:py-24 border-t border-[#1f1f1f]">
           <div className="mb-10 text-left">
             <h2 className="text-2xl sm:text-[36px] font-semibold tracking-tight text-white">
@@ -99,69 +117,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1: AI Pocket Assistant */}
-            <div
-              onClick={() => onTryIt('pocket-ai')}
-              className="group p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#444] transition cursor-pointer flex flex-col justify-between"
-            >
-              <div>
-                <div className="text-[11px] font-mono text-[#888] uppercase tracking-wider mb-2">
-                  Raspberry Pi
-                </div>
-                <h3 className="text-lg font-medium text-white group-hover:text-white transition mb-2">
-                  AI pocket assistant
-                </h3>
-                <p className="text-sm text-[#8e8e8e] leading-relaxed mb-6">
-                  Linux voice prototype with 24-bit I2S MEMS mic, dynamic 3W speaker, and dual-mode Python AI client.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#202020] text-xs font-mono text-[#a3a3a3]">
-                9 parts · 5/5 checks · Rs 1,955
-              </div>
-            </div>
-
-            {/* Card 2: Plant Waterer */}
-            <div
-              onClick={() => onTryIt('sip')}
-              className="group p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#444] transition cursor-pointer flex flex-col justify-between"
-            >
-              <div>
-                <div className="text-[11px] font-mono text-[#888] uppercase tracking-wider mb-2">
-                  Arduino Uno
-                </div>
-                <h3 className="text-lg font-medium text-white group-hover:text-white transition mb-2">
-                  Plant waterer
-                </h3>
-                <p className="text-sm text-[#8e8e8e] leading-relaxed mb-6">
-                  Corrosion-proof capacitive probe measuring soil moisture, driving a 5V galvanically isolated relay.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#202020] text-xs font-mono text-[#a3a3a3]">
-                4 parts · 6/6 checks · Rs 890
-              </div>
-            </div>
-
-            {/* Card 3: Night Light */}
-            <div
-              onClick={() => onTryIt('wisp')}
-              className="group p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#444] transition cursor-pointer flex flex-col justify-between"
-            >
-              <div>
-                <div className="text-[11px] font-mono text-[#888] uppercase tracking-wider mb-2">
-                  Arduino Uno
-                </div>
-                <h3 className="text-lg font-medium text-white group-hover:text-white transition mb-2">
-                  Night light
-                </h3>
-                <p className="text-sm text-[#8e8e8e] leading-relaxed mb-6">
-                  PIR wide-angle motion detection and calibrated ambient light sensor with diffused warm illumination.
-                </p>
-              </div>
-              <div className="pt-4 border-t border-[#202020] text-xs font-mono text-[#a3a3a3]">
-                4 parts · 6/6 checks · Rs 675
-              </div>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            {FEATURED_BUILDS.map((build) => {
+              const price = getBomTotal(build);
+              return (
+                <a
+                  key={build.id}
+                  href={`/b/${build.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onTryIt(build.id);
+                  }}
+                  className="group p-4 sm:p-5 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#444] hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between text-left no-underline"
+                >
+                  <div>
+                    <div className="text-[10px] sm:text-[11px] font-mono text-[#888] uppercase tracking-wider mb-2">
+                      {formatBoard(build.board)}
+                    </div>
+                    <h3 className="text-base sm:text-lg font-medium text-white transition mb-2 leading-snug">
+                      {build.name}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#8e8e8e] leading-relaxed mb-4 sm:mb-6 line-clamp-2">
+                      {build.tagline || build.summary}
+                    </p>
+                  </div>
+                  <div className="pt-3 sm:pt-4 border-t border-[#202020] text-xs font-mono text-[#a3a3a3] flex items-center justify-between gap-1">
+                    <span>{build.parts?.length || 0} parts</span>
+                    <span>Rs {price.toLocaleString('en-IN')}</span>
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </section>
 
