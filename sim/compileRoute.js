@@ -7,16 +7,26 @@ import crypto from 'crypto';
 
 const execFileAsync = promisify(execFile);
 
+export function findArduinoCli() {
+  const candidates = [
+    'arduino-cli',
+    '/usr/local/bin/arduino-cli',
+    '/home/box/.local/bin/arduino-cli',
+  ];
+  for (const bin of candidates) {
+    try {
+      execSync(`"${bin}" version`, { stdio: 'ignore' });
+      return bin;
+    } catch {}
+  }
+  return null;
+}
+
 /**
- * Check if the arduino-cli executable is installed and reachable in PATH
+ * Check if the arduino-cli executable is installed and reachable
  */
 export function isArduinoCliAvailable() {
-  try {
-    execSync('which arduino-cli', { stdio: 'ignore' });
-    return true;
-  } catch {
-    return false;
-  }
+  return Boolean(findArduinoCli());
 }
 
 /**
@@ -158,7 +168,8 @@ export async function compileSketch(sketch, options = {}) {
   const fqbn = options.fqbn || (options.board === 'esp32' ? 'esp32:esp32:esp32' : 'arduino:avr:uno');
 
   // 1. If arduino-cli is present, invoke it
-  if (isArduinoCliAvailable()) {
+  const cliPath = findArduinoCli();
+  if (cliPath) {
     const tmpDir = path.join(os.tmpdir(), `solder-compile-${crypto.randomUUID()}`);
     const sketchDir = path.join(tmpDir, 'sketch');
     const outDir = path.join(tmpDir, 'out');
@@ -169,9 +180,9 @@ export async function compileSketch(sketch, options = {}) {
       await fs.promises.writeFile(path.join(sketchDir, 'sketch.ino'), code, 'utf-8');
 
       const { stdout, stderr } = await execFileAsync(
-        'arduino-cli',
+        cliPath,
         ['compile', '--fqbn', fqbn, '--output-dir', outDir, sketchDir],
-        { timeout: 30000 }
+        { timeout: 60000 }
       );
 
       // Find the generated .hex file

@@ -1,6 +1,6 @@
 {
   "id": "sip",
-  "name": "Sip",
+  "name": "Plant waterer",
   "tagline": "Autonomous plant hydration system with moisture telemetry",
   "summary": "Sip continuously monitors soil moisture via an analog capacitive sensor probe. When the moisture drops below 35%, it engages a 5V relay driving a submersible DC water pump for 3 seconds, displays moisture and status on an I2C OLED screen, and reports telemetry over serial.",
   "board": "uno",

@@ -1,6 +1,6 @@
 {
   "id": "hasp",
-  "name": "Hasp",
+  "name": "Doorbell",
   "tagline": "Biometric desktop lockbox with motorized latch and security chime",
   "summary": "Hasp is a programmable smart desktop vault with a motorized deadbolt driven by an SG90 micro-servo. An interactive authentication trigger simulates biometric verification, updating the OLED display, sounding confirmation chimes, and actuating the reinforced latch mechanism.",
   "board": "uno",

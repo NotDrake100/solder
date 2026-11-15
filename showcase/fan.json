@@ -1,6 +1,6 @@
 {
   "id": "fan",
-  "name": "BreezeMate (Smart Desk Fan)",
+  "name": "Desk fan",
   "tagline": "Autonomous temperature-activated desk cooling fan",
   "summary": "Monitors ambient desk temperature with a DHT11 sensor and activates a DC cooling fan via relay when ambient heat rises.",
   "board": "uno",

@@ -92,6 +92,24 @@ export function generateOfflineBuild(prompt = '', chips = [], photoAnalysis = nu
   );
 }
 
+export function toPlainTitle(prompt, fallback = 'Custom build') {
+  const p = (prompt || '').trim().toLowerCase();
+  if (p.includes('doorbell') || p.includes('door bell') || p.includes('chime')) return 'Smart doorbell';
+  if (p.includes('fan') || p.includes('cooler')) return 'Desk fan';
+  if (p.includes('water') || p.includes('plant') || p.includes('soil')) return 'Plant waterer';
+  if (p.includes('night light') || p.includes('nightlight') || (p.includes('lamp') && p.includes('dark'))) return 'Night light';
+  if (p.includes('voice') && (p.includes('lamp') || p.includes('light'))) return 'Voice lamp';
+  if (p.includes('pocket assistant') || p.includes('assistant')) return 'AI pocket assistant';
+  if (p.includes('camera') || p.includes('security')) return 'Security camera';
+  if (p.includes('air') || p.includes('gas') || p.includes('co2')) return 'Air monitor';
+  if (p.includes('radar') || p.includes('distance')) return 'Distance radar';
+  const words = (prompt || '').replace(/[^\w\s]/g, '').trim().split(/\s+/).slice(0, 4);
+  if (words.length > 0 && words[0]) {
+    return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+  return fallback;
+}
+
 function generateDynamicBuild(
   allText,
   prompt,
@@ -104,10 +122,7 @@ function generateDynamicBuild(
   extra = {}
 ) {
   const id = 'build_' + crypto.randomBytes(4).toString('hex');
-  const userTitle = prompt.trim()
-    ? prompt.trim().slice(0, 48).replace(/[^\w\s-]/g, '')
-    : 'Custom Maker Build';
-  const capitalizedTitle = userTitle.charAt(0).toUpperCase() + userTitle.slice(1);
+  const capitalizedTitle = toPlainTitle(prompt);
 
   const board = wantsWifi ? 'esp32' : 'uno';
   const mcuName = board === 'esp32' ? 'ESP32 DevKit V1' : 'Arduino Uno R3';
@@ -638,10 +653,7 @@ difference() {
 
 function generatePiBuild(allText, prompt) {
   const id = 'pi_' + crypto.randomBytes(4).toString('hex');
-  const userTitle = prompt.trim()
-    ? prompt.trim().slice(0, 48).replace(/[^\w\s-]/g, '')
-    : 'AI Pocket Assistant';
-  const capitalizedTitle = userTitle.charAt(0).toUpperCase() + userTitle.slice(1);
+  const capitalizedTitle = toPlainTitle(prompt, 'AI pocket assistant');
 
   const isCamera = /camera|photo|security|vision|surveillance|stream/.test(allText);
   // If prompt explicitly mentions "pi 5" or "heavy ai", pick rpi_5 so power budget fail+heal is triggered with 1000mA boost!

@@ -1,6 +1,6 @@
 {
   "id": "eave",
-  "name": "Eave",
+  "name": "Air monitor",
   "tagline": "Solar-ready micro environmental and precipitation station",
   "summary": "Eave mounts under roof eaves or balconies to measure ambient temperature, relative humidity, and non-contact precipitation or water reservoir levels via an ultrasonic transceiver. Designed for solar and battery powered long-range telemetry.",
   "board": "esp32",

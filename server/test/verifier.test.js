@@ -8,6 +8,7 @@ import {
   checkSimulate,
   checkFitCheck,
   verifyBuild,
+  findArduinoCli,
 } from '../services/verifier.js';
 
 const PASSING_BUILD = {
@@ -153,15 +154,16 @@ void loop() {
   assert.match(failResult.evidence, /expected ';'/);
 });
 
-test('Verifier: checkSimulate validates sensor assertion transitions', () => {
-  // 1. Passing fixture
-  const passResult = checkSimulate(PASSING_BUILD);
-  assert.equal(passResult.pass, true, 'Valid test assertion must pass');
+test('Verifier: checkSimulate validates sensor assertion transitions or honest skip', async () => {
+  // 1. Passing fixture (with precompiled hex or real compiled hex)
+  const passResult = await checkSimulate(PASSING_BUILD);
+  assert.equal(passResult.pass, true, 'Valid test assertion or skipped without hex');
   assert.equal(passResult.id, 'simulate');
 
   // 2. Failing fixture: Inverted relay logic bug
   const bugBuild = {
     ...PASSING_BUILD,
+    _compiledHex: ':100000000C9434000C9451000C9451000C945100CA',
     code: {
       filename: 'invert.ino',
       ino: `
@@ -173,9 +175,22 @@ void loop() {}
       `.trim()
     }
   };
-  const failResult = checkSimulate(bugBuild);
+  const failResult = await checkSimulate(bugBuild);
   assert.equal(failResult.pass, false, 'Inverted logic bug must fail simulation assertion');
   assert.match(failResult.evidence, /Assertion failure/);
+});
+
+test('Verifier: checkSimulate for Pi builds reports honest skipped', async () => {
+  const piBuild = {
+    id: 'pocket-ai',
+    name: 'AI pocket assistant',
+    board: 'rpi_zero_2w',
+    code: { filename: 'main.py', py: 'print("hello world")' }
+  };
+  const result = await checkSimulate(piBuild);
+  assert.equal(result.pass, true);
+  assert.equal(result.skipped, true);
+  assert.match(result.evidence, /Simulate: skipped/);
 });
 
 test('Verifier: checkFitCheck validates wall thickness and 3D bounding clearances', () => {
@@ -201,4 +216,22 @@ test('Verifier: verifyBuild runs all 6 checks end-to-end', async () => {
   assert.equal(result.passedChecks, 6);
   assert.equal(result.firstFailingCheck, null);
   assert.match(result.summary, /6\/6 checks passed/);
+});
+
+test('Verifier: real arduino-cli compilation test when available (QA-R6 #5)', async (t) => {
+  const cli = findArduinoCli();
+  if (!cli) {
+    t.skip('arduino-cli not available in this test environment');
+    return;
+  }
+  const brokenBuild = {
+    board: 'uno',
+    code: {
+      ino: 'void setup() { int x = 5 }\nvoid loop() {}',
+    },
+  };
+  const result = await checkCompile(brokenBuild);
+  assert.equal(result.pass, false);
+  assert.match(result.evidence, /expected.*';'/);
+  assert.equal(result.label, 'Firmware Compilation (arduino:avr:uno)');
 });

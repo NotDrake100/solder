@@ -139,7 +139,7 @@ export async function runAgentLoop(buildData, emit) {
       checkPowerBudget(currentBuild),
       checkVoltageCompat(currentBuild),
       await checkCompile(currentBuild),
-      checkSimulate(currentBuild),
+      await checkSimulate(currentBuild),
       checkFitCheck(currentBuild),
     ];
     lastChecks = checks;

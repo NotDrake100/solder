@@ -1,6 +1,6 @@
 {
   "id": "wisp",
-  "name": "Wisp",
+  "name": "Night light",
   "tagline": "Real-time indoor air quality, humidity, and volatile gas detector",
   "summary": "Wisp continuously measures VOCs, CO2 concentration, ambient temperature, and relative humidity. An animated OLED dashboard visualizes indoor air comfort indexes and triggers an acoustic alarm whenever volatile gas spikes are detected.",
   "board": "esp32",

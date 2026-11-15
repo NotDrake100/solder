@@ -8,7 +8,7 @@ import eaveRaw from '../../../showcase/eave.json';
 
 export const DESK_FAN_BUILD: SolderBuild = {
   id: 'desk-fan',
-  name: 'BreezeMate',
+  name: 'Desk fan',
   tagline: 'Thermal Auto Desk Fan',
   summary:
     'Smart ambient desk fan that triggers a 5V DC blower relay and piezo alert when ambient temperature exceeds 28°C.',
@@ -167,10 +167,11 @@ export const SHOWCASE_BUILDS: Record<string, SolderBuild> = {
 };
 
 export const SHOWCASE_PILLS = [
-  { id: 'sip', name: 'Sip', desc: 'Plant Waterer', board: 'Uno', tag: 'Soil & Pump' },
-  { id: 'wisp', name: 'Wisp', desc: 'Air Monitor', board: 'ESP32', tag: 'MQ-135 & OLED' },
-  { id: 'hasp', name: 'Hasp', desc: 'Smart Lock', board: 'Uno', tag: 'Servo & Distance' },
-  { id: 'eave', name: 'Eave', desc: 'Weather Station', board: 'ESP32', tag: 'Temp, Rain, Air' },
+  { id: 'desk-fan', name: 'Desk fan', desc: 'Auto Thermal Fan', board: 'Uno', tag: 'LM35 & Relay' },
+  { id: 'sip', name: 'Plant waterer', desc: 'Auto Hydration', board: 'Uno', tag: 'Soil & Pump' },
+  { id: 'wisp', name: 'Night light', desc: 'Dark-Activated Light', board: 'Uno', tag: 'PIR & LED' },
+  { id: 'hasp', name: 'Doorbell', desc: 'Smart Chime', board: 'Uno', tag: 'Button & Buzzer' },
+  { id: 'eave', name: 'Air monitor', desc: 'Gas & Climate', board: 'ESP32', tag: 'MQ-135 & DHT' },
 ] as const;
 
 export const QUICK_CHIPS = [

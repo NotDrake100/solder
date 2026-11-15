@@ -71,14 +71,14 @@ test('PI-SPEC: I2S shared clock wiring rule allows shared GPIO18 (BCLK) and GPIO
   assert.equal(result.pass, true, 'Shared I2S clocks must not trigger duplicate pin assignment error');
 });
 
-test('PI-SPEC: checkSimulate returns skipped: true for Raspberry Pi builds', () => {
+test('PI-SPEC: checkSimulate returns skipped: true for Raspberry Pi builds', async () => {
   const piBuild = {
     board: 'rpi_zero_2w',
     parts: [{ id: 'rpi_zero_2w', libId: 'rpi_zero_2w' }],
     code: { ino: 'print("hello")' }
   };
 
-  const result = checkSimulate(piBuild);
+  const result = await checkSimulate(piBuild);
   assert.equal(result.pass, true);
   assert.equal(result.skipped, true);
   assert.match(result.evidence, /Simulate: skipped/);
