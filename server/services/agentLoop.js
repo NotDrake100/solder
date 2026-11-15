@@ -170,17 +170,20 @@ export async function runAgentLoop(buildData, emit) {
 
     // A check failed: Initiate Self-Healing Fixer Loop
     selfHealCount++;
-    const modelToUse = round <= 2 ? 'gemini-3.5-flash-lite' : 'gemini-4-hydrogen';
+    const isRuleFixer = ['pin_conflicts', 'power_budget', 'fit_check'].includes(failedCheck.id);
+    const startModel = isRuleFixer ? 'Solder rule fixer' : (round <= 2 ? 'gemini-3.5-flash-lite' : 'gemini-4-hydrogen');
 
     emit({
       step: 'fixer_start',
       status: 'fixing',
       round,
-      model: modelToUse,
+      model: startModel,
       checkId: failedCheck.id,
       checkLabel: failedCheck.label,
       evidence: failedCheck.evidence,
-      detail: `Fixing (${failedCheck.id}, round ${round}, ${round <= 2 ? 'Flash-Lite' : 'Hydrogen'}): ${failedCheck.evidence}`,
+      detail: isRuleFixer
+        ? `Fixing (${failedCheck.id}, round ${round}, Solder rule fixer): ${failedCheck.evidence}`
+        : `Fixing (${failedCheck.id}, round ${round}, ${round <= 2 ? 'Flash-Lite' : 'Hydrogen'}): ${failedCheck.evidence}`,
       timestamp: timestamp(),
     });
 
@@ -189,6 +192,7 @@ export async function runAgentLoop(buildData, emit) {
     // Apply self-healing patch
     let changelog = '';
     let diff = '';
+    let modelUsed = 'Solder rule fixer';
 
     if (failedCheck.id === 'pin_conflicts') {
       // QA-R9 #3: Dynamically resolve conflicting pin and generate honest diff
@@ -258,6 +262,7 @@ export async function runAgentLoop(buildData, emit) {
       currentBuild = fixResult.patchedBuild || currentBuild;
       changelog = fixResult.changelog || 'Resolved C++ syntax error and missing semicolons';
       diff = fixResult.diagnosis || 'Added missing declaration';
+      modelUsed = fixResult.modelUsed || (round <= 2 ? 'gemini-3.5-flash-lite' : 'gemini-4-hydrogen');
     } else if (failedCheck.id === 'power_budget') {
       const isPi5 = (currentBuild.board || '').toLowerCase().includes('rpi_5') || (currentBuild.board || '').toLowerCase().includes('pi_5');
       const has1ABoost = (currentBuild.parts || []).some((p) => (p.libId || p.id || '').includes('powerboost'));
@@ -351,19 +356,20 @@ export async function runAgentLoop(buildData, emit) {
       currentBuild = fixResult.patchedBuild || currentBuild;
       changelog = fixResult.changelog || `Corrected logic in ${failedCheck.id}`;
       diff = fixResult.diagnosis || 'Updated firmware logic threshold';
+      modelUsed = fixResult.modelUsed || (round <= 2 ? 'gemini-3.5-flash-lite' : 'gemini-4-hydrogen');
     }
 
     emit({
       step: 'fixer_done',
       status: 'fixed',
       round,
-      model: modelToUse,
+      model: modelUsed,
       checkId: failedCheck.id,
       changelog,
       diff,
       build: currentBuild,
       data: currentBuild,
-      detail: `Self-heal patch applied (${modelToUse}): ${changelog}`,
+      detail: `Self-heal patch applied (${modelUsed}): ${changelog}`,
       timestamp: timestamp(),
     });
 

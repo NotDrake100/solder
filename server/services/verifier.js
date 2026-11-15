@@ -843,7 +843,7 @@ export async function verifyBuild(build) {
   ];
 
   const skippedCount = checks.filter((c) => c.skipped).length;
-  const passedChecks = checks.filter((c) => c.pass && !c.skipped).length;
+  const passedChecks = checks.filter((c) => c.pass).length;
   const totalExecutable = checks.length - skippedCount;
   const passed = checks.every((c) => c.pass || c.skipped);
   const firstFailingCheck = checks.find((c) => !c.pass && !c.skipped) || null;
@@ -851,14 +851,14 @@ export async function verifyBuild(build) {
 
   return {
     passed,
-    totalChecks: totalExecutable,
+    totalChecks: checks.length,
     passedChecks,
     skippedCount,
     checks,
     firstFailingCheck,
     summary: passed
-      ? `${passedChecks}/${totalExecutable} checks passed${skippedNote} · 0 self-heals · ₹${build.product?.priceInr || 890}`
-      : `${passedChecks}/${totalExecutable} checks passed · failing: ${firstFailingCheck?.id}`,
+      ? `${passedChecks}/${checks.length} checks passed${skippedNote} · 0 self-heals · ₹${build.product?.priceInr || 890}`
+      : `${passedChecks}/${checks.length} checks passed · failing: ${firstFailingCheck?.id}`,
   };
 }
 

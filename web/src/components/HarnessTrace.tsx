@@ -120,7 +120,7 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
       healInfo: isFanOrConflict
         ? {
             round: 1,
-            model: 'gemini-3.5-flash-lite',
+            model: 'Solder rule fixer',
             patchDiff: '- #define FAN_PIN 7\n+ #define FAN_PIN 9 // Reallocated to free PWM channel',
             explanation: 'Reallocated relay from D7 to D9 in wiring netlist and sketch',
           }
