@@ -87,7 +87,7 @@ export function App() {
 
   // Permalink routing (/b/:id, /app, or /)
   useEffect(() => {
-    const handleLocation = () => {
+    const handleLocation = async () => {
       const path = window.location.pathname;
       const match = path.match(/\/b\/([a-zA-Z0-9_-]+)/);
       const buildId = match ? match[1] : window.location.hash.replace('#', '');
@@ -98,6 +98,27 @@ export function App() {
           loadBuildIntoChat(DESK_FAN_BUILD);
         } else if (SHOWCASE_BUILDS[buildId]) {
           loadBuildIntoChat(SHOWCASE_BUILDS[buildId]);
+        } else {
+          try {
+            const res = await fetch(`/api/build/${buildId}`);
+            if (!res.ok) throw new Error('Build not found');
+            const json = await res.json();
+            const build = json.data || json;
+            if (build && (build.id || build.name)) {
+              loadBuildIntoChat(build);
+            } else {
+              throw new Error('Invalid build data');
+            }
+          } catch {
+            setMessages([
+              {
+                id: `err-${Date.now()}`,
+                sender: 'assistant',
+                text: 'This build link expired',
+                timestamp: Date.now(),
+              },
+            ]);
+          }
         }
       } else if (path.startsWith('/app')) {
         setView('app');
