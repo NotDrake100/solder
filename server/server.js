@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = path.resolve(__dirname, '../web/dist');
+const PUBLIC_DIR = path.resolve(__dirname, '../web/public');
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -20,7 +21,9 @@ const MIME_TYPES = {
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
   '.ttf': 'font/ttf',
-  '.wasm': 'application/wasm'
+  '.wasm': 'application/wasm',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm'
 };
 
 function tryServeStatic(req, res, pathname) {
@@ -30,6 +33,13 @@ function tryServeStatic(req, res, pathname) {
   const normalized = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
   let filePath = path.join(DIST_DIR, normalized);
 
+  if (!fs.existsSync(filePath)) {
+    const publicPath = path.join(PUBLIC_DIR, normalized);
+    if (fs.existsSync(publicPath) && fs.statSync(publicPath).isFile()) {
+      filePath = publicPath;
+    }
+  }
+
   if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
     filePath = path.join(filePath, 'index.html');
   }
@@ -37,8 +47,49 @@ function tryServeStatic(req, res, pathname) {
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const stat = fs.statSync(filePath);
+    const totalSize = stat.size;
+    const rangeHeader = req.headers?.range;
+
     setCorsHeaders(res);
-    res.writeHead(200, { 'Content-Type': contentType });
+
+    // HTTP Range request support (critical for iOS Safari video playback and seeking)
+    if (rangeHeader && typeof rangeHeader === 'string' && rangeHeader.startsWith('bytes=')) {
+      const parts = rangeHeader.replace(/bytes=/, '').split('-');
+      const start = parts[0] ? parseInt(parts[0], 10) : 0;
+      const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+
+      if (start >= totalSize || end >= totalSize || start > end) {
+        res.writeHead(416, {
+          'Content-Range': `bytes */${totalSize}`,
+          'Accept-Ranges': 'bytes'
+        });
+        res.end();
+        return true;
+      }
+
+      const chunkSize = end - start + 1;
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': contentType
+      });
+
+      if (req.method === 'HEAD') {
+        res.end();
+        return true;
+      }
+
+      fs.createReadStream(filePath, { start, end }).pipe(res);
+      return true;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Content-Length': totalSize,
+      'Accept-Ranges': 'bytes'
+    });
     if (req.method === 'HEAD') {
       res.end();
       return true;
@@ -51,7 +102,12 @@ function tryServeStatic(req, res, pathname) {
   const indexPath = path.join(DIST_DIR, 'index.html');
   if (fs.existsSync(indexPath)) {
     setCorsHeaders(res);
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    const stat = fs.statSync(indexPath);
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Length': stat.size,
+      'Accept-Ranges': 'bytes'
+    });
     if (req.method === 'HEAD') {
       res.end();
       return true;

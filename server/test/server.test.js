@@ -229,3 +229,29 @@ test('9. POST /api/vision/detect tracks electronics bounding boxes and enforces 
   assert.ok(typeof first.confidence === 'number');
   assert.ok(typeof res.body.sessionRemaining === 'number');
 });
+
+test('10. Static video serving: serves .mp4 as video/mp4, .webm as video/webm with HTTP Range support', async () => {
+  // Test 1: Full MP4 request
+  const resMp4 = await fetch(`${baseUrl}/demo-loop.mp4`);
+  assert.equal(resMp4.status, 200);
+  assert.equal(resMp4.headers.get('content-type'), 'video/mp4');
+  assert.equal(resMp4.headers.get('accept-ranges'), 'bytes');
+  const mp4Len = Number(resMp4.headers.get('content-length'));
+  assert.ok(mp4Len > 0);
+
+  // Test 2: Range probe request (bytes=0-1 for iOS Safari autoplay probe)
+  const resRangeProbe = await fetch(`${baseUrl}/demo-loop.mp4`, {
+    headers: { Range: 'bytes=0-1' }
+  });
+  assert.equal(resRangeProbe.status, 206);
+  assert.equal(resRangeProbe.headers.get('content-type'), 'video/mp4');
+  assert.equal(resRangeProbe.headers.get('accept-ranges'), 'bytes');
+  assert.equal(resRangeProbe.headers.get('content-range'), `bytes 0-1/${mp4Len}`);
+  assert.equal(resRangeProbe.headers.get('content-length'), '2');
+
+  // Test 3: WebM request
+  const resWebm = await fetch(`${baseUrl}/demo-loop.webm`);
+  assert.equal(resWebm.status, 200);
+  assert.equal(resWebm.headers.get('content-type'), 'video/webm');
+  assert.equal(resWebm.headers.get('accept-ranges'), 'bytes');
+});

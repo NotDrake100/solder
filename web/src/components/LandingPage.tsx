@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { SolderLogo } from './SolderLogo';
 
@@ -7,6 +7,14 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {});
+    }
+  }, []);
   return (
     <div className="min-h-screen w-full bg-[#0a0a0a] text-[#f5f5f5] flex flex-col justify-between selection:bg-white selection:text-black antialiased">
       {/* 1. STICKY SLIM NAV */}
@@ -60,6 +68,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
           {/* HERO DEMO VIDEO (max-width 1100px, 16px radius, 1px #262626 border) */}
           <div className="w-full max-w-[1100px] rounded-2xl overflow-hidden border border-[#262626] bg-[#121212] shadow-2xl relative">
             <video
+              ref={videoRef}
               autoPlay
               muted
               loop
@@ -67,8 +76,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
               poster="/demo-poster.jpg"
               className="w-full h-auto block rounded-2xl"
             >
-              <source src="/demo-loop.webm" type="video/webm" />
               <source src="/demo-loop.mp4" type="video/mp4" />
+              <source src="/demo-loop.webm" type="video/webm" />
               <img
                 src="/demo-poster.jpg"
                 alt="Solder finished build preview"
