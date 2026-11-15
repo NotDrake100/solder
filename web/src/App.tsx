@@ -255,19 +255,60 @@ export function App() {
         }),
       });
 
-      let buildData: SolderBuild | null = null;
-      let buildId = `build_${Date.now()}`;
-      let isCached = false;
-
-      if (res.ok) {
-        const json = await res.json();
-        buildData = json.data || json;
-        if (json.buildId) buildId = json.buildId;
-        if (json.cached) isCached = true;
+      if (!res.ok) {
+        setIsLoading(false);
+        const errJson = await res.json().catch(() => ({}));
+        const status = res.status;
+        let errorMsg = `The build didn't finish (${errJson.message || `HTTP ${status}`}). Try again.`;
+        if (status === 429) {
+          const resetMin = errJson.details?.resetMinutes || 15;
+          errorMsg = `You've hit the hourly build limit. Try again in ${resetMin} min.`;
+        }
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === asstMsgId
+              ? {
+                  ...m,
+                  isStreaming: false,
+                  isTyping: false,
+                  text: errorMsg,
+                  harnessChecks: (m.harnessChecks || []).map((c) => ({
+                    ...c,
+                    status: 'pending' as const,
+                    evidence: 'Not run',
+                  })),
+                }
+              : m
+          )
+        );
+        return;
       }
 
-      if (isFan && !buildData) {
-        buildData = DESK_FAN_BUILD;
+      const json = await res.json();
+      let buildData: SolderBuild | null = json.data || json;
+      let buildId = json.buildId || buildData?.id || `build_${Date.now()}`;
+      let isCached = Boolean(json.cached);
+
+      if (!buildData) {
+        setIsLoading(false);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === asstMsgId
+              ? {
+                  ...m,
+                  isStreaming: false,
+                  isTyping: false,
+                  text: "The build didn't finish (no build data returned). Try again.",
+                  harnessChecks: (m.harnessChecks || []).map((c) => ({
+                    ...c,
+                    status: 'pending' as const,
+                    evidence: 'Not run',
+                  })),
+                }
+              : m
+          )
+        );
+        return;
       }
 
       if (buildData && isCached) {
@@ -285,6 +326,7 @@ export function App() {
 
       // Step B: Connect to SSE stream
       let sseReceived = false;
+      let sseCompleted = false;
       const streamUrl = `/api/build/${buildId}/stream`;
 
       try {
@@ -296,7 +338,17 @@ export function App() {
             if (!data) return;
             sseReceived = true;
 
+            if (data.data) buildData = data.data;
+            if (data.build) buildData = data.build;
+            if (data.case && buildData) {
+              buildData.case = data.case;
+              if (data.layout) buildData.layout = data.layout;
+            }
+
             const stage = data.stage || data.step;
+            if (stage === 'done' || stage === 'complete') {
+              sseCompleted = true;
+            }
 
             setMessages((prev) =>
               prev.map((m) => {
@@ -519,213 +571,73 @@ export function App() {
 
         sse.onerror = () => {
           sse.close();
-          if (!sseReceived) {
-            simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory, isCached);
+          if (!sseCompleted) {
+            setIsLoading(false);
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === asstMsgId
+                  ? {
+                      ...m,
+                      isStreaming: false,
+                      isTyping: false,
+                      text:
+                        m.text && !m.isTyping
+                          ? m.text
+                          : "The build didn't finish (stream interrupted). Try again.",
+                      harnessChecks: (m.harnessChecks || []).map((c) =>
+                        c.status === 'running' || c.status === 'pending'
+                          ? { ...c, status: 'pending' as const, evidence: 'Not run' }
+                          : c
+                      ),
+                    }
+                  : m
+              )
+            );
           }
         };
-      } catch {
-        simulateLocalProgression(buildData, asstMsgId, prompt, isFan, inventory, isCached);
-      }
-    } catch {
-      simulateLocalProgression(null, asstMsgId, prompt, isFan, inventory, false);
-    }
-  };
-
-  // Graceful fallback streaming sequence with real deterministic harness progression
-  const simulateLocalProgression = async (
-    buildData: SolderBuild | null,
-    msgId: string,
-    prompt: string,
-    isFan: boolean,
-    inventory?: string[],
-    isCached: boolean = false
-  ) => {
-    const targetBuild = buildData || (isFan ? DESK_FAN_BUILD : SHOWCASE_BUILDS.sip);
-    const simStartTime = Date.now();
-
-    // If inventory provided, tag matching parts
-    if (Array.isArray(inventory) && inventory.length > 0) {
-      const invLower = inventory.map((i) => i.toLowerCase());
-      targetBuild.parts = targetBuild.parts.map((p) => ({
-        ...p,
-        owned: invLower.some((inv) => inv.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(inv)),
-      }));
-    }
-
-    // Stage 1: Planner
-    await new Promise((r) => setTimeout(r, 250));
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== msgId) return m;
-        const checks = m.harnessChecks || getInitialLiveHarnessChecks(prompt);
-        return {
-          ...m,
-          isTyping: false,
-          currentStep: 'reading',
-          completedSteps: ['reading'],
-          harnessChecks: checks,
-          text: `Reading your idea: "${prompt}"... Determining microcontroller target and hardware peripherals.`,
-        };
-      })
-    );
-
-    // Stage 2: Parts
-    await new Promise((r) => setTimeout(r, 300));
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== msgId) return m;
-        const checks = (m.harnessChecks || getInitialLiveHarnessChecks(prompt)).map((c) =>
-          c.id === 'pin_conflicts' ? { ...c, status: 'running' as const } : c
-        );
-        return {
-          ...m,
-          currentStep: 'parts',
-          completedSteps: ['reading', 'parts'],
-          harnessChecks: checks,
-          text: `Picking parts: Selected ${targetBuild.parts.length} components with exact INR pricing.`,
-        };
-      })
-    );
-
-    // Stage 3: Wiring & Pin conflicts (Self-heal for desk fan)
-    await new Promise((r) => setTimeout(r, 350));
-    if (isFan) {
-      // First show pin conflict fixing
-      setMessages((prev) =>
-        prev.map((m) => {
-          if (m.id !== msgId) return m;
-          const checks = (m.harnessChecks || []).map((c) =>
-            c.id === 'pin_conflicts'
+      } catch (streamErr: any) {
+        setIsLoading(false);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === asstMsgId
               ? {
-                  ...c,
-                  status: 'fixing' as const,
-                  failedRound: 1,
-                  failedEvidence: 'Pin collision on D7: Relay IN and Buzzer I/O both assigned to D7',
-                }
-              : c
-          );
-          return {
-            ...m,
-            currentStep: 'wiring',
-            completedSteps: ['reading', 'parts', 'wiring'],
-            harnessChecks: checks,
-            text: 'Wiring: Detected pin collision on D7. Reallocating pins...',
-          };
-        })
-      );
-      await new Promise((r) => setTimeout(r, 300));
-    }
-
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== msgId) return m;
-        const checks = (m.harnessChecks || []).map((c) => {
-          if (c.id === 'pin_conflicts') {
-            return isFan
-              ? {
-                  ...c,
-                  status: 'healed' as const,
-                  durationMs: 14,
-                  failedRound: 1,
-                  failedEvidence: 'Pin collision on D7: Relay IN and Buzzer I/O both assigned to D7',
-                  healInfo: {
-                    round: 1,
-                    model: 'gemini-3.5-flash-lite',
-                    patchDiff: '- #define FAN_PIN 7\n+ #define FAN_PIN 9 // Reallocated to free PWM channel',
-                    explanation: 'Reallocated relay from D7 to D9 in wiring netlist and sketch',
-                  },
-                }
-              : { ...c, status: 'pass' as const, durationMs: 14 };
-          }
-          if (c.id === 'power_budget') return { ...c, status: 'pass' as const, durationMs: 12 };
-          if (c.id === 'voltage_compat') return { ...c, status: 'pass' as const, durationMs: 10 };
-          if (c.id === 'compile') return { ...c, status: 'running' as const };
-          return c;
-        });
-        return {
-          ...m,
-          currentStep: 'wiring',
-          completedSteps: ['reading', 'parts', 'wiring'],
-          harnessChecks: checks,
-          text: `Wiring: Routed ${targetBuild.wiring.length} DuPont connections (5V, GND, I2C, control lines).`,
-        };
-      })
-    );
-
-    // Stage 4: Firmware
-    await new Promise((r) => setTimeout(r, 300));
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== msgId) return m;
-        const checks = (m.harnessChecks || []).map((c) =>
-          c.id === 'compile'
-            ? { ...c, status: 'pass' as const, durationMs: 35 }
-            : c.id === 'simulate'
-            ? { ...c, status: 'running' as const }
-            : c
-        );
-        return {
-          ...m,
-          currentStep: 'firmware',
-          completedSteps: ['reading', 'parts', 'wiring', 'firmware'],
-          harnessChecks: checks,
-          text: `Writing firmware: Synthesized Arduino C++ sketch (${targetBuild.code.filename}) verified for ${targetBuild.board.toUpperCase()}.`,
-        };
-      })
-    );
-
-    // Stage 5: Simulation & Case
-    await new Promise((r) => setTimeout(r, 300));
-    const isPi = Boolean(
-      targetBuild.board?.toLowerCase().includes('rpi') ||
-      targetBuild.board?.toLowerCase().includes('pi')
-    );
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== msgId) return m;
-        const checks = (m.harnessChecks || []).map((c) =>
-          c.id === 'simulate'
-            ? (isPi
-                ? {
+                  ...m,
+                  isStreaming: false,
+                  isTyping: false,
+                  text: `The build didn't finish (${streamErr?.message || 'Connection error'}). Try again.`,
+                  harnessChecks: (m.harnessChecks || []).map((c) => ({
                     ...c,
-                    status: 'skipped' as const,
-                    skipped: true,
-                    durationMs: 0,
-                    evidence: 'Simulate: skipped (AVR simulation is Arduino-only; Linux userspace runs natively)',
-                  }
-                : { ...c, status: 'pass' as const, durationMs: 42 })
-            : c.id === 'fit_check'
-            ? { ...c, status: 'running' as const }
-            : c
+                    status: 'pending' as const,
+                    evidence: 'Not run',
+                  })),
+                }
+              : m
+          )
         );
-        return {
-          ...m,
-          currentStep: 'case',
-          completedSteps: ['reading', 'parts', 'wiring', 'firmware', 'case'],
-          harnessChecks: checks,
-          text: `Designing the case: Generated frosted snap-fit enclosure (${targetBuild.case.outerMm.join('x')}mm) with 2.0mm wall clearance.`,
-        };
-      })
-    );
-
-    // Stage 6: Done
-    await new Promise((r) => setTimeout(r, 250));
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== msgId) return m;
-        const checks = (m.harnessChecks || []).map((c) =>
-          c.id === 'fit_check' ? { ...c, status: 'pass' as const, durationMs: 24 } : c
-        );
-        return {
-          ...m,
-          harnessChecks: checks,
-        };
-      })
-    );
-
-    const elapsed = Math.max(1, Math.round((Date.now() - simStartTime) / 1000));
-    finishLiveBuild(targetBuild, msgId, prompt, isFan, inventory, isCached, elapsed);
+      }
+    } catch (err: any) {
+      setIsLoading(false);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === asstMsgId
+            ? {
+                ...m,
+                isStreaming: false,
+                isTyping: false,
+                text: `The build didn't finish (${err?.message || 'Network error'}). Try again.`,
+                harnessChecks: (m.harnessChecks || []).map((c) => ({
+                  ...c,
+                  status: 'pending' as const,
+                  evidence: 'Not run',
+                })),
+              }
+            : m
+        )
+      );
+    }
   };
+
+
 
   const finishLiveBuild = (
     buildData: SolderBuild | null,
@@ -737,7 +649,23 @@ export function App() {
     elapsedSeconds?: number
   ) => {
     setIsLoading(false);
-    const finalBuild: SolderBuild = buildData || (isFan ? DESK_FAN_BUILD : SHOWCASE_BUILDS.sip);
+    if (!buildData) {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId
+            ? {
+                ...m,
+                isStreaming: false,
+                isTyping: false,
+                text: "The build didn't finish. Try again.",
+              }
+            : m
+        )
+      );
+      return;
+    }
+
+    const finalBuild: SolderBuild = { ...buildData };
 
     if (Array.isArray(inventory) && inventory.length > 0) {
       const invLower = inventory.map((i) => i.toLowerCase());
@@ -766,12 +694,12 @@ export function App() {
       prev.map((m) => {
         if (m.id !== msgId) return m;
 
-        // Preserve real accumulated verifier checks, resolving any remaining pending/running to pass
+        // Preserve real accumulated verifier checks without faking pending status
         const finalChecks =
           m.harnessChecks && m.harnessChecks.length > 0
             ? m.harnessChecks.map((c) => ({
                 ...c,
-                status: c.status === 'pending' || c.status === 'running' ? ('pass' as const) : c.status,
+                status: c.status === 'running' ? ('pass' as const) : c.status,
               }))
             : getDefaultHarnessChecks(finalBuild);
 

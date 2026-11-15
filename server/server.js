@@ -278,7 +278,12 @@ export function createServer() {
       sendError(res, 404, `Cannot ${req.method} ${pathname}`);
     } catch (err) {
       console.error(`[Server Error] ${req.method} ${pathname}:`, err);
-      sendError(res, 500, err.message);
+      sendError(
+        res,
+        err.status || 500,
+        err.message,
+        err.status === 429 ? { retryAfter: err.retryAfter, resetMinutes: err.resetMinutes } : null
+      );
     }
   });
 }

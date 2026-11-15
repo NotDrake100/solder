@@ -19,10 +19,19 @@ try {
 const memoryCache = new Map();
 const MAX_MEM_ITEMS = 100;
 
-export function hashPrompt(prompt, chips = []) {
+export function hashPrompt(prompt, chips = [], photoBase64 = '', inventory = []) {
   const normalized = (prompt || '').trim().toLowerCase();
-  const sortedChips = [...(chips || [])].map(c => c.trim().toLowerCase()).sort();
-  const raw = `${normalized}::${sortedChips.join('|')}`;
+  const sortedChips = [...(chips || [])].map((c) => c.trim().toLowerCase()).sort();
+  const sortedInv = [...(inventory || [])]
+    .map((i) => (typeof i === 'string' ? i : i.name || i.id || '').trim().toLowerCase())
+    .sort();
+
+  let photoHash = '';
+  if (photoBase64) {
+    photoHash = crypto.createHash('sha256').update(photoBase64).digest('hex').substring(0, 16);
+  }
+
+  const raw = `${normalized}::${sortedChips.join('|')}::${sortedInv.join('|')}::photo:${photoHash}`;
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 

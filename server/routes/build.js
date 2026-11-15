@@ -13,7 +13,7 @@ export async function handleCreateBuild({ prompt, photoBase64, chips = [], inven
   }
 
   // 1. Check prompt cache first
-  const cacheKey = hashPrompt(prompt || '', chips);
+  const cacheKey = hashPrompt(prompt || '', chips, photoBase64, inventory);
   const cached = getCachedBuild(cacheKey);
   if (cached) {
     activeBuilds.set(cached.id, cached);
@@ -25,19 +25,15 @@ export async function handleCreateBuild({ prompt, photoBase64, chips = [], inven
     };
   }
 
-  // 2. Check rate limits
+  // 2. Check rate limits (QA-BREAK B1: never serve fake fallback build on 429)
   const rateLimit = checkRateLimit(ip);
   if (!rateLimit.allowed) {
-    // Graceful handling: when rate limited, serve offline generator or showcase
-    const fallbackBuild = await buildWithGemini(prompt, photoBase64, chips, inventory);
-    activeBuilds.set(fallbackBuild.id, fallbackBuild);
-    return {
-      buildId: fallbackBuild.id,
-      data: fallbackBuild,
-      cached: false,
-      rateLimited: true,
-      rateLimit
-    };
+    const resetMinutes = Math.max(1, Math.round((new Date(rateLimit.resetAt).getTime() - Date.now()) / 60000));
+    const err = new Error(rateLimit.message || `You've hit the hourly build limit. Try again in ${resetMinutes} min.`);
+    err.status = 429;
+    err.retryAfter = resetMinutes * 60;
+    err.resetMinutes = resetMinutes;
+    throw err;
   }
 
   // 3. Generate with Gemini 3.8 Flash (or smart generator if offline/no key)
