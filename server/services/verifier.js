@@ -250,10 +250,10 @@ export function checkPinConflicts(build) {
     label: 'Pin Assignment & Bus Integrity',
     pass,
     evidence: pass
-      ? `All ${pinUsage.size} pin assignments verified unique; I2C mapped correctly; zero reserved pin collisions.`
+      ? `All ${wiring.length} wiring connections verified; zero reserved pin collisions.`
       : errors.join('; '),
     durationMs,
-    details: { pinCount: pinUsage.size, errors }
+    details: { totalWires: wiring.length, pinCount: pinUsage.size, errors }
   };
 }
 

@@ -196,3 +196,11 @@ test('PI-SPEC: runAgentLoop performs real self-healing swap from Pi 5 to Pi Zero
   assert.equal(doneEvent.harness?.selfHealCount, 1, 'Self-heal count should be 1');
 });
 
+test('PI-SPEC: planner respects explicitly named Raspberry Pi board and never substitutes ESP32 (QA-R8 #1)', async () => {
+  const { buildWithGemini } = await import('../services/gemini.js');
+  const build = await buildWithGemini('An AI pocket assistant I can talk to, on a Raspberry Pi', null, ['Raspberry Pi']);
+  assert.ok(build.board?.toLowerCase().includes('pi'), `Expected Pi board, got ${build.board}`);
+  assert.notEqual(build.board, 'esp32', 'Must not substitute ESP32 when Pi is requested');
+  assert.ok(build.parts.some((p) => (p.libId || p.id).toLowerCase().includes('pi')));
+});
+

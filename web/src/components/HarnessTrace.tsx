@@ -125,7 +125,7 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
             explanation: 'Reallocated relay from D7 to D9 in wiring netlist and sketch',
           }
         : undefined,
-      evidence: `All ${partsCount * 2} pin assignments verified unique; I2C mapped correctly; zero reserved pin collisions.`,
+      evidence: `All ${build?.wiring?.length || partsCount * 2} wiring connections verified; zero reserved pin collisions.`,
     },
     {
       id: 'power_budget',

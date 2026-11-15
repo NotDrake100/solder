@@ -460,11 +460,6 @@ function generateDynamicBuild(
   }
 
   // Layout Placement (Calculate aesthetic inside-case coordinates)
-  const caseWidth = 140;
-  const caseDepth = 95;
-  const caseHeight = 42;
-  const wallMm = 2.0;
-
   const layout = [
     // MCU at bottom left
     {
@@ -548,6 +543,23 @@ function generateDynamicBuild(
       color,
     });
   }
+
+  // Calculate dynamic enclosure outer dimensions from layout bounds to ensure real fit
+  const wallMm = 2.0;
+  let maxLayoutX = 0;
+  let maxLayoutY = 0;
+  let maxLayoutZ = 0;
+  for (const item of layout) {
+    const w = item.dims ? item.dims[0] : 30;
+    const l = item.dims ? item.dims[1] : 30;
+    const h = item.dims ? item.dims[2] : 15;
+    maxLayoutX = Math.max(maxLayoutX, (item.x || 0) + w);
+    maxLayoutY = Math.max(maxLayoutY, (item.y || 0) + l);
+    maxLayoutZ = Math.max(maxLayoutZ, (item.z || 0) + h);
+  }
+  const caseWidth = Math.max(120, Math.ceil(maxLayoutX + wallMm * 2 + 8));
+  const caseDepth = Math.max(80, Math.ceil(maxLayoutY + wallMm * 2 + 8));
+  const caseHeight = Math.max(38, Math.ceil(maxLayoutZ + wallMm * 2 + 6));
 
   // Cost calculation
   const totalBOM = parts.reduce((acc, p) => acc + (p.priceInr || 0) * (p.qty || 1), 0);
@@ -919,19 +931,19 @@ echo "Setup complete! Run: python3 main.py"
     board,
     parts,
     layout: [
-      { id: 'part-mcu', libId: mcuLibId, name: mcuName, x: 5, y: 5, dims: [30, 65, 6] },
-      { id: 'part-battery', libId: 'lipo_2000mah', name: '3.7V 2000mAh LiPo', x: 40, y: 5, dims: [35, 60, 8] },
-      { id: 'part-speaker', libId: 'speaker_3w_4ohm', name: '40mm Speaker', x: 20, y: 75, dims: [40, 40, 18] },
-      { id: 'part-oled', libId: 'oled_096', name: '0.96" OLED', x: 25, y: 80, dims: [27, 28, 4] },
+      { id: 'part-mcu', libId: mcuLibId, name: mcuName, x: 8, y: 12, z: 2, dims: [65, 30, 5] },
+      { id: 'part-battery', libId: 'lipo_2000mah', name: '3.7V 2000mAh LiPo', x: 12, y: 10, z: 7, dims: [50, 32, 8] },
+      { id: 'part-speaker', libId: 'speaker_3w_4ohm', name: '40mm Speaker', x: 42, y: 8, z: 6, dims: [38, 38, 8] },
+      { id: 'part-oled', libId: 'oled_096', name: '0.96" OLED', x: 26, y: 14, z: 16, dims: [27, 28, 4] },
     ],
     case: {
       wallMm: 2.0,
       lidType: 'snap-fit',
-      outerMm: [85, 125, 28],
+      outerMm: [92, 58, 24],
       clearanceMm: 2.2,
       material: 'acrylic',
       color: '#f8fafc',
-      scad: `// Solder Pocket Case for ${capitalizedTitle}\n$fn=40;\ncube([85, 125, 28], center=true);\n`,
+      scad: `// Solder Pocket Case for ${capitalizedTitle}\n$fn=40;\ncube([92, 58, 24], center=true);\n`,
     },
     wiring,
     code: {

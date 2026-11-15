@@ -38,7 +38,7 @@ export const BUILD_RESPONSE_SCHEMA = {
     name: { type: "STRING" },
     tagline: { type: "STRING" },
     summary: { type: "STRING" },
-    board: { type: "STRING", enum: ["uno", "esp32"] },
+    board: { type: "STRING", enum: ["uno", "esp32", "rpi_zero_2w", "rpi_5"] },
     parts: {
       type: "ARRAY",
       items: {
@@ -242,9 +242,10 @@ ${PARTS_REFERENCE}
 Rules:
 1. Prices must be in INR (₹).
 2. Case must have 2.0mm wall thickness and at least 2.0mm clearance around all components.
-3. Code must be valid Arduino C++ (.ino) compiling for Arduino Uno or ESP32.
+3. Code must be valid Arduino C++ (.ino) compiling for Arduino Uno or ESP32, or Python (.py) for Raspberry Pi.
 4. Serial output prints in code must match the assertions expected in tests.
-5. boxSvg must be a valid, highly polished SVG illustration of packaging with barcode and typography.`;
+5. boxSvg must be a valid, highly polished SVG illustration of packaging with barcode and typography.
+6. HARD RULE: Respect explicitly named boards. If user asks for Raspberry Pi / Pi Zero / Pi 5, you MUST choose board: 'rpi_zero_2w' or 'rpi_5' with Python main.py. Never substitute ESP32 or Uno if the user requested a Pi.`;
 
   const userPrompt = `Idea: "${prompt}"
 Requested modifications/chips: ${chips.length ? chips.join(', ') : 'None'}
@@ -268,6 +269,14 @@ Generate a complete SolderBuild JSON package matching the response schema.`;
     if (!data.id) {
       data.id = 'build_' + Math.random().toString(36).substring(2, 9);
     }
+
+    // Server-side post-check: if prompt explicitly asks for Pi and model picked non-Pi, enforce Pi re-plan
+    const isPiPrompt = /\b(?:pi|raspberry|rpi|pocket\s*assistant)\b/i.test(`${prompt} ${(chips || []).join(' ')}`);
+    if (isPiPrompt && !data.board?.toLowerCase().includes('pi')) {
+      console.warn(`[Gemini Service] User requested Raspberry Pi, but model selected ${data.board}. Re-planning via offline generator.`);
+      return generateOfflineBuild(prompt, chips);
+    }
+
     return data;
   } catch (err) {
     console.warn(`[Gemini Service] gemini-3.8-flash failed (${err.message}). Falling back to smart generator.`);

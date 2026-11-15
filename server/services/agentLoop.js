@@ -256,13 +256,44 @@ export async function runAgentLoop(buildData, emit) {
         diff = '+ External 5V 2A regulator rail added';
       }
     } else if (failedCheck.id === 'fit_check') {
-      currentBuild.case.outerMm = [
-        Math.max(currentBuild.case.outerMm[0], 140) + 20,
-        Math.max(currentBuild.case.outerMm[1], 100) + 25,
-        currentBuild.case.outerMm[2],
-      ];
-      changelog = `Expanded case outer dimensions to ${currentBuild.case.outerMm.join('x')}mm to maintain 2.2mm clearance`;
-      diff = `+ outerMm: [${currentBuild.case.outerMm.join(', ')}]`;
+      let maxPartX = 0;
+      let maxPartY = 0;
+      let maxPartZ = 0;
+      for (const item of currentBuild.layout || []) {
+        const dims = item.dims || [30, 30, 15];
+        maxPartX = Math.max(maxPartX, (item.x || 0) + dims[0]);
+        maxPartY = Math.max(maxPartY, (item.y || 0) + dims[1]);
+        maxPartZ = Math.max(maxPartZ, (item.z || 0) + dims[2]);
+      }
+      const wallMm = Math.max(currentBuild.case?.wallMm || 2.0, 2.2);
+      const reqW = Math.max(currentBuild.case?.outerMm?.[0] || 120, Math.ceil(maxPartX + wallMm * 2 + 10));
+      const reqL = Math.max(currentBuild.case?.outerMm?.[1] || 80, Math.ceil(maxPartY + wallMm * 2 + 10));
+      const reqH = Math.max(currentBuild.case?.outerMm?.[2] || 40, Math.ceil(maxPartZ + wallMm * 2 + 6));
+      currentBuild.case = {
+        ...(currentBuild.case || {}),
+        outerMm: [reqW, reqL, reqH],
+        wallMm,
+      };
+      if (currentBuild.case.scad) {
+        currentBuild.case.scad = currentBuild.case.scad
+          .replace(/outer_x\s*=\s*\d+;/, `outer_x = ${reqW};`)
+          .replace(/outer_y\s*=\s*\d+;/, `outer_y = ${reqL};`)
+          .replace(/outer_z\s*=\s*\d+;/, `outer_z = ${reqH};`);
+      }
+      changelog = `Expanded case outer dimensions to ${reqW}x${reqL}x${reqH}mm to maintain 2.2mm clearance`;
+      diff = `+ outerMm: [${reqW}, ${reqL}, ${reqH}]`;
+
+      emit({
+        step: 'case',
+        stage: 'case',
+        label: 'Designing the case',
+        status: 'success',
+        detail: `Expanded case outer dimensions to ${reqW}x${reqL}x${reqH}mm to maintain 2.2mm clearance`,
+        case: currentBuild.case,
+        layout: currentBuild.layout,
+        data: currentBuild,
+        timestamp: timestamp(),
+      });
     } else {
       const fixResult = await fixWithGemini(currentBuild, failedCheck.evidence);
       currentBuild = fixResult.patchedBuild || currentBuild;
@@ -278,6 +309,8 @@ export async function runAgentLoop(buildData, emit) {
       checkId: failedCheck.id,
       changelog,
       diff,
+      build: currentBuild,
+      data: currentBuild,
       detail: `Self-heal patch applied (${modelToUse}): ${changelog}`,
       timestamp: timestamp(),
     });
