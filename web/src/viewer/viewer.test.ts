@@ -28,7 +28,7 @@ for (const theme of ['pla', 'acrylic', 'dark', 'resin'] as const) {
   assert(!!mats.ldrCeramic, 'LDR ceramic material exists');
   assert(!!mats.wireMaterials.red, 'Red wire material exists');
 
-  if (theme === 'acrylic' || theme === 'pla') {
+  if (theme === 'acrylic') {
     const encPhys = mats.enclosure as THREE.MeshPhysicalMaterial;
     assert(encPhys.transparent === true, `Enclosure must be transparent for theme ${theme}`);
     assert(encPhys.transmission >= 0.7, `Enclosure transmission >= 0.7 for theme ${theme} (was ${encPhys.transmission})`);

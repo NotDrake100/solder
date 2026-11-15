@@ -111,13 +111,18 @@ export class EnclosureCameraController {
     this.desiredTarget.copy(center);
     this.defaultTarget.copy(center);
 
-    const maxDim = Math.max(Number(size.x) || 120, Number(size.y) || 90, Number(size.z) || 45);
+    const maxDim = Math.max(Number(size.x) || 70, Number(size.y) || 110, Number(size.z) || 25);
     const fov = (this.camera.fov * Math.PI) / 180;
-    // Optimal 1.35x bounding sphere framing for studio presentation
-    const distance = (maxDim / (2 * Math.tan(fov / 2))) * 1.35;
+    const aspect = Math.max(0.4, this.camera.aspect || 1.0);
 
-    this.targetSpherical.radius = Math.max(distance, 95);
-    this.targetSpherical.phi = Math.PI / 3.2; // 3/4 elevation
+    // Compute distance required to fit both vertically and horizontally with margin
+    const distV = (maxDim / 2) / Math.tan(fov / 2);
+    const distH = (maxDim / 2) / (Math.tan(fov / 2) * aspect);
+    // 1.55x margin ensures safe border on 390px wide phone and desktop alike
+    const distance = Math.max(distV, distH) * 1.55;
+
+    this.targetSpherical.radius = Math.max(distance, 110);
+    this.targetSpherical.phi = Math.PI / 3.4; // 3/4 elevation
     this.targetSpherical.theta = Math.PI / 4.2; // 3/4 angle
     this.defaultSpherical.copy(this.targetSpherical);
   }

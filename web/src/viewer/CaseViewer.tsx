@@ -178,41 +178,28 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       renderer.toneMappingExposure = 1.1;
       rendererRef.current = renderer;
 
-      // 4. Ultra-Clean Neutral Studio Lighting (Soft PCF shadows, clean white rim highlights)
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      // 4. Good Three-Point Lighting (White/grey/black only, crisp studio contrast)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
       scene.add(ambientLight);
 
-      // Key light with soft PCF shadow
-      const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
-      keyLight.position.set(90, -100, 160);
+      // Key light: crisp directional white light with shadow
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
+      keyLight.position.set(100, -80, 140);
       keyLight.castShadow = true;
       keyLight.shadow.mapSize.width = 2048;
       keyLight.shadow.mapSize.height = 2048;
-      keyLight.shadow.camera.near = 10;
-      keyLight.shadow.camera.far = 500;
-      const d = 110;
-      keyLight.shadow.camera.left = -d;
-      keyLight.shadow.camera.right = d;
-      keyLight.shadow.camera.top = d;
-      keyLight.shadow.camera.bottom = -d;
       keyLight.shadow.bias = -0.0004;
-      keyLight.shadow.radius = 3.2; // soft shadow penumbra
       scene.add(keyLight);
 
-      // Soft neutral fill bounce
-      const fillLight = new THREE.DirectionalLight(0xa1a1aa, 0.35);
-      fillLight.position.set(-100, 80, 90);
+      // Fill light: soft neutral grey bounce
+      const fillLight = new THREE.DirectionalLight(0xa3a3a3, 0.6);
+      fillLight.position.set(-100, 80, 80);
       scene.add(fillLight);
 
-      // Clean neutral rim light catching translucent acrylic edges
-      const rimLight = new THREE.DirectionalLight(0xe4e4e7, 0.4);
-      rimLight.position.set(-30, 140, 60);
+      // Back / rim light: clean white rim highlight
+      const rimLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      rimLight.position.set(-50, 120, 100);
       scene.add(rimLight);
-
-      // Subtle secondary rim light for depth
-      const secondaryRimLight = new THREE.DirectionalLight(0x71717a, 0.2);
-      secondaryRimLight.position.set(40, 120, -40);
-      scene.add(secondaryRimLight);
 
       // 5. Studio Ground Grid Floor (Subtle neutral grey hairline) & Contact Shadow
       const gridHelper = new THREE.GridHelper(320, 32, 0x3f3f46, 0x27272a);
@@ -375,11 +362,6 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
         const box = new THREE.Box3().setFromObject(enclosure.group);
         cameraController.fitToBox(box);
       }
-
-      // Trigger burst reveal if enabled
-      if (enableBurstReveal) {
-        triggerBurst();
-      }
     }, [
       layout,
       caseSpec,
@@ -389,8 +371,6 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
       showLid,
       showWires,
       selectedPartId,
-      enableBurstReveal,
-      triggerBurst,
     ]);
 
     // Handle mouse move for part hovering / tooltip
@@ -473,23 +453,6 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
           </div>
         )}
 
-        {/* Burst Reveal Playing Indicator Badge */}
-        {isBurstActive && (
-          <div className="absolute top-4 right-4 z-10 px-3 py-1.5 rounded-full bg-[#212121]/95 text-[#f5f5f5] backdrop-blur text-xs font-medium shadow-md border border-[#2a2a2a] flex items-center space-x-2 pointer-events-none">
-            <svg
-              className="w-3.5 h-3.5 animate-spin text-[#a3a3a3]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-              <path d="M12 2a10 10 0 0 1 10 10" />
-            </svg>
-            <span>Burst Reveal...</span>
-          </div>
-        )}
-
         {/* Clean Neutral Floating Control Pill Toolbar (Bottom) */}
         {!hideControls && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#212121]/95 border border-[#2a2a2a] shadow-xl backdrop-blur-md">
@@ -514,23 +477,6 @@ export const CaseViewer = forwardRef<CaseViewerRef, CaseViewerProps>(
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
             <span>{isExploded ? 'Assembled' : 'Exploded'}</span>
-          </button>
-
-          {/* Burst Reveal Signature Animation Replay */}
-          <button
-            type="button"
-            onClick={triggerBurst}
-            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-[#a3a3a3] hover:bg-[#2a2a2a] hover:text-[#f5f5f5] transition-colors"
-            title="Replay Signature Burst Reveal"
-          >
-            <svg
-              className="w-3.5 h-3.5 text-[#a3a3a3]"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8 5.8 21.3l2.4-7.4L2 9.4h7.6z" />
-            </svg>
-            <span>Burst</span>
           </button>
 
           <div className="w-[1px] h-4 bg-[#2a2a2a] mx-0.5" />

@@ -154,17 +154,8 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({
           </button>
         </div>
 
-        {/* Action Buttons: Order, Ship, AR */}
+        {/* Action Buttons: Ship, AR */}
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-          <button
-            onClick={onOpenOrder}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-zinc-800 transition shadow-sm shrink-0"
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Order It</span>
-            <span className="text-[10px] font-mono opacity-80">(₹{totalPartsCost + 280})</span>
-          </button>
-
           <button
             onClick={onOpenShip}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-zinc-200 text-zinc-800 text-xs font-semibold hover:bg-zinc-50 hover:border-zinc-300 transition shadow-xs shrink-0"
@@ -273,16 +264,6 @@ export const WorkspaceTabs: React.FC<WorkspaceTabsProps> = ({
                 Exploded View
               </button>
             </div>
-
-            {/* Signature Burst Reveal */}
-            <button
-              onClick={handleBurstReveal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold hover:bg-emerald-100 transition shadow-xs"
-              title="Play signature slow-motion burst reveal animation"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Burst Reveal</span>
-            </button>
 
             {/* Material Theme */}
             <div className="flex items-center gap-1 text-xs text-zinc-500">

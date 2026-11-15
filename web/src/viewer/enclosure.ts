@@ -259,67 +259,102 @@ export function buildEnclosureAssembly(
 
   const [w, d, h] = outerDimensions;
 
-  // 1. Procedural Base Box
-  let baseMesh: THREE.Mesh;
-  if (caseSpec?.stlData) {
-    const stlGeom = parseSTL(caseSpec.stlData);
-    stlGeom.center();
-    baseMesh = new THREE.Mesh(stlGeom, materials.enclosure);
-  } else {
-    // Generate clean procedural base
-    const baseGeom = new THREE.BoxGeometry(w, d, h);
-    // Cut inner cavity simulation
-    baseMesh = new THREE.Mesh(baseGeom, materials.enclosure);
-    baseMesh.position.set(0, 0, h / 2 - wallMm);
-    baseMesh.castShadow = true;
-    baseMesh.receiveShadow = true;
-  }
+  // 1. Procedural Base Box: Open-top hollow box with real wall thickness
+  const shellMat = new THREE.MeshStandardMaterial({
+    color: 0xd4d4d8, // Crisp light grey solid walls
+    roughness: 0.45,
+    metalness: 0.1,
+    transparent: false,
+    opacity: 1.0,
+  });
+
+  const floorGeom = new THREE.BoxGeometry(w, d, wallMm);
+  const baseMesh = new THREE.Mesh(floorGeom, shellMat);
+  baseMesh.position.set(0, 0, wallMm / 2);
   baseMesh.name = 'enclosure_base';
+  baseMesh.castShadow = true;
+  baseMesh.receiveShadow = true;
+
+  const wallH = Math.max(1, h - wallMm);
+  const wallZ = wallH / 2;
+
+  // Real thickness solid side walls (open top)
+  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(wallMm, d, wallH), shellMat);
+  leftWall.position.set(-w / 2 + wallMm / 2, 0, wallZ);
+  leftWall.castShadow = true;
+  leftWall.receiveShadow = true;
+  baseMesh.add(leftWall);
+
+  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(wallMm, d, wallH), shellMat);
+  rightWall.position.set(w / 2 - wallMm / 2, 0, wallZ);
+  rightWall.castShadow = true;
+  rightWall.receiveShadow = true;
+  baseMesh.add(rightWall);
+
+  const frontWall = new THREE.Mesh(new THREE.BoxGeometry(Math.max(1, w - 2 * wallMm), wallMm, wallH), shellMat);
+  frontWall.position.set(0, -d / 2 + wallMm / 2, wallZ);
+  frontWall.castShadow = true;
+  frontWall.receiveShadow = true;
+  baseMesh.add(frontWall);
+
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(Math.max(1, w - 2 * wallMm), wallMm, wallH), shellMat);
+  backWall.position.set(0, d / 2 - wallMm / 2, wallZ);
+  backWall.castShadow = true;
+  backWall.receiveShadow = true;
+  baseMesh.add(backWall);
+
   group.add(baseMesh);
 
   // 2. Corner Standoffs / Mounting Posts
   const standoffs = new THREE.Group();
   standoffs.name = 'standoffs';
-  const postGeom = new THREE.CylinderGeometry(3.0, 3.2, Math.min(12, h * 0.35), 24);
-  const holeGeom = new THREE.CylinderGeometry(1.4, 1.4, Math.min(12, h * 0.35) + 0.2, 16);
+  const postGeom = new THREE.CylinderGeometry(2.5, 2.8, Math.min(6, h * 0.25), 16);
+  const holeGeom = new THREE.CylinderGeometry(1.2, 1.2, Math.min(6, h * 0.25) + 0.1, 12);
 
   const postPositions = [
-    [-w / 2 + 10, -d / 2 + 10],
-    [w / 2 - 10, -d / 2 + 10],
-    [-w / 2 + 10, d / 2 - 10],
-    [w / 2 - 10, d / 2 - 10],
+    [-w / 2 + 6, -d / 2 + 6],
+    [w / 2 - 6, -d / 2 + 6],
+    [-w / 2 + 6, d / 2 - 6],
+    [w / 2 - 6, d / 2 - 6],
   ];
 
-  const postMat = materials.enclosure;
+  const postMat = shellMat;
   const brassInsertMat = materials.metalGold;
 
   for (const [px, py] of postPositions) {
     const postMesh = new THREE.Mesh(postGeom, postMat);
     postMesh.rotation.x = Math.PI / 2;
-    postMesh.position.set(px, py, 6);
+    postMesh.position.set(px, py, wallMm + 2);
     standoffs.add(postMesh);
 
-    // Brass threaded insert inside post
     const insertMesh = new THREE.Mesh(holeGeom, brassInsertMat);
     insertMesh.rotation.x = Math.PI / 2;
-    insertMesh.position.set(px, py, 6.1);
+    insertMesh.position.set(px, py, wallMm + 2.1);
     standoffs.add(insertMesh);
   }
   group.add(standoffs);
 
-  // 3. Enclosure Lid
-  const lidGeom = createProceduralLidGeometry(w, d, wallMm);
-  const lidMesh = new THREE.Mesh(lidGeom, materials.enclosureLid);
+  // 3. Enclosure Lid: separate plate floating slightly above (wireframe-free, 15% transparent only for the lid so parts are visible)
+  const lidGeom = new THREE.BoxGeometry(w, d, wallMm);
+  const lidMat = new THREE.MeshStandardMaterial({
+    color: 0xf4f4f5,
+    roughness: 0.25,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.15,
+    depthWrite: true,
+  });
+  const lidMesh = new THREE.Mesh(lidGeom, lidMat);
   lidMesh.name = 'enclosure_lid';
   lidMesh.castShadow = true;
 
-  // Assembled position: sitting right on top of base box
-  const assembledLidPos = new THREE.Vector3(0, 0, h - wallMm);
+  // Assembled position: floating slightly above open top
+  const assembledLidPos = new THREE.Vector3(0, 0, h + 8);
   const assembledLidRot = new THREE.Euler(0, 0, 0);
 
-  // Exploded position: floating high above with subtle tilt for CAD beauty
-  const explodedLidPos = new THREE.Vector3(0, 0, h + 55);
-  const explodedLidRot = new THREE.Euler(-0.1, 0, 0);
+  // Exploded position: floating high above
+  const explodedLidPos = new THREE.Vector3(0, 0, h + 45);
+  const explodedLidRot = new THREE.Euler(0, 0, 0);
 
   lidMesh.position.copy(assembledLidPos);
   lidMesh.rotation.copy(assembledLidRot);

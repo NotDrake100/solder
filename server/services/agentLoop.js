@@ -20,9 +20,62 @@ const isTest =
 
 const sleep = (ms) => (isTest ? Promise.resolve() : new Promise((r) => setTimeout(r, ms)));
 
+export function packPiPocketLayout(build) {
+  const isPi =
+    (build.board || '').toLowerCase().includes('rpi') ||
+    (build.board || '').toLowerCase().includes('pi') ||
+    (build.code?.filename || '').endsWith('.py') ||
+    (build.name || '').toLowerCase().includes('pocket') ||
+    (build.tagline || '').toLowerCase().includes('pocket');
+
+  if (!isPi) return build;
+
+  const packedMap = {
+    lipo_2000mah: { x: 2, y: 6, z: 0, dims: [34, 52, 7] },
+    rpi_zero_2w: { x: 2, y: 6, z: 8, dims: [65, 30, 5] },
+    rpi_5: { x: 2, y: 6, z: 8, dims: [65, 30, 5] },
+    speaker_3w_4ohm: { x: 12, y: 62, z: 0, dims: [40, 40, 6] },
+    oled_096: { x: 2, y: 38, z: 13, dims: [27, 27, 4] },
+    inmp441_mic: { x: 44, y: 38, z: 2, dims: [14, 14, 3] },
+    max98357a_amp: { x: 42, y: 54, z: 2, dims: [18, 18, 4] },
+    tactile_button: { x: 48, y: 92, z: 6, dims: [12, 12, 8] },
+    powerboost_1000c: { x: 38, y: 6, z: 0, dims: [22, 36, 6] },
+    mt3608: { x: 38, y: 6, z: 0, dims: [18, 36, 6] },
+  };
+
+  build.layout = (build.layout || []).map((item) => {
+    const libId = item.libId || item.id || '';
+    const packed =
+      packedMap[libId] ||
+      (libId.includes('battery') || libId.includes('lipo') ? packedMap.lipo_2000mah : null) ||
+      (libId.includes('speaker') ? packedMap.speaker_3w_4ohm : null) ||
+      (libId.includes('oled') ? packedMap.oled_096 : null) ||
+      (libId.includes('mic') ? packedMap.inmp441_mic : null) ||
+      (libId.includes('amp') ? packedMap.max98357a_amp : null) ||
+      (libId.includes('button') ? packedMap.tactile_button : null) ||
+      (libId.includes('rpi') || libId.includes('zero') ? packedMap.rpi_zero_2w : null) ||
+      (libId.includes('boost') || libId.includes('mt3608') ? packedMap.mt3608 : null);
+
+    if (packed) {
+      return { ...item, ...packed };
+    }
+    return item;
+  });
+
+  const wallMm = build.case?.wallMm || 2.0;
+  build.case = {
+    ...(build.case || {}),
+    outerMm: [70, 110, 25],
+    wallMm,
+  };
+
+  return build;
+}
+
 export async function runAgentLoop(buildData, emit) {
   const timestamp = () => Date.now();
   let currentBuild = { ...buildData };
+  packPiPocketLayout(currentBuild);
 
   // Demo safety: Seed desk fan with an initial pin conflict on D7 for reproducible self-healing
   const isFanDemo =
@@ -317,6 +370,16 @@ export async function runAgentLoop(buildData, emit) {
         diff = '+ External 5V 2A regulator rail added';
       }
     } else if (failedCheck.id === 'fit_check') {
+      const isPi =
+        (currentBuild.board || '').toLowerCase().includes('rpi') ||
+        (currentBuild.board || '').toLowerCase().includes('pi') ||
+        (currentBuild.code?.filename || '').endsWith('.py') ||
+        (currentBuild.name || '').toLowerCase().includes('pocket');
+
+      if (isPi) {
+        packPiPocketLayout(currentBuild);
+      }
+
       let maxPartX = 0;
       let maxPartY = 0;
       let maxPartZ = 0;
@@ -326,11 +389,11 @@ export async function runAgentLoop(buildData, emit) {
         maxPartY = Math.max(maxPartY, (item.y || 0) + dims[1]);
         maxPartZ = Math.max(maxPartZ, (item.z || 0) + dims[2]);
       }
-      const wallMm = Math.max(currentBuild.case?.wallMm || 2.0, 2.2);
+      const wallMm = Math.max(currentBuild.case?.wallMm || 2.0, 2.0);
       const clearance = 2 * 2.2;
-      const reqW = Math.ceil(maxPartX + wallMm * 2 + clearance);
-      const reqL = Math.ceil(maxPartY + wallMm * 2 + clearance);
-      const reqH = Math.ceil(maxPartZ + wallMm * 2 + clearance);
+      const reqW = isPi ? 70 : Math.ceil(maxPartX + wallMm * 2 + clearance);
+      const reqL = isPi ? 110 : Math.ceil(maxPartY + wallMm * 2 + clearance);
+      const reqH = isPi ? 25 : Math.ceil(maxPartZ + wallMm * 2 + clearance);
       currentBuild.case = {
         ...(currentBuild.case || {}),
         outerMm: [reqW, reqL, reqH],

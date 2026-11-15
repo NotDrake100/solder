@@ -166,20 +166,11 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
           </button>
         </div>
 
-        {/* Right: Actions (Order It, Ship It, AR) */}
+        {/* Right: Actions (Ship It, AR) */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-mono font-bold text-orange-400 mr-1">
             ₹{totalCost} INR
           </span>
-
-          <button
-            onClick={onOpenOrder}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-semibold transition shadow-md active:scale-[0.98]"
-            title="Order hardware parts kit"
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Order Kit</span>
-          </button>
 
           <button
             onClick={onOpenShip}
@@ -244,16 +235,6 @@ export const PreviewPanel: React.FC<PreviewPanelProps> = ({
                   Exploded
                 </button>
               </div>
-
-              <div className="w-px h-4 bg-[#38332c]" />
-
-              <button
-                onClick={() => setBurstCount((c) => c + 1)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-600/20 border border-orange-500/40 text-orange-300 hover:bg-orange-600/30 text-xs font-semibold transition"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-orange-400" />
-                <span>Burst Reveal</span>
-              </button>
             </div>
           </div>
         )}

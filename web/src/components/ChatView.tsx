@@ -40,7 +40,6 @@ interface ChatViewProps {
   isLoading: boolean;
   onOpenScrapMode: () => void;
   onOpenLiveCamera: () => void;
-  onOpenOrder: () => void;
   onOpenShip?: () => void;
   onOpenAr?: () => void;
   onOpenShare?: () => void;
@@ -146,7 +145,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
   isLoading,
   onOpenScrapMode,
   onOpenLiveCamera,
-  onOpenOrder,
   onOpenShip,
   onOpenAr,
   onOpenShare,
@@ -539,7 +537,6 @@ export const ChatView: React.FC<ChatViewProps> = ({
                     <div className="ml-10">
                       <ResultPanel
                         build={msg.buildData}
-                        onOpenOrder={onOpenOrder}
                         onOpenShip={onOpenShip}
                         onOpenAr={onOpenAr}
                         onOpenShare={onOpenShare}

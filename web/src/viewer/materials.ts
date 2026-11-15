@@ -196,78 +196,38 @@ export function createMaterialLibrary(
 
     case 'dark':
       enclosure = new THREE.MeshStandardMaterial({
-        color: 0x18181b,
-        roughness: 0.7,
-        metalness: 0.2,
-        wireframe,
+        color: 0xd4d4d8,
+        roughness: 0.45,
+        metalness: 0.1,
       });
       enclosureLid = new THREE.MeshStandardMaterial({
-        color: 0x27272a,
-        roughness: 0.65,
-        metalness: 0.25,
-        wireframe,
+        color: 0xf4f4f5,
+        roughness: 0.25,
+        metalness: 0.05,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: true,
       });
       break;
 
     case 'resin':
-      enclosure = new THREE.MeshPhysicalMaterial({
-        color: hexColor,
-        transmission: 0.78,
-        opacity: 0.92,
-        transparent: true,
-        roughness: 0.12,
-        ior: 1.54,
-        thickness: 2.5,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        wireframe,
-      });
-      enclosureLid = new THREE.MeshPhysicalMaterial({
-        color: hexColor,
-        transmission: 0.82,
-        opacity: 0.95,
-        transparent: true,
-        roughness: 0.15,
-        ior: 1.54,
-        thickness: 2.0,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        wireframe,
-      });
-      break;
-
     case 'pla':
     default:
-      // Default frosted translucent enclosure so Uno, sensors, and wiring are clearly visible inside
-      enclosure = new THREE.MeshPhysicalMaterial({
-        color: 0xf8fafc,
-        transmission: 0.72,
-        opacity: 0.88,
-        transparent: true,
-        roughness: 0.22,
-        ior: 1.48,
-        thickness: 2.0,
-        specularIntensity: 1.0,
-        clearcoat: 0.35,
-        clearcoatRoughness: 0.15,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        wireframe,
+      // Crisp light grey solid enclosure with 15% transparent lid floating above
+      enclosure = new THREE.MeshStandardMaterial({
+        color: 0xd4d4d8, // Light grey solid walls
+        roughness: 0.45,
+        metalness: 0.1,
+        transparent: false,
+        opacity: 1.0,
       });
-      enclosureLid = new THREE.MeshPhysicalMaterial({
-        color: 0xf1f5f9,
-        transmission: 0.75,
-        opacity: 0.88,
+      enclosureLid = new THREE.MeshStandardMaterial({
+        color: 0xf4f4f5,
+        roughness: 0.25,
+        metalness: 0.05,
         transparent: true,
-        roughness: 0.20,
-        ior: 1.48,
-        thickness: 1.8,
-        specularIntensity: 1.1,
-        clearcoat: 0.4,
-        clearcoatRoughness: 0.12,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        wireframe,
+        opacity: 0.15, // 15% transparent only for the lid so parts are visible
+        depthWrite: true,
       });
       break;
   }

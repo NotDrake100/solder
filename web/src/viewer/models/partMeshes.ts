@@ -869,81 +869,242 @@ export function buildLdrLightSensorMesh(materials: MaterialLibrary): THREE.Group
 
 /**
  * Builds detailed procedural 3D model for Raspberry Pi Zero 2 W
+ * Crisp 65x30x5 dark board with header strip
  */
 export function buildRpiZeroMesh(materials: MaterialLibrary): THREE.Group {
   const group = new THREE.Group();
   group.name = 'rpi_zero_2w';
 
-  // 1. PCB (30 x 65 x 1.4 mm)
-  const pcbGeom = new THREE.BoxGeometry(30, 65, 1.4);
-  const pcb = new THREE.Mesh(pcbGeom, materials.pcbUno);
-  pcb.position.set(0, 0, 0.7);
+  // 1. Dark board (65 x 30 x 5 mm)
+  const pcbGeom = new THREE.BoxGeometry(65, 30, 4.5);
+  const pcbMat = new THREE.MeshStandardMaterial({
+    color: 0x18181b,
+    roughness: 0.5,
+    metalness: 0.1,
+  });
+  const pcb = new THREE.Mesh(pcbGeom, pcbMat);
+  pcb.position.set(0, 0, 2.25);
   pcb.castShadow = true;
   group.add(pcb);
 
-  // 2. RP3A0 SiP / CPU shield can (12 x 12 x 1.2 mm)
-  const cpuGeom = new THREE.BoxGeometry(12, 12, 1.2);
-  const cpu = new THREE.Mesh(cpuGeom, materials.metalShield);
-  cpu.position.set(0, 0, 1.4 + 0.6);
-  cpu.castShadow = true;
-  group.add(cpu);
-
-  // 3. 40-pin GPIO header along the side (5 x 51 x 3.5 mm)
-  const headerGeom = new THREE.BoxGeometry(5, 51, 3.5);
-  const header = new THREE.Mesh(headerGeom, materials.plasticBlack);
-  header.position.set(-11, 0, 1.4 + 1.75);
+  // 2. 40-pin GPIO header strip along the edge (51 x 5 x 3.5 mm)
+  const headerGeom = new THREE.BoxGeometry(51, 5, 3.5);
+  const headerMat = new THREE.MeshStandardMaterial({
+    color: 0x09090b,
+    roughness: 0.7,
+    metalness: 0.1,
+  });
+  const header = new THREE.Mesh(headerGeom, headerMat);
+  header.position.set(0, 11, 4.5 + 1.75);
   group.add(header);
 
-  // 4. Dual Micro-USB connectors (power + data)
-  for (const yOffset of [-15, -4]) {
-    const usbGeom = new THREE.BoxGeometry(7, 5.5, 2.8);
-    const usb = new THREE.Mesh(usbGeom, materials.metalSilver);
-    usb.position.set(12, yOffset, 1.4 + 1.4);
-    group.add(usb);
-  }
+  // 3. CPU chip shield (12 x 12 x 1.5 mm)
+  const cpuGeom = new THREE.BoxGeometry(12, 12, 1.5);
+  const cpuMat = new THREE.MeshStandardMaterial({
+    color: 0x27272a,
+    roughness: 0.3,
+    metalness: 0.5,
+  });
+  const cpu = new THREE.Mesh(cpuGeom, cpuMat);
+  cpu.position.set(-8, -4, 4.5 + 0.75);
+  group.add(cpu);
 
-  // 5. Mini-HDMI connector
-  const hdmiGeom = new THREE.BoxGeometry(7, 11, 3.0);
-  const hdmi = new THREE.Mesh(hdmiGeom, materials.metalSilver);
-  hdmi.position.set(12, 16, 1.4 + 1.5);
-  group.add(hdmi);
+  // 4. Connectors (USB / HDMI)
+  const usbGeom = new THREE.BoxGeometry(8, 6, 2.8);
+  const usbMat = new THREE.MeshStandardMaterial({
+    color: 0xa1a1aa,
+    roughness: 0.25,
+    metalness: 0.8,
+  });
+  const usb1 = new THREE.Mesh(usbGeom, usbMat);
+  usb1.position.set(12, -10, 4.5 + 1.4);
+  group.add(usb1);
 
-  // 6. MicroSD slot
-  const sdGeom = new THREE.BoxGeometry(12, 14, 1.2);
-  const sd = new THREE.Mesh(sdGeom, materials.metalSilver);
-  sd.position.set(0, -30, 1.4 + 0.6);
-  group.add(sd);
+  const usb2 = new THREE.Mesh(usbGeom, usbMat);
+  usb2.position.set(24, -10, 4.5 + 1.4);
+  group.add(usb2);
 
   return group;
 }
 
 /**
- * Builds detailed procedural 3D model for 40mm 3W Mini Speaker
+ * Builds detailed procedural 3D model for 40mm 3W Mini Speaker (40mm disc)
  */
 export function buildSpeakerMesh(materials: MaterialLibrary): THREE.Group {
   const group = new THREE.Group();
   group.name = 'speaker_3w_4ohm';
 
-  // 1. Metal rim / basket
-  const rimGeom = new THREE.CylinderGeometry(20, 17, 4, 32);
-  const rim = new THREE.Mesh(rimGeom, materials.metalSilver);
-  rim.rotation.x = Math.PI / 2;
-  rim.position.set(0, 0, 16);
-  group.add(rim);
+  // 1. 40mm outer disc
+  const discGeom = new THREE.CylinderGeometry(20, 20, 6, 32);
+  const discMat = new THREE.MeshStandardMaterial({
+    color: 0x27272a,
+    roughness: 0.4,
+    metalness: 0.2,
+  });
+  const disc = new THREE.Mesh(discGeom, discMat);
+  disc.rotation.x = Math.PI / 2;
+  disc.position.set(0, 0, 3);
+  disc.castShadow = true;
+  group.add(disc);
 
-  // 2. Speaker cone (dark paper/poly cone)
-  const coneGeom = new THREE.CylinderGeometry(18, 8, 12, 32);
-  const cone = new THREE.Mesh(coneGeom, materials.plasticBlack);
+  // 2. Inner speaker cone disc
+  const coneGeom = new THREE.CylinderGeometry(14, 14, 2, 32);
+  const coneMat = new THREE.MeshStandardMaterial({
+    color: 0x09090b,
+    roughness: 0.6,
+    metalness: 0.1,
+  });
+  const cone = new THREE.Mesh(coneGeom, coneMat);
   cone.rotation.x = Math.PI / 2;
-  cone.position.set(0, 0, 9);
+  cone.position.set(0, 0, 5);
   group.add(cone);
 
-  // 3. Magnet base
-  const magnetGeom = new THREE.CylinderGeometry(11, 11, 6, 32);
-  const magnet = new THREE.Mesh(magnetGeom, materials.metalShield);
-  magnet.rotation.x = Math.PI / 2;
-  magnet.position.set(0, 0, 3);
-  group.add(magnet);
+  // 3. Center dust cap
+  const capGeom = new THREE.CylinderGeometry(5, 5, 2.5, 24);
+  const capMat = new THREE.MeshStandardMaterial({
+    color: 0x3f3f46,
+    roughness: 0.3,
+    metalness: 0.3,
+  });
+  const cap = new THREE.Mesh(capGeom, capMat);
+  cap.rotation.x = Math.PI / 2;
+  cap.position.set(0, 0, 5.5);
+  group.add(cap);
+
+  return group;
+}
+
+/**
+ * Builds solid LiPo battery block
+ */
+export function buildLiPoMesh(): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'lipo_battery';
+
+  // Flat block (52 x 34 x 7 mm)
+  const bodyGeom = new THREE.BoxGeometry(52, 34, 7);
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x334155, // slate blue metallic battery wrap
+    roughness: 0.4,
+    metalness: 0.3,
+  });
+  const body = new THREE.Mesh(bodyGeom, bodyMat);
+  body.position.set(0, 0, 3.5);
+  body.castShadow = true;
+  group.add(body);
+
+  // Gold protection circuit tape
+  const tapeGeom = new THREE.BoxGeometry(10, 34, 7.2);
+  const tapeMat = new THREE.MeshStandardMaterial({
+    color: 0xd97706,
+    roughness: 0.3,
+    metalness: 0.5,
+  });
+  const tape = new THREE.Mesh(tapeGeom, tapeMat);
+  tape.position.set(-21, 0, 3.5);
+  group.add(tape);
+
+  return group;
+}
+
+/**
+ * Builds solid I2S MEMS mic (small square)
+ */
+export function buildMicMesh(): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'inmp441_mic';
+
+  // Small square (14 x 14 x 3 mm)
+  const boardGeom = new THREE.BoxGeometry(14, 14, 3);
+  const boardMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.5,
+    metalness: 0.1,
+  });
+  const board = new THREE.Mesh(boardGeom, boardMat);
+  board.position.set(0, 0, 1.5);
+  board.castShadow = true;
+  group.add(board);
+
+  // Gold MEMS acoustic port
+  const portGeom = new THREE.CylinderGeometry(2, 2, 1, 16);
+  const portMat = new THREE.MeshStandardMaterial({
+    color: 0xd4af37,
+    roughness: 0.2,
+    metalness: 0.8,
+  });
+  const port = new THREE.Mesh(portGeom, portMat);
+  port.rotation.x = Math.PI / 2;
+  port.position.set(0, 0, 3);
+  group.add(port);
+
+  return group;
+}
+
+/**
+ * Builds tactile button (small cylinder)
+ */
+export function buildButtonMesh(): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'tactile_button';
+
+  // Base block (12 x 12 x 3 mm)
+  const baseGeom = new THREE.BoxGeometry(12, 12, 3);
+  const baseMat = new THREE.MeshStandardMaterial({
+    color: 0x18181b,
+    roughness: 0.7,
+    metalness: 0.1,
+  });
+  const base = new THREE.Mesh(baseGeom, baseMat);
+  base.position.set(0, 0, 1.5);
+  group.add(base);
+
+  // Actuator cylinder
+  const actGeom = new THREE.CylinderGeometry(3.5, 3.5, 4.5, 24);
+  const actMat = new THREE.MeshStandardMaterial({
+    color: 0xd4d4d8,
+    roughness: 0.3,
+    metalness: 0.5,
+  });
+  const act = new THREE.Mesh(actGeom, actMat);
+  act.rotation.x = Math.PI / 2;
+  act.position.set(0, 0, 3 + 2.25);
+  group.add(act);
+
+  return group;
+}
+
+/**
+ * Builds audio amplifier or boost charger module (small boards)
+ */
+export function buildAmpChargerMesh(isAmp = true): THREE.Group {
+  const group = new THREE.Group();
+  group.name = isAmp ? 'max98357a_amp' : 'boost_regulator';
+
+  const w = isAmp ? 18 : 22;
+  const l = isAmp ? 18 : 36;
+  const h = isAmp ? 3.5 : 5;
+
+  const boardGeom = new THREE.BoxGeometry(w, l, 2);
+  const boardMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.5,
+    metalness: 0.1,
+  });
+  const board = new THREE.Mesh(boardGeom, boardMat);
+  board.position.set(0, 0, 1);
+  group.add(board);
+
+  // IC chip or inductor coil block
+  const chipGeom = new THREE.BoxGeometry(w * 0.5, l * 0.4, h - 2);
+  const chipMat = new THREE.MeshStandardMaterial({
+    color: 0x09090b,
+    roughness: 0.6,
+    metalness: 0.15,
+  });
+  const chip = new THREE.Mesh(chipGeom, chipMat);
+  chip.position.set(0, 0, 2 + (h - 2) / 2);
+  group.add(chip);
 
   return group;
 }
@@ -1010,6 +1171,16 @@ export function createPartMesh(
     meshGroup = buildRpiZeroMesh(materials);
   } else if (libId.includes('speaker') || libId.includes('audio_3w')) {
     meshGroup = buildSpeakerMesh(materials);
+  } else if (libId.includes('lipo') || libId.includes('battery_2000') || libId.includes('cell')) {
+    meshGroup = buildLiPoMesh();
+  } else if (libId.includes('mic') || libId.includes('inmp441')) {
+    meshGroup = buildMicMesh();
+  } else if (libId.includes('button') || libId.includes('tactile')) {
+    meshGroup = buildButtonMesh();
+  } else if (libId.includes('amp') || libId.includes('max98357')) {
+    meshGroup = buildAmpChargerMesh(true);
+  } else if (libId.includes('boost') || libId.includes('mt3608') || libId.includes('powerboost')) {
+    meshGroup = buildAmpChargerMesh(false);
   } else if (libId.includes('uno') || libId.includes('arduino')) {
     meshGroup = buildArduinoUnoMesh(materials);
   } else if (libId.includes('esp32') || libId.includes('nodemcu')) {
@@ -1027,7 +1198,7 @@ export function createPartMesh(
   } else if (libId.includes('mq135') || libId.includes('gas') || libId.includes('air')) {
     meshGroup = buildMq135Mesh(materials);
   } else if (libId.includes('18650') || libId.includes('battery')) {
-    meshGroup = buildBattery18650Mesh(materials);
+    meshGroup = buildLiPoMesh();
   } else if (libId.includes('buzzer') || libId.includes('piezo')) {
     meshGroup = buildPiezoBuzzerMesh(materials);
   } else if (libId.includes('ultrasonic') || libId.includes('hcsr04') || libId.includes('distance')) {
@@ -1041,6 +1212,21 @@ export function createPartMesh(
   } else {
     meshGroup = buildGenericModuleMesh(item, materials);
   }
+
+  // Attach crisp thin white EdgesGeometry lines to all meshes
+  meshGroup.traverse((child) => {
+    if (child instanceof THREE.Mesh && child.geometry) {
+      const alreadyHas = child.children.some((c) => c instanceof THREE.LineSegments);
+      if (!alreadyHas) {
+        const edges = new THREE.EdgesGeometry(child.geometry, 25);
+        const line = new THREE.LineSegments(
+          edges,
+          new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 1 })
+        );
+        child.add(line);
+      }
+    }
+  });
 
   // Calculate position in scene coordinates
   const dims = getPartDimensions(item.libId);

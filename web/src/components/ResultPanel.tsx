@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Cpu,
@@ -6,7 +6,6 @@ import {
   Code2,
   Copy,
   Check,
-  ShoppingBag,
   Truck,
   Eye,
   Download,
@@ -73,7 +72,6 @@ interface ResultPanelProps {
   activeTab?: ResultTab;
   onTabChange?: (tab: ResultTab) => void;
   isLoading?: boolean;
-  onOpenOrder?: () => void;
   onOpenShip?: () => void;
   onOpenAr?: () => void;
   onOpenShare?: () => void;
@@ -85,7 +83,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   activeTab: controlledTab,
   onTabChange,
   isLoading = false,
-  onOpenOrder,
   onOpenShip,
   onOpenAr,
   onOpenShare,
@@ -100,7 +97,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   };
 
   const [isExploded, setIsExploded] = useState(false);
-  const [burstCount, setBurstCount] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
   const [materialTheme, setMaterialTheme] = useState<'acrylic' | 'pla' | 'dark'>('acrylic');
   const [piFirmwareMode, setPiFirmwareMode] = useState<'on-device' | 'cloud' | 'setup'>('on-device');
@@ -124,15 +120,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     if (piFirmwareMode === 'setup') return 'setup.sh';
     return 'main.py';
   }, [build, isPi, piFirmwareMode]);
-
-  // Signature burst reveal animation when a new build loads
-  useEffect(() => {
-    if (!build || !build.layout || build.layout.length === 0) return;
-    const timer = setTimeout(() => {
-      setBurstCount((prev) => prev + 1);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [build?.id]);
 
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -221,7 +208,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     <div
       className={`result rounded-xl border border-[#2a2a2a] bg-[#141414] overflow-hidden my-3 select-none ${className}`}
     >
-      {/* Result Tabs Bar (QA-R3 #7: horizontal scroll, no wrap, Order Kit below card on mobile) */}
+      {/* Result Tabs Bar (QA-R3 #7: horizontal scroll, no wrap) */}
       <div
         className="result-tabs flex items-center justify-between border-b border-[#262626] px-3 bg-[#171717] gap-2 overflow-x-auto whitespace-nowrap scrollbar-none"
         role="tablist"
@@ -293,7 +280,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </button>
         </div>
 
-        {/* Right CTA: Download Kit & Order Kit on Desktop */}
+        {/* Right CTA: Download Kit on Desktop */}
         <div className="shrink-0 py-1 hidden sm:flex items-center gap-2">
           <button
             onClick={handleDownloadKit}
@@ -303,16 +290,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             <Download className="w-3.5 h-3.5" />
             <span>Download kit</span>
           </button>
-          {onOpenOrder && (
-            <button
-              onClick={onOpenOrder}
-              className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer whitespace-nowrap"
-            >
-              <ShoppingBag className="w-3 h-3" />
-              <span>Order Kit</span>
-              <span className="mono text-[11px] opacity-80">Rs {totalCost}</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -326,7 +303,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               layout={build.layout}
               wiring={build.wiring}
               isExploded={isExploded}
-              burstCount={burstCount}
               materialTheme={materialTheme}
               hideControls={true}
               className="w-full h-full"
@@ -665,25 +641,15 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         )}
       </div>
 
-      {/* Mobile CTA: Download Kit & Order Kit Below the Card */}
-      <div className="sm:hidden p-2.5 border-t border-[#262626] bg-[#171717] flex items-center gap-2">
+      {/* Mobile CTA: Download Kit Below the Card */}
+      <div className="sm:hidden p-2.5 border-t border-[#262626] bg-[#171717] flex items-center">
         <button
           onClick={handleDownloadKit}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-[#333] bg-[#222] text-[#f5f5f5] hover:bg-[#2e2e2e] hover:text-white transition cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-[#333] bg-[#222] text-[#f5f5f5] hover:bg-[#2e2e2e] hover:text-white transition cursor-pointer"
         >
           <Download className="w-3.5 h-3.5" />
           <span>Download kit</span>
         </button>
-        {onOpenOrder && (
-          <button
-            onClick={onOpenOrder}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-white text-black hover:bg-neutral-200 transition cursor-pointer"
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Order Kit</span>
-            <span className="mono text-[11px] opacity-80">· Rs {totalCost}</span>
-          </button>
-        )}
       </div>
     </div>
   );

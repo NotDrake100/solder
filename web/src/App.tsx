@@ -12,7 +12,7 @@ import {
 } from './components/HarnessTrace';
 import { LiveCameraModal } from './components/LiveCameraModal';
 import { ScrapModal } from './components/ScrapModal';
-import { OrderModal, ShipModal, ArModal, ShareModal } from './components/ActionModals';
+import { ShipModal, ArModal, ShareModal } from './components/ActionModals';
 
 const RECENT_BUILDS_KEY = 'solder_recent_builds';
 
@@ -40,7 +40,6 @@ export function App() {
 
   // Modals state
   const [isScrapOpen, setIsScrapOpen] = useState(false);
-  const [isOrderOpen, setIsOrderOpen] = useState(false);
   const [isShipOpen, setIsShipOpen] = useState(false);
   const [isArOpen, setIsArOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -864,7 +863,6 @@ export function App() {
           isLoading={isLoading}
           onOpenScrapMode={() => setIsScrapOpen(true)}
           onOpenLiveCamera={() => setIsLiveCameraOpen(true)}
-          onOpenOrder={() => setIsOrderOpen(true)}
           onOpenShip={() => setIsShipOpen(true)}
           onOpenAr={() => setIsArOpen(true)}
           onOpenShare={() => setIsShareOpen(true)}
@@ -888,13 +886,6 @@ export function App() {
         isOpen={isScrapOpen}
         onClose={() => setIsScrapOpen(false)}
         onApplyParts={handleApplyScrapParts}
-      />
-
-      <OrderModal
-        isOpen={isOrderOpen}
-        onClose={() => setIsOrderOpen(false)}
-        build={activeBuild}
-        savingsInr={scrapSavings}
       />
 
       <ShipModal

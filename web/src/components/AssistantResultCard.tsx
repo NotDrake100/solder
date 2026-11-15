@@ -119,22 +119,11 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
           </button>
         </div>
 
-        {/* Small Header Buttons: Order It, Ship It, AR */}
+        {/* Small Header Buttons: Ship It, AR */}
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
           <span className="text-xs font-mono font-semibold text-emerald-400 mr-1">
             ₹{totalCost}
           </span>
-
-          {onOpenOrder && (
-            <button
-              onClick={onOpenOrder}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-white hover:bg-zinc-100 text-black text-xs font-medium transition"
-              title="Order hardware kit"
-            >
-              <ShoppingBag className="w-3 h-3 text-black" />
-              <span>Order It</span>
-            </button>
-          )}
 
           {onOpenShip && (
             <button
@@ -183,14 +172,6 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
                 Exploded View
               </button>
             </div>
-
-            <button
-              onClick={() => setBurstCount((c) => c + 1)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-[11px] font-medium hover:bg-emerald-900/80 transition"
-            >
-              <Sparkles className="w-3 h-3 text-emerald-400" />
-              <span>Burst Reveal</span>
-            </button>
           </div>
 
           {/* 3D Viewer Container: 420px desktop, 300px mobile */}
@@ -201,7 +182,6 @@ export const AssistantResultCard: React.FC<AssistantResultCardProps> = ({
               wiring={build.wiring}
               isExploded={isExploded}
               onExplodeToggle={setIsExploded}
-              burstTrigger={burstCount}
               materialTheme="acrylic"
               className="w-full h-full"
             />
