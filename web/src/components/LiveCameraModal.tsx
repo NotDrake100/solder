@@ -8,16 +8,16 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
-
-interface TrackedMarker {
-  id: string;
-  label: string;
-  confidence: number;
-  x: number; // percentage 0-100
-  y: number; // percentage 0-100
-  missCount: number;
-  nudgeY?: number;
-}
+import {
+  TrackedMarker,
+  RawDetection,
+  mergeDetections,
+  trackMarkers,
+  getVisibleMarkers,
+  preventLabelOverlap,
+  dedupePartsList,
+  FoundPartItem,
+} from '../utils/cameraTracking';
 
 interface LiveCameraModalProps {
   isOpen: boolean;
@@ -194,119 +194,50 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
 
   // 3. Update tracked markers with proximity/label matching and chip collision avoidance
   const updateDetections = (
-    newDetections: Array<{ label: string; box_2d: [number, number, number, number]; confidence: number }>
+    newDetections: RawDetection[]
   ) => {
-    // Add confident detections to running accumulated parts list
+    // Spatial merge: merge detections with same canonical name whose boxes overlap
+    // or whose centers are within ~25% frame width into a single marker at the merged box center
+    const merged = mergeDetections(newDetections);
+
+    // Update running accumulated parts with genuinely separate objects
     setAccumulatedParts((prev) => {
-      const updated = new Map(prev);
-      newDetections.forEach((d) => {
-        if (d.confidence >= 0.6) {
-          const cleanLabel = d.label.trim();
-          if (!updated.has(cleanLabel)) {
-            updated.set(cleanLabel, 1);
-          }
-        }
+      const updated = new Map<string, number>(prev);
+      const confident = merged.filter((d) => d.confidence >= 0.6);
+      const countsInFrame = new Map<string, number>();
+
+      confident.forEach((d) => {
+        countsInFrame.set(d.canonicalName, (countsInFrame.get(d.canonicalName) || 0) + 1);
       });
+
+      countsInFrame.forEach((count, canonicalName) => {
+        const existing = updated.get(canonicalName) || 0;
+        updated.set(canonicalName, Math.max(existing, count));
+      });
+
       return updated;
     });
 
+    // Track markers across frames with exponential smoothing and 2-consecutive detection gating
     setTrackedMarkers((prevTracked) => {
-      // Map detections to center points (percentages 0-100)
-      const mapped = newDetections.map((det) => {
-        const [ymin, xmin, ymax, xmax] = det.box_2d;
-        const centerX = (xmin + xmax) / 20; // 0-1000 -> 0-100%
-        const centerY = (ymin + ymax) / 20;
-        return {
-          label: det.label,
-          confidence: det.confidence,
-          x: Math.max(5, Math.min(95, centerX)),
-          y: Math.max(5, Math.min(95, centerY)),
-        };
-      });
-
-      const nextMarkers: TrackedMarker[] = [];
-      const usedIndices = new Set<number>();
-
-      // Match existing markers with closest new detection
-      prevTracked.forEach((marker) => {
-        let bestDist = Infinity;
-        let bestIdx = -1;
-
-        mapped.forEach((det, idx) => {
-          if (usedIndices.has(idx)) return;
-          const dist = Math.hypot(marker.x - det.x, marker.y - det.y);
-          const sameLabel = marker.label.toLowerCase() === det.label.toLowerCase();
-          const threshold = sameLabel ? 32 : 18;
-          if (dist < threshold && dist < bestDist) {
-            bestDist = dist;
-            bestIdx = idx;
-          }
-        });
-
-        if (bestIdx >= 0) {
-          usedIndices.add(bestIdx);
-          const match = mapped[bestIdx];
-          nextMarkers.push({
-            id: marker.id,
-            label: match.label,
-            confidence: match.confidence,
-            x: match.x,
-            y: match.y,
-            missCount: 0,
-          });
-        } else {
-          // Missed scan: keep if < 2 missed scans, prune after 2 missed scans
-          if (marker.missCount < 2) {
-            nextMarkers.push({
-              ...marker,
-              missCount: marker.missCount + 1,
-            });
-          }
-        }
-      });
-
-      // Add unmatched new detections as fresh markers
-      mapped.forEach((det, idx) => {
-        if (!usedIndices.has(idx)) {
-          nextMarkers.push({
-            id: `marker-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
-            label: det.label,
-            confidence: det.confidence,
-            x: det.x,
-            y: det.y,
-            missCount: 0,
-          });
-        }
-      });
-
-      // Collision avoidance for confident label chips (nudge vertically if colliding)
-      const confident = nextMarkers.filter((m) => m.confidence >= 0.6);
-      confident.sort((a, b) => a.y - b.y);
-
-      for (let i = 0; i < confident.length; i++) {
-        confident[i].nudgeY = 0;
-        for (let j = 0; j < i; j++) {
-          const m1 = confident[j];
-          const m2 = confident[i];
-          const sameSide = (m1.x > 70) === (m2.x > 70);
-          if (sameSide && Math.abs(m1.y - m2.y) < 7) {
-            m2.nudgeY = (m1.nudgeY || 0) + 26;
-          }
-        }
-      }
-
-      return nextMarkers;
+      const nextTracked = trackMarkers(prevTracked, merged);
+      return preventLabelOverlap(nextTracked);
     });
   };
 
   if (!isOpen) return null;
 
-  const foundItemsArray = Array.from(accumulatedParts.entries());
+  const foundItemsArray: FoundPartItem[] = dedupePartsList(
+    Array.from(accumulatedParts.entries()).map(([canonicalName, count]) => ({
+      canonicalName,
+      count,
+    }))
+  );
   const totalFoundCount = foundItemsArray.length;
 
   const handleUsePartsClick = () => {
-    const partsList = foundItemsArray.map(([name]) => name);
-    onUseParts(partsList.length ? partsList : ['Arduino Uno', 'DHT11 Sensor', '5V Relay']);
+    const partsList = foundItemsArray.map((item) => item.displayText);
+    onUseParts(partsList.length ? partsList : ['Arduino Uno', 'DHT11 Sensor', '5V Relay Module']);
     onClose();
   };
 
@@ -401,7 +332,7 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
 
             {/* Tracking Overlay with Center Markers & Side Chips (QA-CAMERA-MARKERS) */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {trackedMarkers.map((marker) => {
+              {getVisibleMarkers(trackedMarkers).map((marker) => {
                 const isHighConf = marker.confidence >= 0.6;
                 const isLeft = marker.x > 70;
 
@@ -413,7 +344,7 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
                       left: `${marker.x}%`,
                       top: `${marker.y}%`,
                       transform: 'translate(-50%, -50%)',
-                      opacity: marker.missCount > 0 ? 0.35 : 1,
+                      opacity: marker.missCount === 0 ? 1 : marker.missCount === 1 ? 0.4 : 0.2,
                     }}
                   >
                     {isHighConf ? (
@@ -496,13 +427,13 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
                 <span>Scanning for Arduino, sensors, relays...</span>
               </div>
             ) : (
-              foundItemsArray.map(([label]) => (
+              foundItemsArray.map((item) => (
                 <span
-                  key={label}
+                  key={item.canonicalName}
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#202020] border border-[#333] text-xs font-medium text-white shrink-0 animate-fadeIn"
                 >
                   <Check className="w-3 h-3 text-white" />
-                  <span>{label}</span>
+                  <span>{item.displayText}</span>
                 </span>
               ))
             )}

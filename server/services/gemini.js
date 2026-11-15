@@ -463,6 +463,142 @@ Return a JSON with:
 }
 
 /**
+ * Normalizes maker hardware labels to canonical component names.
+ */
+export function toCanonicalPartName(rawLabel) {
+  if (!rawLabel || typeof rawLabel !== 'string') return '';
+  const s = rawLabel.trim().toLowerCase();
+
+  if (s.includes('arduino') || s.includes('uno') || s.includes('atmega328')) {
+    return 'Arduino Uno';
+  }
+  if (
+    s.includes('esp32') ||
+    s.includes('esp-32') ||
+    s.includes('esp 32') ||
+    s.includes('wroom') ||
+    s.includes('devkit')
+  ) {
+    return 'ESP32';
+  }
+  if (s.includes('pi zero') || s.includes('pizero') || s.includes('rpi zero')) {
+    return 'Raspberry Pi Zero 2 W';
+  }
+  if (s.includes('raspberry') || s.includes('rpi')) {
+    return 'Raspberry Pi';
+  }
+  if (s.includes('relay')) {
+    return '5V Relay Module';
+  }
+  if (s.includes('servo') || s.includes('sg90')) {
+    return 'SG90 Servo';
+  }
+  if (s.includes('oled') || s.includes('ssd1306') || s.includes('0.96')) {
+    return 'OLED Display';
+  }
+  if (
+    s.includes('ultrasonic') ||
+    s.includes('sr04') ||
+    s.includes('hcsr04') ||
+    s.includes('distance sensor')
+  ) {
+    return 'HC-SR04 Ultrasonic';
+  }
+  if (
+    s.includes('dht11') ||
+    s.includes('dht-11') ||
+    s.includes('dht22') ||
+    s.includes('temp sensor') ||
+    s.includes('humidity')
+  ) {
+    return 'DHT11 Sensor';
+  }
+  if (s.includes('soil') || s.includes('moisture') || s.includes('hygrometer')) {
+    return 'Soil Moisture Sensor';
+  }
+  if (s.includes('breadboard')) {
+    return 'Breadboard';
+  }
+  if (s.includes('jumper') || s.includes('wire') || s.includes('cable')) {
+    return 'Jumper Wires';
+  }
+  if (s.includes('battery') || s.includes('18650') || s.includes('lipo')) {
+    return '18650 Battery';
+  }
+  if (s.includes('buzzer') || s.includes('piezo')) {
+    return 'Buzzer';
+  }
+  if (s.includes('led') || s.includes('light emitting diode')) {
+    return 'LED';
+  }
+  if (s.includes('button') || s.includes('pushbutton') || s.includes('switch')) {
+    return 'Push Button';
+  }
+  if (s.includes('potentiometer') || s.includes('pot')) {
+    return 'Potentiometer';
+  }
+
+  return rawLabel.trim().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Merges detections with the same canonical name whose boxes overlap or whose centers
+ * are within 250 units (25% of 1000) of frame width.
+ */
+export function normalizeAndMergeDetections(detections) {
+  if (!Array.isArray(detections)) return [];
+
+  const items = detections
+    .filter((d) => d && d.label && Array.isArray(d.box_2d) && d.box_2d.length === 4)
+    .map((d) => ({
+      label: toCanonicalPartName(d.label),
+      box_2d: [d.box_2d[0], d.box_2d[1], d.box_2d[2], d.box_2d[3]],
+      confidence: typeof d.confidence === 'number' ? d.confidence : 0.9,
+    }));
+
+  let merged = true;
+  while (merged) {
+    merged = false;
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const a = items[i];
+        const b = items[j];
+
+        if (a.label === b.label) {
+          const overlap = !(
+            a.box_2d[3] < b.box_2d[1] ||
+            a.box_2d[1] > b.box_2d[3] ||
+            a.box_2d[2] < b.box_2d[0] ||
+            a.box_2d[0] > b.box_2d[2]
+          );
+          const centerAX = (a.box_2d[1] + a.box_2d[3]) / 2;
+          const centerAY = (a.box_2d[0] + a.box_2d[2]) / 2;
+          const centerBX = (b.box_2d[1] + b.box_2d[3]) / 2;
+          const centerBY = (b.box_2d[0] + b.box_2d[2]) / 2;
+          const dist = Math.hypot(centerAX - centerBX, centerAY - centerBY);
+
+          if (overlap || dist <= 250) {
+            a.box_2d = [
+              Math.min(a.box_2d[0], b.box_2d[0]),
+              Math.min(a.box_2d[1], b.box_2d[1]),
+              Math.max(a.box_2d[2], b.box_2d[2]),
+              Math.max(a.box_2d[3], b.box_2d[3]),
+            ];
+            a.confidence = Math.max(a.confidence, b.confidence);
+            items.splice(j, 1);
+            merged = true;
+            break;
+          }
+        }
+      }
+      if (merged) break;
+    }
+  }
+
+  return items;
+}
+
+/**
  * Live Camera Mode:
  * Analyzes video frame (640px JPEG) with Gemini 3.8 Flash.
  * Returns structured electronics bounding boxes [ymin, xmin, ymax, xmax] 0-1000.
@@ -471,17 +607,19 @@ export async function detectPartsWithGeminiVision(imageBase64) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return [
-      { label: 'Arduino Uno R3', box_2d: [210, 160, 680, 540], confidence: 0.96 },
+    return normalizeAndMergeDetections([
+      { label: 'Arduino Uno', box_2d: [210, 160, 680, 540], confidence: 0.96 },
       { label: '5V Relay Module', box_2d: [340, 580, 590, 860], confidence: 0.91 },
-      { label: 'DHT11 Temp Sensor', box_2d: [620, 220, 820, 440], confidence: 0.88 },
+      { label: 'DHT11 Sensor', box_2d: [620, 220, 820, 440], confidence: 0.88 },
       { label: 'Jumper Wires', box_2d: [480, 480, 720, 620], confidence: 0.82 }
-    ];
+    ]);
   }
 
   const prompt = `Locate and label all electronics maker parts in this camera view.
-Target hardware components: Arduino Uno, ESP32, 5V Relay, SG90 Servo, OLED Display, HC-SR04 Ultrasonic, DHT11, Soil Moisture Sensor, Breadboard, Jumper Wires, Battery 18650, Buzzer, LED.
-For each part, provide label, box_2d [ymin, xmin, ymax, xmax] scaled 0 to 1000, and confidence. Only electronics parts.`;
+CRITICAL RULES:
+1. Exactly ONE entry per physical object. Do NOT detect multiple parts, pins, chips, or labels on the same board (e.g. an entire Arduino board must produce only ONE single bounding box for the entire board, not multiple boxes for components on it).
+2. Normalise names to canonical part names only. Use: "Arduino Uno" (not "Arduino Uno R3" or "Uno"), "ESP32", "Raspberry Pi Zero 2 W", "5V Relay Module", "SG90 Servo", "OLED Display", "HC-SR04 Ultrasonic", "DHT11 Sensor", "Soil Moisture Sensor", "Breadboard", "Jumper Wires", "18650 Battery", "Buzzer", "LED", "Push Button", "Potentiometer".
+3. Provide the full bounding box covering the entire physical object [ymin, xmin, ymax, xmax] scaled 0 to 1000, and confidence (0.0 to 1.0). Only electronics maker components.`;
 
   try {
     const rawData = imageBase64.replace(/^data:image\/\w+;base64,/, '');
@@ -507,18 +645,18 @@ For each part, provide label, box_2d [ymin, xmin, ymax, xmax] scaled 0 to 1000, 
     });
 
     if (Array.isArray(res) && res.length > 0) {
-      return res;
+      return normalizeAndMergeDetections(res);
     }
-    return [
-      { label: 'Arduino Uno R3', box_2d: [210, 160, 680, 540], confidence: 0.95 },
+    return normalizeAndMergeDetections([
+      { label: 'Arduino Uno', box_2d: [210, 160, 680, 540], confidence: 0.95 },
       { label: '5V Relay Module', box_2d: [340, 580, 590, 860], confidence: 0.90 }
-    ];
+    ]);
   } catch (err) {
     console.warn(`[Gemini Vision] Real-time detection error: ${err.message}. Using fallback tracking.`);
-    return [
-      { label: 'Arduino Uno R3', box_2d: [210, 160, 680, 540], confidence: 0.94 },
+    return normalizeAndMergeDetections([
+      { label: 'Arduino Uno', box_2d: [210, 160, 680, 540], confidence: 0.94 },
       { label: '5V Relay Module', box_2d: [340, 580, 590, 860], confidence: 0.89 },
-      { label: 'DHT11 Temp Sensor', box_2d: [620, 220, 820, 440], confidence: 0.87 }
-    ];
+      { label: 'DHT11 Sensor', box_2d: [620, 220, 820, 440], confidence: 0.87 }
+    ]);
   }
 }

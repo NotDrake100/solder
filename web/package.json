@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run src/utils/caseStl.test.ts && (bun test src/frontend.test.ts || bun run src/frontend.test.ts || node --test src/frontend.test.ts)"
+    "test": "vitest run src/utils/ && (bun test src/frontend.test.ts || bun run src/frontend.test.ts || node --test src/frontend.test.ts)"
   },
   "dependencies": {
     "avr8js": "0.21.1",
