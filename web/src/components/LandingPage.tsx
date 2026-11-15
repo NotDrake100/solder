@@ -7,9 +7,6 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
-  const [videoFailed, setVideoFailed] = useState(false);
-  const [cameraStillFailed, setCameraStillFailed] = useState(false);
-
   return (
     <div className="min-h-screen w-full bg-[#0a0a0a] text-[#f5f5f5] flex flex-col justify-between selection:bg-white selection:text-black antialiased">
       {/* 1. STICKY SLIM NAV */}
@@ -62,33 +59,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
 
           {/* HERO DEMO VIDEO (max-width 1100px, 16px radius, 1px #262626 border) */}
           <div className="w-full max-w-[1100px] rounded-2xl overflow-hidden border border-[#262626] bg-[#121212] shadow-2xl relative">
-            {!videoFailed ? (
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                poster="/demo-poster.jpg"
-                onError={() => setVideoFailed(true)}
-                className="w-full h-auto block rounded-2xl"
-              >
-                <source src="/demo-loop.mp4" type="video/mp4" />
-                <source src="/demo-loop.webm" type="video/webm" />
-                <img
-                  src="/landing-shot.png"
-                  alt="Solder finished build preview"
-                  className="w-full h-auto object-cover rounded-2xl"
-                  loading="lazy"
-                />
-              </video>
-            ) : (
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              poster="/demo-poster.jpg"
+              className="w-full h-auto block rounded-2xl"
+            >
+              <source src="/demo-loop.webm" type="video/webm" />
+              <source src="/demo-loop.mp4" type="video/mp4" />
               <img
-                src="/landing-shot.png"
+                src="/demo-poster.jpg"
                 alt="Solder finished build preview"
                 className="w-full h-auto object-cover rounded-2xl"
                 loading="lazy"
               />
-            )}
+            </video>
           </div>
         </section>
 
@@ -191,52 +178,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
               </div>
             </div>
 
-            {/* Right: Phone Frame with live scan still */}
+            {/* Right: Camera still (replacing mock phone) with detected parts chip kept inside its section */}
             <div className="flex justify-center md:justify-end">
-              <div className="w-full max-w-[340px] aspect-[9/16] rounded-[36px] p-3 border border-[#262626] bg-[#0d0d0d] shadow-2xl relative overflow-hidden flex flex-col justify-between">
-                {!cameraStillFailed ? (
-                  <img
-                    src="/camera-still.png"
-                    alt="Live camera scan still"
-                    onError={() => setCameraStillFailed(true)}
-                    className="w-full h-full object-cover rounded-[28px]"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-[28px] bg-[#141414] p-4 flex flex-col justify-between relative overflow-hidden">
-                    <div className="text-[11px] font-mono text-[#888] flex items-center justify-between">
-                      <span>SCANNING</span>
-                      <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    </div>
-
-                    {/* Mock markers matching marker-style-ref */}
-                    <div className="relative w-full h-48 my-auto">
-                      {/* Marker 1: Arduino Uno */}
-                      <div className="absolute top-4 left-6 flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-[10px] border-2 border-white bg-black/35 backdrop-blur-[2px] flex items-center justify-center">
-                          <span className="text-[9px] text-white select-none">▲</span>
-                        </div>
-                        <div className="px-2 py-0.5 rounded bg-white text-black font-sans text-[11px] font-medium shadow-sm">
-                          Arduino Uno 94%
-                        </div>
-                      </div>
-
-                      {/* Marker 2: 5V Relay */}
-                      <div className="absolute bottom-6 right-4 flex items-center gap-2">
-                        <div className="px-2 py-0.5 rounded bg-white text-black font-sans text-[11px] font-medium shadow-sm">
-                          5V Relay 91%
-                        </div>
-                        <div className="w-9 h-9 rounded-[10px] border-2 border-white bg-black/35 backdrop-blur-[2px] flex items-center justify-center">
-                          <span className="text-[9px] text-white select-none">▲</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl bg-black/80 border border-[#2a2a2a] text-center text-xs font-mono text-white">
-                      2 parts detected · Ready to build
-                    </div>
-                  </div>
-                )}
+              <div className="w-full max-w-[480px] rounded-2xl overflow-hidden border border-[#262626] bg-[#121212] shadow-2xl relative">
+                <img
+                  src="/camera-still.png"
+                  alt="Live camera scan still"
+                  className="w-full h-auto object-cover block rounded-2xl"
+                  loading="lazy"
+                />
+                <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 px-3 py-1.5 rounded-xl bg-black/80 border border-[#333] text-center text-xs font-mono text-white backdrop-blur-md shadow-lg pointer-events-none">
+                  2 parts detected · Ready to build
+                </div>
               </div>
             </div>
           </div>

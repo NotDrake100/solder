@@ -233,11 +233,11 @@ export function createServer() {
           fs.createReadStream(imagePath).pipe(res);
           return;
         }
-        // Fallback to landing-shot.png
-        const fallbackPath = path.resolve(__dirname, '../web/public/landing-shot.png');
+        // Fallback to demo-poster.jpg
+        const fallbackPath = path.resolve(__dirname, '../web/public/demo-poster.jpg');
         if (fs.existsSync(fallbackPath)) {
           setCorsHeaders(res);
-          res.writeHead(200, { 'Content-Type': 'image/png' });
+          res.writeHead(200, { 'Content-Type': 'image/jpeg' });
           fs.createReadStream(fallbackPath).pipe(res);
           return;
         }
