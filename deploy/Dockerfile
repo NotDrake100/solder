@@ -1,13 +1,13 @@
 # ==============================================================================
 # Solder Production Dockerfile
-# Multi-stage build: Frontend Vite builder + Node.js 20 & arduino-cli runtime
+# Multi-stage build: Frontend Vite builder + Node.js 22 & arduino-cli runtime
 # Zero Secrets Policy: GEMINI_API_KEY is injected at container runtime via env.
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
 # Stage 1: Build Frontend Assets (Vite + React + Tailwind)
 # ------------------------------------------------------------------------------
-FROM node:20-bookworm-slim AS web-builder
+FROM node:22-bookworm-slim AS web-builder
 WORKDIR /app
 
 # Install frontend dependencies
@@ -23,9 +23,9 @@ WORKDIR /app/web
 RUN npm run build
 
 # ------------------------------------------------------------------------------
-# Stage 2: Runtime Container (Node 20 + arduino-cli with AVR core)
+# Stage 2: Runtime Container (Node 22 + arduino-cli with AVR core)
 # ------------------------------------------------------------------------------
-FROM node:20-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 
 LABEL maintainer="Solder Swarm Team"
 LABEL description="Solder - Idea to hardware build engine with 3D viewer & AVR simulation"

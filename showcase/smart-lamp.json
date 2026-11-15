@@ -1,0 +1,298 @@
+{
+  "id": "smart-lamp",
+  "name": "Smart lamp",
+  "tagline": "Voice & motion-activated ambient smart lamp with OLED dashboard",
+  "summary": "Wisp continuously measures VOCs, CO2 concentration, ambient temperature, and relative humidity. An animated OLED dashboard visualizes indoor air comfort indexes and triggers an acoustic alarm whenever volatile gas spikes are detected.",
+  "board": "esp32",
+  "parts": [
+    {
+      "id": "part-mcu",
+      "name": "ESP32 DevKit V1",
+      "libId": "esp32_devkit",
+      "qty": 1,
+      "priceInr": 380,
+      "why": "Dual-core 240MHz MCU with 12-bit ADC channels and onboard 2.4GHz WiFi/BLE."
+    },
+    {
+      "id": "part-gas",
+      "name": "MQ-135 Air Quality & Hazardous Gas Sensor",
+      "libId": "mq135",
+      "qty": 1,
+      "priceInr": 160,
+      "why": "Sensitive SnO2 electro-chemical sensor for NH3, NOx, alcohol, benzene, and smoke."
+    },
+    {
+      "id": "part-dht",
+      "name": "DHT11 Temperature & Relative Humidity Sensor",
+      "libId": "dht11",
+      "qty": 1,
+      "priceInr": 110,
+      "why": "Digital calibrated ambient temperature (0-50°C) and humidity (20-90% RH) probe."
+    },
+    {
+      "id": "part-display",
+      "name": "0.96 inch I2C OLED Display",
+      "libId": "oled_096",
+      "qty": 1,
+      "priceInr": 220,
+      "why": "High-contrast monochrome display showing live ppm graphs and comfort status."
+    },
+    {
+      "id": "part-buzzer",
+      "name": "5V Active Piezo Buzzer",
+      "libId": "piezo_buzzer",
+      "qty": 1,
+      "priceInr": 30,
+      "why": "Audible alert sounder for hazardous indoor air conditions."
+    }
+  ],
+  "layout": [
+    {
+      "libId": "esp32_devkit",
+      "name": "ESP32 DevKit V1",
+      "x": 10,
+      "y": 12,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "mq135",
+      "name": "MQ-135 Gas Sensor",
+      "x": 68,
+      "y": 10,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "dht11",
+      "name": "DHT11 Climate Sensor",
+      "x": 68,
+      "y": 48,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "piezo_buzzer",
+      "name": "Piezo Buzzer",
+      "x": 10,
+      "y": 68,
+      "z": 2,
+      "rotZ": 0
+    },
+    {
+      "libId": "oled_096",
+      "name": "0.96\" OLED Display",
+      "x": 38,
+      "y": 38,
+      "z": 20,
+      "rotZ": 0
+    }
+  ],
+  "case": {
+    "wallMm": 2,
+    "lidType": "snap-fit",
+    "outerMm": [
+      112,
+      85,
+      34
+    ],
+    "material": "translucent_resin",
+    "color": "#3b82f6",
+    "scad": "// Solder Wisp Enclosure - Procedural OpenSCAD\n$fn = 36;\nwall = 2.0;\ninner_x = 108.0;\ninner_y = 81.0;\ninner_z = 30.0;\nouter_x = inner_x + 2*wall;\nouter_y = inner_y + 2*wall;\nouter_z = inner_z + 2*wall;\n\nmodule wisp_enclosure() {\n  difference() {\n    cube([outer_x, outer_y, outer_z]);\n    translate([wall, wall, wall])\n      cube([inner_x, inner_y, inner_z + 1]);\n    // MicroUSB / Type-C cutouts\n    translate([-1, 18, wall + 2])\n      cube([wall + 2, 12, 8]);\n    // Honeycomb air ventilation mesh for MQ-135\n    for (r = [0:3]) {\n      for (c = [0:4]) {\n        translate([outer_x - wall - 1, 15 + (c*5), wall + 6 + (r*5)])\n          cube([wall + 2, 2.5, 2.5]);\n      }\n    }\n  }\n}\n\nmodule wisp_lid() {\n  difference() {\n    cube([outer_x, outer_y, wall + 2]);\n    // OLED Bezel Window\n    translate([wall + 38, wall + 38, -1])\n      cube([27, 18, wall + 4]);\n    // Buzzer sound aperture\n    translate([wall + 16, wall + 72, -1])\n      cylinder(r = 2.5, h = wall + 4);\n  }\n}\n\nwisp_enclosure();\ntranslate([0, outer_y + 12, 0]) wisp_lid();\n"
+  },
+  "wiring": [
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "3V3"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "3V3"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO21"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "SDA"
+      },
+      "color": "#10b981",
+      "signal": "I2C SDA"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO22"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "SCL"
+      },
+      "color": "#06b6d4",
+      "signal": "I2C SCL"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "VIN"
+      },
+      "to": {
+        "part": "mq135",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "5V Power"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "mq135",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO34"
+      },
+      "to": {
+        "part": "mq135",
+        "pin": "AO"
+      },
+      "color": "#eab308",
+      "signal": "Gas Analog AO"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "3V3"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "3V3"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO4"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "DATA"
+      },
+      "color": "#a855f7",
+      "signal": "DHT Data"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO18"
+      },
+      "to": {
+        "part": "piezo_buzzer",
+        "pin": "POS"
+      },
+      "color": "#f97316",
+      "signal": "Alarm Buzzer"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "piezo_buzzer",
+        "pin": "NEG"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    }
+  ],
+  "code": {
+    "filename": "wisp.ino",
+    "ino": "#include <Wire.h>\n\nconst int GAS_PIN = 34;\nconst int DHT_PIN = 4;\nconst int BUZZER_PIN = 18;\nconst int GAS_ALERT_THRESHOLD = 350;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(BUZZER_PIN, OUTPUT);\n  digitalWrite(BUZZER_PIN, LOW);\n  \n  Serial.println(F(\"--- Solder Wisp Air Quality Guardian ---\"));\n  Serial.println(F(\"Monitoring MQ-135 Volatiles & DHT11 Temperature/RH\"));\n}\n\nvoid loop() {\n  int gasRaw = analogRead(GAS_PIN); // 0-4095 on ESP32\n  int gasPpm = map(gasRaw, 0, 4095, 20, 1000);\n  \n  Serial.print(F(\"AIR QUALITY: \"));\n  \n  if (gasPpm > GAS_ALERT_THRESHOLD) {\n    Serial.print(F(\"POOR (\"));\n    Serial.print(gasPpm);\n    Serial.println(F(\" ppm) -> ALARM_ON\"));\n    digitalWrite(BUZZER_PIN, HIGH); // Alarm chime\n  } else {\n    Serial.print(F(\"GOOD (\"));\n    Serial.print(gasPpm);\n    Serial.println(F(\" ppm) | AMBIENT_NOMINAL\"));\n    digitalWrite(BUZZER_PIN, LOW);\n  }\n  \n  delay(1000);\n}\n"
+  },
+  "tests": [
+    {
+      "name": "Hazardous Gas Spikes Trigger Buzzer",
+      "set": {
+        "mq135": 450,
+        "dht11_temp": 28
+      },
+      "expectPin": {
+        "pin": 18,
+        "state": 1
+      },
+      "expectSerial": "AIR_QUALITY: POOR -> ALARM_ON"
+    },
+    {
+      "name": "Clean Air Ambient Mode",
+      "set": {
+        "mq135": 90,
+        "dht11_temp": 24
+      },
+      "expectPin": {
+        "pin": 18,
+        "state": 0
+      },
+      "expectSerial": "AIR_QUALITY: GOOD"
+    }
+  ],
+  "product": {
+    "pageHeadline": "Breathe cleaner air in your home and creative studio.",
+    "bullets": [
+      "Precision MQ-135 sensor detecting carbon monoxide, ammonia, benzene, and smoke",
+      "Microsecond temperature and relative humidity tracking for optimal comfort",
+      "Translucent frosted enclosure with directional ambient airflow channels",
+      "Dual-core ESP32 architecture capable of local MQTT and Home Assistant telemetry"
+    ],
+    "priceInr": 1490,
+    "boxSvg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 500\" width=\"100%\" height=\"100%\">\n  <defs>\n    <linearGradient id=\"wisp-grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">\n      <stop offset=\"0%\" stop-color=\"#1e3a8a\" />\n      <stop offset=\"100%\" stop-color=\"#0f172a\" />\n    </linearGradient>\n  </defs>\n  <rect width=\"800\" height=\"500\" rx=\"16\" fill=\"url(#wisp-grad)\" />\n  <rect x=\"30\" y=\"30\" width=\"740\" height=\"440\" rx=\"8\" fill=\"none\" stroke=\"rgba(255,255,255,0.2)\" stroke-dasharray=\"6 4\" stroke-width=\"1.5\" />\n  <text x=\"60\" y=\"90\" fill=\"#60a5fa\" font-family=\"system-ui, sans-serif\" font-size=\"14\" font-weight=\"700\" letter-spacing=\"3\">SOLDER HARDWARE KIT #02</text>\n  <text x=\"60\" y=\"150\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"56\" font-weight=\"800\" letter-spacing=\"-1\">Wisp</text>\n  <text x=\"60\" y=\"185\" fill=\"#93c5fd\" font-family=\"system-ui, sans-serif\" font-size=\"18\" font-weight=\"400\">Indoor Air Quality & Volatile Gas Station</text>\n  <g transform=\"translate(540, 80)\">\n    <rect width=\"190\" height=\"190\" rx=\"16\" fill=\"rgba(255,255,255,0.06)\" stroke=\"#3b82f6\" stroke-width=\"2\" />\n    <circle cx=\"95\" cy=\"95\" r=\"55\" fill=\"none\" stroke=\"#60a5fa\" stroke-width=\"2\" />\n    <circle cx=\"95\" cy=\"95\" r=\"35\" fill=\"none\" stroke=\"#3b82f6\" stroke-width=\"2\" stroke-dasharray=\"8 4\" />\n    <text x=\"95\" y=\"100\" text-anchor=\"middle\" fill=\"#60a5fa\" font-family=\"system-ui, sans-serif\" font-size=\"14\" font-weight=\"700\">VOC / AQI</text>\n  </g>\n  <g transform=\"translate(60, 240)\">\n    <text x=\"0\" y=\"0\" fill=\"#60a5fa\" font-family=\"system-ui, sans-serif\" font-size=\"13\" font-weight=\"700\">SYSTEM SPECS</text>\n    <text x=\"0\" y=\"28\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• MCU: ESP32-WROOM-32 (240MHz Tensilica LX6 Dual-Core)</text>\n    <text x=\"0\" y=\"54\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Sensors: MQ-135 Gas Chamber + DHT11 Digital Temp/RH</text>\n    <text x=\"0\" y=\"80\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Alert: 85dB Acoustic Warning Sounder</text>\n    <text x=\"0\" y=\"106\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Display: 0.96\" 128x64 Blue Monochrome I2C OLED</text>\n    <text x=\"0\" y=\"132\" fill=\"#e2e8f0\" font-family=\"system-ui, sans-serif\" font-size=\"14\">• Case: Translucent SLA Resin / Matte PLA with Vent Grids</text>\n  </g>\n  <g transform=\"translate(60, 420)\">\n    <text x=\"0\" y=\"0\" fill=\"#ffffff\" font-family=\"system-ui, sans-serif\" font-size=\"24\" font-weight=\"800\">₹1,490</text>\n    <text x=\"100\" y=\"-2\" fill=\"#94a3b8\" font-family=\"system-ui, sans-serif\" font-size=\"13\">Complete DIY Pack</text>\n  </g>\n</svg>"
+  },
+  "buildSteps": [
+    "Step 1: 3D print the vented Wisp case and snap-fit lid using frosted acrylic or clear resin.",
+    "Step 2: Press-fit the ESP32 DevKit into the base retaining clips.",
+    "Step 3: Insert the MQ-135 gas sensor facing the side ventilation honeycomb.",
+    "Step 4: Mount the DHT11 temp/humidity probe and connect data line to GPIO4.",
+    "Step 5: Install the OLED display into the lid bezel window and wire I2C SDA/SCL to GPIO21/22.",
+    "Step 6: Connect the piezo buzzer to GPIO18 and power on via USB Type-C."
+  ]
+}

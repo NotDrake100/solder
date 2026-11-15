@@ -1,0 +1,32 @@
+# Secrets and env — never bake into the image
+.env
+.env.*
+**/.env
+**/.env.*
+**/*secret*
+**/*credentials*
+*.pem
+*.key
+
+# Dependencies and build outputs (rebuilt in the image)
+**/node_modules
+**/.vite
+**/dist
+web/dist
+cache_store
+server/cache_store
+server/data
+**/*.log
+
+# VCS and local tooling
+.git
+.gitignore
+.gcloudignore
+.cursor
+.vscode
+docs
+docs/
+showcase/.git
+*.md
+!README.md
+!deploy/README.md

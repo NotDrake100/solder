@@ -1,0 +1,19 @@
+# Upload context for Cloud Build / Cloud Run source deploy
+.git
+.gcloudignore
+.env
+.env.*
+**/.env
+**/.env.*
+**/node_modules
+**/.vite
+cache_store
+server/cache_store
+server/data
+**/*.log
+docs
+docs/
+docs/agy-logs
+docs/qa
+docs/landing-assets
+docs/layout-ref

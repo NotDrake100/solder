@@ -8,6 +8,8 @@ import eaveRaw from '../../../showcase/eave.json';
 import pocketAiRaw from '../../../showcase/pocket-ai.json';
 import robotCarRaw from '../../../showcase/robot-car.json';
 import macroPadRaw from '../../../showcase/macro-pad.json';
+import smartLampRaw from '../../../showcase/smart-lamp.json';
+import weatherStationRaw from '../../../showcase/weather-station.json';
 
 export const DESK_FAN_BUILD: SolderBuild = {
   id: 'desk-fan',
@@ -164,6 +166,8 @@ void loop() {
 export const SHOWCASE_BUILDS: Record<string, SolderBuild> = {
   'pocket-ai': pocketAiRaw as unknown as SolderBuild,
   sip: sipRaw as unknown as SolderBuild,
+  'smart-lamp': smartLampRaw as unknown as SolderBuild,
+  'weather-station': weatherStationRaw as unknown as SolderBuild,
   wisp: wispRaw as unknown as SolderBuild,
   eave: eaveRaw as unknown as SolderBuild,
   'robot-car': robotCarRaw as unknown as SolderBuild,

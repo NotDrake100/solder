@@ -6,8 +6,8 @@ import { ProductThumbnail } from './ProductThumbnails';
 const SHOWCASE_PRODUCTS = [
   { id: 'pocket-ai', label: 'Pi pocket AI assistant' },
   { id: 'sip', label: 'Plant monitor' },
-  { id: 'wisp', label: 'Smart lamp' },
-  { id: 'eave', label: 'Weather station' },
+  { id: 'smart-lamp', label: 'Smart lamp' },
+  { id: 'weather-station', label: 'Weather station' },
   { id: 'robot-car', label: 'Robot car' },
   { id: 'hasp', label: 'Doorbell' },
   { id: 'desk-fan', label: 'Desk fan' },
@@ -122,7 +122,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
                 }}
                 aria-label={product.label}
                 title={product.label}
-                className="group relative p-4 sm:p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#555] hover:-translate-y-1 card-hover-gpu transform-gpu cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden"
+                className="group relative p-2 sm:p-3 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#555] hover:-translate-y-1 card-hover-gpu transform-gpu cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden"
               >
                 <div
                   style={{

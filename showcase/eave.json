@@ -1,6 +1,6 @@
 {
   "id": "eave",
-  "name": "Air monitor",
+  "name": "Weather station",
   "tagline": "Solar-ready micro environmental and precipitation station",
   "summary": "Eave mounts under roof eaves or balconies to measure ambient temperature, relative humidity, and non-contact precipitation or water reservoir levels via an ultrasonic transceiver. Designed for solar and battery powered long-range telemetry.",
   "board": "esp32",
@@ -89,25 +89,150 @@
     }
   ],
   "case": {
-    "wallMm": 2.0,
+    "wallMm": 2,
     "lidType": "snap-fit",
-    "outerMm": [126, 92, 38],
+    "outerMm": [
+      126,
+      92,
+      38
+    ],
     "material": "matte_pla",
     "color": "#0284c7",
     "scad": "// Solder Eave Weather Station Enclosure - Procedural OpenSCAD\n$fn = 36;\nwall = 2.0;\ninner_x = 122.0;\ninner_y = 88.0;\ninner_z = 34.0;\nouter_x = inner_x + 2*wall;\nouter_y = inner_y + 2*wall;\nouter_z = inner_z + 2*wall;\n\nmodule eave_housing() {\n  difference() {\n    cube([outer_x, outer_y, outer_z]);\n    translate([wall, wall, wall])\n      cube([inner_x, inner_y, inner_z + 1]);\n    // HC-SR04 ultrasonic transducer twin ports\n    translate([outer_x - wall - 1, 22, wall + 10])\n      rotate([0, 90, 0]) cylinder(r = 8.1, h = wall + 2);\n    translate([outer_x - wall - 1, 48, wall + 10])\n      rotate([0, 90, 0]) cylinder(r = 8.1, h = wall + 2);\n    // Slanted weather baffle vents for DHT11\n    for (i = [0:4]) {\n      translate([-1, 30 + (i*6), wall + 5])\n        cube([wall + 2, 3, 10]);\n    }\n  }\n}\n\nmodule eave_lid() {\n  difference() {\n    cube([outer_x, outer_y, wall + 2]);\n    // Diagnostic OLED window\n    translate([wall + 40, wall + 40, -1])\n      cube([27, 17, wall + 4]);\n    // Solar cable gland notch\n    translate([outer_x/2 - 5, -1, wall])\n      cube([10, wall + 2, 3]);\n  }\n}\n\neave_housing();\ntranslate([0, outer_y + 12, 0]) eave_lid();\n"
   },
   "wiring": [
-    { "from": { "part": "esp32_devkit", "pin": "VIN" }, "to": { "part": "ultrasonic_hcsr04", "pin": "VCC" }, "color": "#e11d48", "signal": "5V Power" },
-    { "from": { "part": "esp32_devkit", "pin": "GND" }, "to": { "part": "ultrasonic_hcsr04", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO5" }, "to": { "part": "ultrasonic_hcsr04", "pin": "TRIG" }, "color": "#eab308", "signal": "Ultrasonic TRIG" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO18" }, "to": { "part": "ultrasonic_hcsr04", "pin": "ECHO" }, "color": "#3b82f6", "signal": "Ultrasonic ECHO" },
-    { "from": { "part": "esp32_devkit", "pin": "3V3" }, "to": { "part": "dht11", "pin": "VCC" }, "color": "#e11d48", "signal": "3V3 Power" },
-    { "from": { "part": "esp32_devkit", "pin": "GND" }, "to": { "part": "dht11", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO4" }, "to": { "part": "dht11", "pin": "DATA" }, "color": "#a855f7", "signal": "DHT Data" },
-    { "from": { "part": "esp32_devkit", "pin": "3V3" }, "to": { "part": "oled_096", "pin": "VCC" }, "color": "#e11d48", "signal": "3V3 Power" },
-    { "from": { "part": "esp32_devkit", "pin": "GND" }, "to": { "part": "oled_096", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO21" }, "to": { "part": "oled_096", "pin": "SDA" }, "color": "#10b981", "signal": "I2C SDA" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO22" }, "to": { "part": "oled_096", "pin": "SCL" }, "color": "#06b6d4", "signal": "I2C SCL" }
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "VIN"
+      },
+      "to": {
+        "part": "ultrasonic_hcsr04",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "5V Power"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "ultrasonic_hcsr04",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO5"
+      },
+      "to": {
+        "part": "ultrasonic_hcsr04",
+        "pin": "TRIG"
+      },
+      "color": "#eab308",
+      "signal": "Ultrasonic TRIG"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO18"
+      },
+      "to": {
+        "part": "ultrasonic_hcsr04",
+        "pin": "ECHO"
+      },
+      "color": "#3b82f6",
+      "signal": "Ultrasonic ECHO"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "3V3"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "3V3 Power"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO4"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "DATA"
+      },
+      "color": "#a855f7",
+      "signal": "DHT Data"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "3V3"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "3V3 Power"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO21"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "SDA"
+      },
+      "color": "#10b981",
+      "signal": "I2C SDA"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO22"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "SCL"
+      },
+      "color": "#06b6d4",
+      "signal": "I2C SCL"
+    }
   ],
   "code": {
     "filename": "eave.ino",
@@ -116,12 +241,18 @@
   "tests": [
     {
       "name": "High Water Level Warning",
-      "set": { "distance_cm": 5, "dht11_temp": 31 },
+      "set": {
+        "distance_cm": 5,
+        "dht11_temp": 31
+      },
       "expectSerial": "RAIN_LEVEL: WARNING HIGH"
     },
     {
       "name": "Normal Ambient Reporting",
-      "set": { "distance_cm": 45, "dht11_temp": 24 },
+      "set": {
+        "distance_cm": 45,
+        "dht11_temp": 24
+      },
       "expectSerial": "WEATHER_STATION: OK"
     }
   ],

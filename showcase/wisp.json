@@ -1,6 +1,6 @@
 {
   "id": "wisp",
-  "name": "Night light",
+  "name": "Smart lamp",
   "tagline": "Real-time indoor air quality, humidity, and volatile gas detector",
   "summary": "Wisp continuously measures VOCs, CO2 concentration, ambient temperature, and relative humidity. An animated OLED dashboard visualizes indoor air comfort indexes and triggers an acoustic alarm whenever volatile gas spikes are detected.",
   "board": "esp32",
@@ -89,26 +89,162 @@
     }
   ],
   "case": {
-    "wallMm": 2.0,
+    "wallMm": 2,
     "lidType": "snap-fit",
-    "outerMm": [112, 85, 34],
+    "outerMm": [
+      112,
+      85,
+      34
+    ],
     "material": "translucent_resin",
     "color": "#3b82f6",
     "scad": "// Solder Wisp Enclosure - Procedural OpenSCAD\n$fn = 36;\nwall = 2.0;\ninner_x = 108.0;\ninner_y = 81.0;\ninner_z = 30.0;\nouter_x = inner_x + 2*wall;\nouter_y = inner_y + 2*wall;\nouter_z = inner_z + 2*wall;\n\nmodule wisp_enclosure() {\n  difference() {\n    cube([outer_x, outer_y, outer_z]);\n    translate([wall, wall, wall])\n      cube([inner_x, inner_y, inner_z + 1]);\n    // MicroUSB / Type-C cutouts\n    translate([-1, 18, wall + 2])\n      cube([wall + 2, 12, 8]);\n    // Honeycomb air ventilation mesh for MQ-135\n    for (r = [0:3]) {\n      for (c = [0:4]) {\n        translate([outer_x - wall - 1, 15 + (c*5), wall + 6 + (r*5)])\n          cube([wall + 2, 2.5, 2.5]);\n      }\n    }\n  }\n}\n\nmodule wisp_lid() {\n  difference() {\n    cube([outer_x, outer_y, wall + 2]);\n    // OLED Bezel Window\n    translate([wall + 38, wall + 38, -1])\n      cube([27, 18, wall + 4]);\n    // Buzzer sound aperture\n    translate([wall + 16, wall + 72, -1])\n      cylinder(r = 2.5, h = wall + 4);\n  }\n}\n\nwisp_enclosure();\ntranslate([0, outer_y + 12, 0]) wisp_lid();\n"
   },
   "wiring": [
-    { "from": { "part": "esp32_devkit", "pin": "3V3" }, "to": { "part": "oled_096", "pin": "VCC" }, "color": "#e11d48", "signal": "3V3" },
-    { "from": { "part": "esp32_devkit", "pin": "GND" }, "to": { "part": "oled_096", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO21" }, "to": { "part": "oled_096", "pin": "SDA" }, "color": "#10b981", "signal": "I2C SDA" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO22" }, "to": { "part": "oled_096", "pin": "SCL" }, "color": "#06b6d4", "signal": "I2C SCL" },
-    { "from": { "part": "esp32_devkit", "pin": "VIN" }, "to": { "part": "mq135", "pin": "VCC" }, "color": "#e11d48", "signal": "5V Power" },
-    { "from": { "part": "esp32_devkit", "pin": "GND" }, "to": { "part": "mq135", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO34" }, "to": { "part": "mq135", "pin": "AO" }, "color": "#eab308", "signal": "Gas Analog AO" },
-    { "from": { "part": "esp32_devkit", "pin": "3V3" }, "to": { "part": "dht11", "pin": "VCC" }, "color": "#e11d48", "signal": "3V3" },
-    { "from": { "part": "esp32_devkit", "pin": "GND" }, "to": { "part": "dht11", "pin": "GND" }, "color": "#18181b", "signal": "GND" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO4" }, "to": { "part": "dht11", "pin": "DATA" }, "color": "#a855f7", "signal": "DHT Data" },
-    { "from": { "part": "esp32_devkit", "pin": "GPIO18" }, "to": { "part": "piezo_buzzer", "pin": "POS" }, "color": "#f97316", "signal": "Alarm Buzzer" },
-    { "from": { "part": "esp32_devkit", "pin": "GND" }, "to": { "part": "piezo_buzzer", "pin": "NEG" }, "color": "#18181b", "signal": "GND" }
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "3V3"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "3V3"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO21"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "SDA"
+      },
+      "color": "#10b981",
+      "signal": "I2C SDA"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO22"
+      },
+      "to": {
+        "part": "oled_096",
+        "pin": "SCL"
+      },
+      "color": "#06b6d4",
+      "signal": "I2C SCL"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "VIN"
+      },
+      "to": {
+        "part": "mq135",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "5V Power"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "mq135",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO34"
+      },
+      "to": {
+        "part": "mq135",
+        "pin": "AO"
+      },
+      "color": "#eab308",
+      "signal": "Gas Analog AO"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "3V3"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "VCC"
+      },
+      "color": "#e11d48",
+      "signal": "3V3"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "GND"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO4"
+      },
+      "to": {
+        "part": "dht11",
+        "pin": "DATA"
+      },
+      "color": "#a855f7",
+      "signal": "DHT Data"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GPIO18"
+      },
+      "to": {
+        "part": "piezo_buzzer",
+        "pin": "POS"
+      },
+      "color": "#f97316",
+      "signal": "Alarm Buzzer"
+    },
+    {
+      "from": {
+        "part": "esp32_devkit",
+        "pin": "GND"
+      },
+      "to": {
+        "part": "piezo_buzzer",
+        "pin": "NEG"
+      },
+      "color": "#18181b",
+      "signal": "GND"
+    }
   ],
   "code": {
     "filename": "wisp.ino",
@@ -117,14 +253,26 @@
   "tests": [
     {
       "name": "Hazardous Gas Spikes Trigger Buzzer",
-      "set": { "mq135": 450, "dht11_temp": 28 },
-      "expectPin": { "pin": 18, "state": 1 },
+      "set": {
+        "mq135": 450,
+        "dht11_temp": 28
+      },
+      "expectPin": {
+        "pin": 18,
+        "state": 1
+      },
       "expectSerial": "AIR_QUALITY: POOR -> ALARM_ON"
     },
     {
       "name": "Clean Air Ambient Mode",
-      "set": { "mq135": 90, "dht11_temp": 24 },
-      "expectPin": { "pin": 18, "state": 0 },
+      "set": {
+        "mq135": 90,
+        "dht11_temp": 24
+      },
+      "expectPin": {
+        "pin": 18,
+        "state": 0
+      },
       "expectSerial": "AIR_QUALITY: GOOD"
     }
   ],
