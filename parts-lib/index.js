@@ -19,7 +19,16 @@ const partsList = [
   'ultrasonic_hcsr04',
   'ldr_sensor',
   'led_lamp',
-  'pir_motion'
+  'pir_motion',
+  'inmp441_mic',
+  'max98357a_amp',
+  'speaker_3w_4ohm',
+  'tactile_button',
+  'lipo_2000mah',
+  'powerboost_1000c',
+  'rpi_zero_2w',
+  'rpi_5',
+  'rpi_camera_v3'
 ];
 
 export const ALL_PARTS = [];
