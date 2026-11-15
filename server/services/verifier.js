@@ -260,7 +260,7 @@ export function checkPinConflicts(build) {
     }
   }
 
-  const durationMs = Date.now() - start;
+  const durationMs = Math.max(1, Math.round(performance.now() - start));
   const pass = errors.length === 0;
 
   return {
@@ -374,7 +374,7 @@ export function checkPowerBudget(build) {
  * - Validates 5V vs 3.3V signalling between MCU and peripheral ICs
  */
 export function checkVoltageCompat(build) {
-  const start = Date.now();
+  const start = performance.now();
   const board = (build.board || 'uno').toLowerCase();
   const isPi = board.includes('rpi') || board.includes('pi');
   const boardLogic = (board === 'esp32' || isPi) ? 3.3 : 5.0;
@@ -402,7 +402,7 @@ export function checkVoltageCompat(build) {
     }
   }
 
-  const durationMs = Date.now() - start;
+  const durationMs = Math.max(1, Math.round(performance.now() - start));
   const pass = errors.length === 0;
 
   return {
@@ -424,7 +424,7 @@ export function checkVoltageCompat(build) {
  * - Returns first real compiler error line on failure
  */
 export async function checkCompile(build) {
-  const start = Date.now();
+  const start = performance.now();
   const board = (build.board || 'uno').toLowerCase();
   const isPi = board.includes('rpi') || board.includes('pi') || (build.code?.filename || '').endsWith('.py');
   const code = build.code?.py || build.code?.ino || '';
@@ -447,7 +447,7 @@ export async function checkCompile(build) {
       errors.push(evidence);
     }
 
-    const durationMs = Date.now() - start;
+    const durationMs = Math.max(1, Math.round(performance.now() - start));
     return {
       id: 'compile',
       label: 'Firmware Compilation (python3)',
@@ -494,7 +494,7 @@ export async function checkCompile(build) {
         build._compiledHex = await fs.promises.readFile(path.join(outDir, hexFile), 'utf8');
       }
 
-      const durationMs = Date.now() - start;
+      const durationMs = Math.max(1, Math.round(performance.now() - start));
       return {
         id: 'compile',
         label: 'Firmware Compilation (arduino:avr:uno)',
@@ -590,7 +590,7 @@ export async function checkCompile(build) {
     errors.push(`sketch.ino: error: unmatched braces (${braceCount > 0 ? 'missing }' : 'stray }'})`);
   }
 
-  const durationMs = Date.now() - start;
+  const durationMs = Math.max(1, Math.round(performance.now() - start));
   const pass = errors.length === 0;
 
   return {

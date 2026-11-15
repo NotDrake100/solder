@@ -154,7 +154,7 @@ export async function runAgentLoop(buildData, emit) {
         status: check.skipped ? 'skipped' : check.pass ? 'pass' : 'fail',
         skipped: Boolean(check.skipped),
         evidence: check.evidence,
-        durationMs: check.durationMs,
+        durationMs: typeof check.durationMs === 'number' ? Math.max(1, Math.round(check.durationMs)) : undefined,
         round,
         timestamp: timestamp(),
       });

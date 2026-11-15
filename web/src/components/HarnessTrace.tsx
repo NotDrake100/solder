@@ -343,7 +343,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                       )}
                       {!isSkipped && chk.durationMs !== undefined && chk.durationMs !== null ? (
                         <span className="mono text-[11px] text-[#666]">
-                          {Math.max(1, chk.durationMs)}ms
+                          {Math.max(1, Math.round(chk.durationMs))}ms
                         </span>
                       ) : null}
                     </div>
