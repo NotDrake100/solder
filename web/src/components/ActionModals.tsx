@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ShoppingBag, Box, Check, Copy, ExternalLink, QrCode, Sparkles, Download } from 'lucide-react';
 import type { SolderBuild } from '../types';
 import { downloadBuildKit } from '../utils/kitDownloader';
+import { generateCaseStl } from '../utils/caseStl';
 import { getOffersForPart, getCheapestInStockPrice } from '../data/partPrices';
 import { getBomTotal } from './HarnessTrace';
 
@@ -23,7 +24,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   const grandTotal = getBomTotal(build);
 
   const handleDownload = () => {
-    const stl = `solid ${build?.name || 'solder_enclosure'}\nfacet normal 0 0 0\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid`;
+    const stl = generateCaseStl(build);
     downloadBuildKit(build, stl);
   };
 

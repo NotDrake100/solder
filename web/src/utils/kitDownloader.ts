@@ -1,5 +1,6 @@
 import { zipSync, strToU8 } from 'fflate';
 import { getOffersForPart, getCheapestInStockPrice, getSearchLinks } from '../data/partPrices';
+import { generateCaseStl } from './caseStl';
 
 export function generateWiringCsv(build: any): string {
   let csv = 'from,to,purpose\n';
@@ -105,33 +106,11 @@ export function downloadBuildKit(build: any, stlStringOrBinary?: string | Uint8A
   files['README.md'] = strToU8(generateReadme(build));
 
   // 5. 3D Case STL
-  if (stlStringOrBinary) {
-    if (typeof stlStringOrBinary === 'string') {
-      files['case.stl'] = strToU8(stlStringOrBinary);
-    } else {
-      files['case.stl'] = stlStringOrBinary;
-    }
+  const stlData = stlStringOrBinary || generateCaseStl(build);
+  if (typeof stlData === 'string') {
+    files['case.stl'] = strToU8(stlData);
   } else {
-    // Generate clean parametric ASCII STL
-    const [w, l, h] = build.case?.outerMm || [82, 64, 28];
-    const asciiStl = `solid solder_enclosure
-facet normal 0 0 -1
-  outer loop
-    vertex 0 0 0
-    vertex ${w} 0 0
-    vertex ${w} ${l} 0
-  endloop
-endfacet
-facet normal 0 0 1
-  outer loop
-    vertex 0 0 ${h}
-    vertex ${w} 0 ${h}
-    vertex ${w} ${l} ${h}
-  endloop
-endfacet
-endsolid solder_enclosure
-`;
-    files['case.stl'] = strToU8(asciiStl);
+    files['case.stl'] = stlData;
   }
 
   // 6. Compress and trigger download

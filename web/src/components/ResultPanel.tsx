@@ -22,6 +22,7 @@ import { Simulator } from '../../../sim/Simulator';
 import { getBomTotal } from './HarnessTrace';
 import { getOffersForPart, getCheapestInStockPrice, getSearchLinks } from '../data/partPrices';
 import { downloadBuildKit } from '../utils/kitDownloader';
+import { generateCaseStl } from '../utils/caseStl';
 
 const PART_DRAW_MAP: Record<string, number> = {
   arduino_uno: 45,
@@ -173,13 +174,9 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     });
   };
 
-  const getCaseStl = () => {
-    return `solid ${build?.name || 'solder_enclosure'}\nfacet normal 0 0 0\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid`;
-  };
-
   const handleDownloadKit = () => {
     if (!build) return;
-    const stl = getCaseStl();
+    const stl = generateCaseStl(build);
     downloadBuildKit(build, stl);
   };
 
@@ -205,7 +202,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   };
 
   const handleDownloadStl = () => {
-    const stlContent = getCaseStl();
+    if (!build) return;
+    const stlContent = generateCaseStl(build);
     const blob = new Blob([stlContent], { type: 'application/sla' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
