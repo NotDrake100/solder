@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fixWithGemini } from './gemini.js';
+import { saveBuildToFile } from '../routes/build.js';
 import {
   checkPinConflicts,
   checkPowerBudget,
@@ -190,23 +191,38 @@ export async function runAgentLoop(buildData, emit) {
     let diff = '';
 
     if (failedCheck.id === 'pin_conflicts') {
-      // Reassign conflicting pin D7 (fan, motor, or buzzer) to D9 (or D6)
-      const targetPin = 'D9';
+      // QA-R9 #3: Dynamically resolve conflicting pin and generate honest diff
+      const pinMatch = (failedCheck.evidence || '').match(/Pin\s+([A-Za-z0-9_]+)/i);
+      const conflictPin = pinMatch ? pinMatch[1].toUpperCase() : 'D7';
+
+      // Find free digital pin (e.g. D9, D6, D8, D10, D11)
+      const usedPins = new Set();
+      (currentBuild.wiring || []).forEach((w) => {
+        usedPins.add(String(w.from?.pin || '').toUpperCase());
+        usedPins.add(String(w.to?.pin || '').toUpperCase());
+      });
+      const candidates = ['D9', 'D6', 'D8', 'D10', 'D11', 'D12', 'D5'];
+      const targetPin = candidates.find((p) => !usedPins.has(p)) || 'D6';
+
       let reallocatedName = 'actuator';
+      let foundConflict = false;
 
       currentBuild.wiring = (currentBuild.wiring || []).map((w) => {
+        if (foundConflict) return w;
         const toPart = (w.to?.part || '').toLowerCase();
         const fromPart = (w.from?.part || '').toLowerCase();
         const toPin = String(w.to?.pin || '').toUpperCase();
         const fromPin = String(w.from?.pin || '').toUpperCase();
 
-        const isConflictLoad =
-          toPart.includes('fan') || fromPart.includes('fan') ||
-          toPart.includes('motor') || fromPart.includes('motor') ||
-          toPart.includes('buzzer') || fromPart.includes('buzzer');
+        const matchesConflictPin =
+          toPin === conflictPin ||
+          fromPin === conflictPin ||
+          toPin === conflictPin.replace('D', '') ||
+          fromPin === conflictPin.replace('D', '');
 
-        if (isConflictLoad && (toPin === 'D7' || toPin === '7' || fromPin === 'D7' || fromPin === '7')) {
-          reallocatedName = w.to?.part || w.from?.part;
+        if (matchesConflictPin) {
+          foundConflict = true;
+          reallocatedName = w.to?.part || w.from?.part || 'actuator';
           const isFromMcu = fromPart.includes('uno') || fromPart.includes('esp32');
           return {
             ...w,
@@ -219,15 +235,24 @@ export async function runAgentLoop(buildData, emit) {
       });
 
       if (currentBuild.code?.ino) {
-        currentBuild.code.ino = currentBuild.code.ino
-          .replace(/#define\s+FAN_PIN\s+7/i, '#define FAN_PIN 9 // Reallocated to free PWM channel')
-          .replace(/const\s+int\s+FAN_PIN\s*=\s*7;/i, 'const int FAN_PIN = 9;')
-          .replace(/const\s+int\s+BUZZER_PIN\s*=\s*7;/i, 'const int BUZZER_PIN = 6;')
-          .replace(/#define\s+BUZZER_PIN\s+7/i, '#define BUZZER_PIN 6');
+        const numConflict = conflictPin.replace('D', '');
+        const numTarget = targetPin.replace('D', '');
+        const pinRegex = new RegExp(`(#define\\s+\\w*PIN\\w*\\s+)${numConflict}\\b`, 'i');
+        const constRegex = new RegExp(`(const\\s+int\\s+\\w*PIN\\w*\\s*=\\s*)${numConflict}\\b`, 'i');
+        if (pinRegex.test(currentBuild.code.ino)) {
+          currentBuild.code.ino = currentBuild.code.ino.replace(pinRegex, `$1${numTarget} // Reallocated from ${conflictPin}`);
+        } else if (constRegex.test(currentBuild.code.ino)) {
+          currentBuild.code.ino = currentBuild.code.ino.replace(constRegex, `$1${numTarget}`);
+        } else {
+          currentBuild.code.ino = currentBuild.code.ino.replace(
+            /#define\s+FAN_PIN\s+\d+/i,
+            `#define FAN_PIN ${numTarget} // Reallocated to free channel`
+          );
+        }
       }
 
-      changelog = `Reallocated ${reallocatedName} from D7 to ${targetPin} in wiring and firmware sketch`;
-      diff = `- #define FAN_PIN 7\n+ #define FAN_PIN 9 // Reallocated to free PWM channel`;
+      changelog = `Reallocated ${reallocatedName} from ${conflictPin} to ${targetPin} in wiring netlist and sketch`;
+      diff = `- Pin ${conflictPin}: ${reallocatedName}\n+ Pin ${targetPin}: ${reallocatedName} (free channel)`;
     } else if (failedCheck.id === 'compile') {
       const fixResult = await fixWithGemini(currentBuild, failedCheck.evidence);
       currentBuild = fixResult.patchedBuild || currentBuild;
@@ -235,6 +260,8 @@ export async function runAgentLoop(buildData, emit) {
       diff = fixResult.diagnosis || 'Added missing declaration';
     } else if (failedCheck.id === 'power_budget') {
       const isPi5 = (currentBuild.board || '').toLowerCase().includes('rpi_5') || (currentBuild.board || '').toLowerCase().includes('pi_5');
+      const has1ABoost = (currentBuild.parts || []).some((p) => (p.libId || p.id || '').includes('powerboost'));
+
       if (isPi5) {
         currentBuild.board = 'rpi_zero_2w';
         currentBuild.parts = (currentBuild.parts || []).map((p) =>
@@ -244,13 +271,38 @@ export async function runAgentLoop(buildData, emit) {
                 libId: 'rpi_zero_2w',
                 name: 'Raspberry Pi Zero 2 W',
                 qty: 1,
-                priceInr: 1450,
-                why: 'Ultra-compact SBC drawing 400mA typical, operates safely within 1000mA battery envelope.',
+                priceInr: 1709,
+                why: 'Ultra-compact SBC drawing 400mA typical, operates safely within regulator envelope.',
               }
             : p
         );
         changelog = 'Swapped Raspberry Pi 5 to Pi Zero 2 W to operate safely within 1000mA battery power envelope';
-        diff = '- board: rpi_5 (2800mA peak)\n+ board: rpi_zero_2w (400mA typical, total 722mA < 1000mA)';
+        diff = '- board: rpi_5 (2800mA peak)\n+ board: rpi_zero_2w (400mA typical, safe operation)';
+      } else if (has1ABoost) {
+        // QA-R10 #1: Swap PowerBoost 1000C for 2A+ MT3608 boost regulator to guarantee >= 25% headroom
+        currentBuild.parts = (currentBuild.parts || []).map((p) =>
+          (p.libId || p.id || '').includes('powerboost')
+            ? {
+                id: p.id || 'part-boost',
+                libId: 'mt3608',
+                name: 'MT3608 2A DC-DC Step-Up Boost Regulator',
+                qty: 1,
+                priceInr: 33,
+                why: '2A continuous boost regulator providing >50% thermal headroom over 1000mA PowerBoost.',
+              }
+            : p
+        );
+        currentBuild.wiring = (currentBuild.wiring || []).map((w) => {
+          const fromPart = w.from?.part || '';
+          const toPart = w.to?.part || '';
+          return {
+            ...w,
+            from: { ...w.from, part: fromPart.includes('powerboost') ? 'mt3608' : fromPart },
+            to: { ...w.to, part: toPart.includes('powerboost') ? 'mt3608' : toPart },
+          };
+        });
+        changelog = 'Upgraded PowerBoost 1000C to MT3608 2A regulator to ensure >25% power headroom';
+        diff = '- part: powerboost_1000c (1000mA max, 0% headroom)\n+ part: mt3608 (2000mA max 2A, 50%+ safe headroom, Rs 33 on Robu)';
       } else {
         changelog = 'Added external 5V 2A auxiliary power rail requirement for inductive servos';
         diff = '+ External 5V 2A regulator rail added';
@@ -367,6 +419,11 @@ export async function runAgentLoop(buildData, emit) {
     data: currentBuild,
     timestamp: timestamp(),
   });
+
+  // QA-FEATURES: Persist final build (with all heals applied) to disk
+  if (currentBuild.id) {
+    saveBuildToFile(currentBuild.id, currentBuild);
+  }
 
   return currentBuild;
 }

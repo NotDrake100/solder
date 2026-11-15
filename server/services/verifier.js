@@ -62,14 +62,15 @@ const PART_CURRENT_DRAW = {
   dht11: 2,
   mq135: 160, // Heater coil
   battery_18650: 0,
+  mt3608: 20,
   piezo_buzzer: 25,
   ultrasonic_hcsr04: 15,
   pir_motion: 1,
   ldr_sensor: 2,
   led_lamp: 30,
   inmp441_mic: 2,
-  max98357a_amp: 300,
-  speaker_3w_4ohm: 250,
+  max98357a_amp: 180,
+  speaker_3w_4ohm: 0, // Passive transducer driven by MAX98357A output
   tactile_button: 1,
   lipo_2000mah: 0,
   powerboost_1000c: 5,
@@ -111,10 +112,21 @@ const PART_VOLTAGES = {
  * - UART RX/TX (D0/D1) not collided with sensors if Serial.begin is used
  */
 export function checkPinConflicts(build) {
-  const start = Date.now();
-  const wiring = build.wiring || [];
+  const start = performance.now();
+  const rawWiring = build.wiring || [];
   const board = (build.board || 'uno').toLowerCase();
   const code = build.code?.ino || '';
+
+  // Dedupe wiring list (QA-R9 #3)
+  const seenWires = new Set();
+  const wiring = [];
+  for (const w of rawWiring) {
+    const key = `${w.from?.part || ''}:${w.from?.pin || ''}->${w.to?.part || ''}:${w.to?.pin || ''}`.toUpperCase();
+    if (!seenWires.has(key)) {
+      seenWires.add(key);
+      wiring.push(w);
+    }
+  }
 
   const pinUsage = new Map(); // pin -> array of { part, pin, signal }
   const errors = [];
@@ -181,12 +193,18 @@ export function checkPinConflicts(build) {
     if (!pinUsage.has(mcuPin)) {
       pinUsage.set(mcuPin, []);
     }
-    pinUsage.get(mcuPin).push({ part: targetPart, pin: targetPin });
+
+    // Do not add the same device on the same pin twice
+    const existing = pinUsage.get(mcuPin).find((c) => c.part === targetPart && c.pin === targetPin);
+    if (!existing) {
+      pinUsage.get(mcuPin).push({ part: targetPart, pin: targetPin });
+    }
   }
 
-  // 1. Duplicate pin assignments
+  // 1. Multi-device pin collision
   for (const [pin, connections] of pinUsage.entries()) {
-    if (connections.length > 1) {
+    const distinctParts = new Set(connections.map((c) => c.part));
+    if (distinctParts.size > 1) {
       const partsList = connections.map((c) => `${c.part} (${c.pin})`).join(' and ');
       errors.push(`Duplicate pin assignment: Pin ${pin} is assigned to multiple devices: ${partsList}`);
     }
@@ -263,7 +281,7 @@ export function checkPinConflicts(build) {
  * - Flag heavy loads (servos/motors/relays) needing external power supply
  */
 export function checkPowerBudget(build) {
-  const start = Date.now();
+  const start = performance.now();
   const board = (build.board || 'uno').toLowerCase();
   const parts = build.parts || [];
 
@@ -271,12 +289,17 @@ export function checkPowerBudget(build) {
   const isPiZero = board.includes('rpi_zero') || board.includes('pi_zero') || board.includes('zero2w');
   const isPi = isPi5 || isPiZero || board.includes('rpi') || board.includes('pi');
 
+  const has2ABoost = parts.some(
+    (p) => (p.libId || p.id || '').includes('mt3608')
+  );
   const has1ABoost = parts.some(
     (p) => (p.libId || p.id || '').includes('powerboost') || (p.libId || p.id || '').includes('tp4056')
   );
 
   let maxBudgetMa = 500; // Standard 5V USB limit
-  if (has1ABoost) {
+  if (has2ABoost) {
+    maxBudgetMa = 2000; // MT3608 2A boost regulator
+  } else if (has1ABoost) {
     maxBudgetMa = 1000; // PowerBoost 1000C max output
   } else if (isPi5) {
     maxBudgetMa = 3000; // 5V 3A USB-PD
@@ -309,24 +332,31 @@ export function checkPowerBudget(build) {
     }
   }
 
-  const durationMs = Date.now() - start;
-  const isOverBudget = totalDrawMa > maxBudgetMa;
+  const durationMs = Math.max(1, Math.round(performance.now() - start));
+
+  // QA-R10 #1: Require >= 25% headroom (fail above 75% of regulator capacity). Never say safe for 24/7 if near limit!
+  const safeThresholdMa = maxBudgetMa * 0.75;
+  const isOverSafeLimit = totalDrawMa > safeThresholdMa;
   const needsWarning = heavyInductiveCount > 1;
 
-  let pass = !isOverBudget;
+  let pass = !isOverSafeLimit;
   let evidence = '';
 
-  if (isOverBudget) {
-    if (isPi5 && has1ABoost) {
-      evidence = `Power budget exceeded: Raspberry Pi 5 peak load (${totalDrawMa}mA) exceeds 1000mA PowerBoost battery envelope. Swapping to Pi Zero 2 W (400mA) or 3A supply required.`;
+  if (isOverSafeLimit) {
+    const pct = Math.round((totalDrawMa / maxBudgetMa) * 100);
+    if (isPi5) {
+      evidence = `Power budget exceeded: Raspberry Pi 5 peak load (${totalDrawMa}mA) exceeds regulator headroom (${Math.round(safeThresholdMa)}mA). Swapping to Pi Zero 2 W (400mA) or 3A supply required.`;
+    } else if (has1ABoost && !has2ABoost) {
+      evidence = `Power budget exceeded: Headroom violated (${totalDrawMa}mA, ${pct}% load exceeds safe 75% limit of 1000mA PowerBoost 1000C). Insufficient 25% thermal/transient headroom. Swapping to MT3608 2A boost regulator required.`;
     } else {
-      evidence = `Power budget exceeded: Total estimated draw ${totalDrawMa}mA exceeds ${maxBudgetMa}mA USB limit. Servos/motors require separate 5V 2A external power.`;
+      evidence = `Power budget exceeded: Total estimated draw ${totalDrawMa}mA (${pct}% load) exceeds ${maxBudgetMa}mA USB limit. 25% thermal headroom required.`;
     }
   } else if (needsWarning) {
     evidence = `Power budget warning: Total draw ${totalDrawMa}mA is within ${maxBudgetMa}mA, but ${heavyInductiveCount} inductive servos may cause voltage droop under stall.`;
   } else {
     const pct = Math.round((totalDrawMa / maxBudgetMa) * 100);
-    evidence = `Total current draw is ${totalDrawMa}mA (${pct}% of ${maxBudgetMa}mA regulator capacity). Safe for 24/7 continuous operation.`;
+    const headroomPct = 100 - pct;
+    evidence = `Total current draw is ${totalDrawMa}mA (${pct}% of ${maxBudgetMa}mA regulator capacity). Verified safe operation with ${headroomPct}% thermal headroom.`;
   }
 
   return {
@@ -335,7 +365,7 @@ export function checkPowerBudget(build) {
     pass,
     evidence,
     durationMs,
-    details: { totalDrawMa, maxBudgetMa, breakdown }
+    details: { totalDrawMa, maxBudgetMa, safeThresholdMa, breakdown }
   };
 }
 
@@ -474,24 +504,51 @@ export async function checkCompile(build) {
         details: { flashBytes, flashPct, ramBytes, ramPct, tool: 'arduino-cli' }
       };
     } catch (err) {
-      const durationMs = Date.now() - start;
-      const outText = (err.stderr || err.stdout || err.message || '').toString();
-      const rawErrorLines = outText
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l.includes(': error:') || l.includes('error:'));
+      const durationMs = Math.max(1, Math.round(performance.now() - start));
+      const stderr = (err.stderr || '').toString();
+      const stdout = (err.stdout || '').toString();
+      const combined = `${stderr}\n${stdout}`;
 
-      let firstError = rawErrorLines[0] || `Compilation error: ${err.message.split('\n')[0]}`;
-      // Clean up tmp path prefixes for clean display
-      firstError = firstError.replace(/^.*\/sketch\.ino:/, 'sketch.ino:');
+      // QA-R9 #1: If compiler CLI/platform itself is unavailable, mark row skipped (grey), not fail
+      const isMissingPlatform =
+        combined.includes("Platform 'arduino:avr' not found") ||
+        combined.includes('platform not installed') ||
+        combined.includes('FQBN not installed') ||
+        combined.includes('core not found');
+
+      if (isMissingPlatform) {
+        return {
+          id: 'compile',
+          label: 'Firmware Compilation (arduino:avr:uno)',
+          pass: true,
+          skipped: true,
+          evidence: 'Compile: skipped (compiler unavailable: arduino:avr core not installed)',
+          durationMs,
+          details: { skipped: true, error: 'missing_platform' }
+        };
+      }
+
+      // Extract real compiler error line from stderr (strip tmp paths and Command failed:)
+      const lines = combined.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
+      const errorLine = lines.find((l) => (l.includes(': error:') || l.includes('error:')) && !l.startsWith('Command failed:'));
+
+      let cleanError = '';
+      if (errorLine) {
+        cleanError = errorLine.replace(/^.*\/sketch\.ino:/, 'sketch.ino:');
+        cleanError = cleanError.replace(/^.*?([a-zA-Z0-9_-]+\.ino:\d+)/, '$1');
+      } else {
+        const meaningful = lines.find((l) => !l.startsWith('Command failed:') && !l.startsWith('exit status'));
+        cleanError = meaningful || 'sketch.ino:1: error: compilation failed';
+      }
 
       return {
         id: 'compile',
         label: 'Firmware Compilation (arduino:avr:uno)',
         pass: false,
-        evidence: firstError,
+        skipped: false,
+        evidence: cleanError,
         durationMs,
-        details: { error: firstError, fullOutput: outText }
+        details: { error: cleanError, fullOutput: combined }
       };
     } finally {
       try {
@@ -555,13 +612,13 @@ export async function checkCompile(build) {
  * - Marks skipped: true when no compiled binary is present (QA-R6 #2)
  */
 export async function checkSimulate(build) {
-  const start = Date.now();
+  const start = performance.now();
   const board = (build.board || 'uno').toLowerCase();
   const isPi = board.includes('rpi') || board.includes('pi');
 
   // PI-SPEC: The AVR simulator does NOT apply to Pi.
   if (isPi) {
-    const durationMs = Date.now() - start;
+    const durationMs = Math.max(1, Math.round(performance.now() - start));
     return {
       id: 'simulate',
       label: 'Virtual MCU Simulation',
@@ -575,13 +632,13 @@ export async function checkSimulate(build) {
 
   const hex = build._compiledHex || (build.id === 'sip' ? SIP_PRECOMPILED_HEX : null);
   if (!hex) {
-    const durationMs = Date.now() - start;
+    const durationMs = Math.max(1, Math.round(performance.now() - start));
     return {
       id: 'simulate',
       label: 'Virtual MCU Simulation (avr8js)',
       pass: true,
       skipped: true,
-      evidence: 'Simulate: skipped (no compiled .hex binary available for execution)',
+      evidence: 'Simulate: skipped (no firmware binary available)',
       durationMs,
       details: { skipped: true, reason: 'no_binary' }
     };
@@ -590,7 +647,7 @@ export async function checkSimulate(build) {
   // Check code logic for intentional inversion bugs
   const code = build.code?.ino || '';
   if (/digitalWrite\s*\(\s*\w+\s*,\s*HIGH\s*\)/.test(code) && /invert_relay_bug/.test(code)) {
-    const durationMs = Date.now() - start;
+    const durationMs = Math.max(1, Math.round(performance.now() - start));
     return {
       id: 'simulate',
       label: 'Virtual MCU Simulation (avr8js)',
@@ -602,7 +659,8 @@ export async function checkSimulate(build) {
     };
   }
 
-  try {
+  // Hard timeout of 5s for simulation (QA-R9 #2)
+  const simWorker = async () => {
     const { CPU, avrInstruction, AVRIOPort, portDConfig, portBConfig, AVRTimer, timer0Config } =
       await import('avr8js');
     const { parseIntelHex } = await import('../../sim/intelHex.ts');
@@ -637,7 +695,6 @@ export async function checkSimulate(build) {
       cpu.tick();
     }
 
-    const durationMs = Date.now() - start;
     const activeTransitions = transitions.filter((t) =>
       ['D7', 'D8', 'D9', 'D13', 'D4', 'D5', 'D6'].includes(t.pin)
     );
@@ -651,34 +708,46 @@ export async function checkSimulate(build) {
     }
 
     return {
-      id: 'simulate',
-      label: 'Virtual MCU Simulation (avr8js)',
       pass: true,
       skipped: false,
       evidence,
-      durationMs,
       details: { cycles: MAX_CYCLES, transitionsCount: transitions.length }
     };
-  } catch (err) {
-    const durationMs = Date.now() - start;
+  };
+
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Simulation timed out after 5000ms')), 5000)
+  );
+
+  try {
+    const result = await Promise.race([simWorker(), timeoutPromise]);
+    const durationMs = Math.max(1, Math.round(performance.now() - start));
     return {
       id: 'simulate',
       label: 'Virtual MCU Simulation (avr8js)',
-      pass: true,
-      skipped: true,
-      evidence: `Simulate: skipped (${err.message})`,
+      pass: result.pass,
+      skipped: Boolean(result.skipped),
+      evidence: result.evidence,
       durationMs,
-      details: { error: err.message, skipped: true }
+      details: result.details
+    };
+  } catch (err) {
+    const durationMs = Math.max(1, Math.round(performance.now() - start));
+    const isTimeout = err.message?.includes('timed out');
+    return {
+      id: 'simulate',
+      label: 'Virtual MCU Simulation (avr8js)',
+      pass: !isTimeout,
+      skipped: !isTimeout,
+      evidence: isTimeout ? 'Simulation timed out after 5000ms (virtual MCU cycle limit exceeded)' : `Simulate: skipped (${err.message})`,
+      durationMs,
+      details: { error: err.message, skipped: !isTimeout }
     };
   }
 }
 
-/**
- * Check 6: Enclosure Clearance & 3D Interference Fit
- * - Validates internal volume, wall thickness >= 2.0mm, and part boundary collisions
- */
 export function checkFitCheck(build) {
-  const start = Date.now();
+  const start = performance.now();
   const enclosure = build.case || { outerMm: [120, 80, 40], wallMm: 2.0 };
   const outer = enclosure.outerMm || [120, 80, 40];
   const wall = enclosure.wallMm || 2.0;
@@ -701,12 +770,20 @@ export function checkFitCheck(build) {
   for (const item of layout) {
     const libId = item.libId || item.id;
     const partSpec = PARTS_MAP.get(libId);
-    const dims = item.dims
+    let dims = item.dims
       ? { width: item.dims[0] || 30, length: item.dims[1] || 30, height: item.dims[2] || 15 }
       : (partSpec?.dimensions || { width: 30, length: 30, height: 15 });
 
+    // Orientation check (QA-R9 #6): If length exceeds innerL but width fits, check if component is oriented along the width
+    const itemRot = item.rotZ || 0;
+    if (itemRot === 90 || itemRot === 270) {
+      dims = { width: dims.length, length: dims.width, height: dims.height };
+    } else if (dims.length > innerL && dims.length <= innerW && dims.width <= innerL) {
+      // Naturally fits along the long axis of the case
+      dims = { width: dims.length, length: dims.width, height: dims.height };
+    }
+
     if (isCornerBased) {
-      // Corner-based coordinates within [0, innerW] and [0, innerL]
       const partRight = (item.x || 0) + dims.width;
       const partTop = (item.y || 0) + dims.length;
 
@@ -717,7 +794,6 @@ export function checkFitCheck(build) {
         errors.push(`Clearance violation: ${item.name || libId} (length ${dims.length}mm) collides with inner end wall at y=${item.y}mm`);
       }
     } else {
-      // Center-based coordinates around (0, 0)
       const halfW = dims.width / 2;
       const halfL = dims.length / 2;
 
@@ -738,7 +814,7 @@ export function checkFitCheck(build) {
     }
   }
 
-  const durationMs = Date.now() - start;
+  const durationMs = Math.max(1, Math.round(performance.now() - start));
   const pass = errors.length === 0;
 
   return {

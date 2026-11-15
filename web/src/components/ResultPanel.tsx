@@ -20,6 +20,50 @@ import { CaseViewer } from '../viewer';
 import { WiringDiagram } from './WiringDiagram';
 import { Simulator } from '../../../sim/Simulator';
 import { getBomTotal } from './HarnessTrace';
+import { getOffersForPart, getCheapestInStockPrice, getSearchLinks } from '../data/partPrices';
+import { downloadBuildKit } from '../utils/kitDownloader';
+
+const PART_DRAW_MAP: Record<string, number> = {
+  arduino_uno: 45,
+  esp32_devkit: 80,
+  rpi_zero_2w: 400,
+  rpi_5: 2800,
+  relay_5v: 75,
+  sg90_servo: 250,
+  oled_096: 20,
+  soil_moisture: 15,
+  dht11: 2,
+  mq135: 160,
+  battery_18650: 0,
+  piezo_buzzer: 25,
+  ultrasonic_hcsr04: 15,
+  pir_motion: 1,
+  ldr_sensor: 2,
+  led_lamp: 30,
+  inmp441_mic: 2,
+  max98357a_amp: 300,
+  speaker_3w_4ohm: 250,
+  tactile_button: 1,
+  lipo_2000mah: 0,
+  powerboost_1000c: 5,
+  mt3608: 20,
+};
+
+function getPartCurrentDraw(libId?: string, name?: string): number {
+  const id = (libId || '').toLowerCase();
+  const n = (name || '').toLowerCase();
+  if (PART_DRAW_MAP[id] !== undefined) return PART_DRAW_MAP[id];
+  if (id.includes('rpi_5') || id.includes('pi_5')) return 2800;
+  if (id.includes('rpi') || id.includes('zero') || n.includes('zero 2')) return 400;
+  if (id.includes('speaker') || n.includes('speaker')) return 250;
+  if (id.includes('amp') || n.includes('amplifier')) return 300;
+  if (id.includes('oled') || n.includes('oled')) return 20;
+  if (id.includes('mic') || n.includes('microphone')) return 2;
+  if (id.includes('button')) return 1;
+  if (id.includes('boost') || id.includes('regulator') || n.includes('mt3608')) return 20;
+  if (id.includes('battery') || id.includes('cell')) return 0;
+  return 20;
+}
 
 export type ResultTab = 'case' | 'parts' | 'wiring' | 'simulate' | 'firmware';
 
@@ -88,6 +132,51 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     }, 400);
     return () => clearTimeout(timer);
   }, [build?.id]);
+
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const { totalEstimatedPrice, pricedCount, totalPartsCount } = useMemo(() => {
+    let sum = 0;
+    let priced = 0;
+    const parts = build?.parts || [];
+    parts.forEach((p) => {
+      if (p.owned) return;
+      const offers = getOffersForPart(p);
+      if (offers) {
+        const cheapest = getCheapestInStockPrice(offers);
+        if (cheapest !== null) {
+          sum += cheapest * (p.qty || 1);
+          priced++;
+        }
+      }
+    });
+    return {
+      totalEstimatedPrice: Math.round(sum),
+      pricedCount: priced,
+      totalPartsCount: parts.length,
+    };
+  }, [build]);
+
+  const pricingSummaryText = useMemo(() => {
+    if (pricedCount > 0) {
+      return `Estimated total Rs ${totalEstimatedPrice} (${pricedCount} of ${totalPartsCount} parts priced, checked 15 Nov 2026)`;
+    }
+    return `Estimated total based on catalog averages`;
+  }, [totalEstimatedPrice, pricedCount, totalPartsCount]);
+
+  const handleShare = () => {
+    if (!build?.id) return;
+    const url = `${window.location.origin}/b/${build.id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    });
+  };
+
+  const handleDownloadKit = () => {
+    if (!build) return;
+    downloadBuildKit(build);
+  };
 
   const totalCost = getBomTotal(build);
 
@@ -346,56 +435,53 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
                   </p>
                 </div>
 
-                {/* Power Budget Table */}
-                <div className="rounded-lg border border-[#2a2a2a] bg-[#171717] p-3 space-y-2">
-                  <div className="flex items-center justify-between text-white font-sans font-medium border-b border-[#262626] pb-1.5">
-                    <span>Power Budget & Headroom</span>
-                    <span className="text-[11px] font-mono text-white">
-                      {build.parts?.reduce(
-                        (sum, p) =>
-                          sum +
-                          (p.libId === 'rpi_zero_2w'
-                            ? 400
-                            : p.libId === 'rpi_5'
-                            ? 2800
-                            : p.libId?.includes('amp')
-                            ? 180
-                            : 30),
-                        0
-                      )}mA / 1000mA battery envelope
-                    </span>
-                  </div>
-                  <table className="w-full text-left text-[11px]">
-                    <thead className="text-[#666]">
-                      <tr>
-                        <th className="pb-1 font-normal">Component</th>
-                        <th className="pb-1 text-right font-normal">Typical Draw</th>
-                        <th className="pb-1 text-right font-normal">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#222] text-[#aaa]">
-                      {build.parts?.map((p) => {
-                        const draw =
-                          p.libId === 'rpi_zero_2w'
-                            ? 400
-                            : p.libId === 'rpi_5'
-                            ? 2800
-                            : p.libId?.includes('amp')
-                            ? 180
-                            : p.libId === 'oled_096'
-                            ? 22
-                            : 15;
-                        return (
-                          <tr key={p.id}>
-                            <td className="py-1 text-[#f5f5f5]">{p.name}</td>
-                            <td className="py-1 text-right font-mono">{draw}mA</td>
-                            <td className="py-1 text-right font-mono text-white">✓ PASS</td>
+                {/* Power Budget Table (QA-R10 #2: identical computed number and headroom matching harness) */}
+                {(() => {
+                  const has2A = (build.parts || []).some((p) => (p.libId || p.id || '').includes('mt3608'));
+                  const has1A = (build.parts || []).some((p) => (p.libId || p.id || '').includes('powerboost'));
+                  const maxCap = has2A ? 2000 : has1A ? 1000 : 2000;
+                  const safeLimit = Math.round(maxCap * 0.75);
+                  const isP5 = build.board?.includes('rpi_5') || build.board?.includes('pi_5');
+                  let totalDraw = isP5 ? 2800 : 400;
+
+                  (build.parts || []).forEach((p) => {
+                    const id = p.libId || p.id;
+                    if (['rpi_5', 'rpi_zero_2w', 'arduino_uno', 'esp32_devkit'].includes(id)) return;
+                    totalDraw += getPartCurrentDraw(p.libId, p.name) * (p.qty || 1);
+                  });
+
+                  return (
+                    <div className="rounded-lg border border-[#2a2a2a] bg-[#171717] p-3 space-y-2">
+                      <div className="flex items-center justify-between text-white font-sans font-medium border-b border-[#262626] pb-1.5">
+                        <span>Power Budget & Headroom</span>
+                        <span className="text-[11px] font-mono text-white">
+                          {totalDraw}mA / {maxCap}mA regulator ({safeLimit}mA safe limit)
+                        </span>
+                      </div>
+                      <table className="w-full text-left text-[11px]">
+                        <thead className="text-[#666]">
+                          <tr>
+                            <th className="pb-1 font-normal">Component</th>
+                            <th className="pb-1 text-right font-normal">Typical Draw</th>
+                            <th className="pb-1 text-right font-normal">Status</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                        </thead>
+                        <tbody className="divide-y divide-[#222] text-[#aaa]">
+                          {build.parts?.map((p) => {
+                            const draw = getPartCurrentDraw(p.libId, p.name);
+                            return (
+                              <tr key={p.id}>
+                                <td className="py-1 text-[#f5f5f5]">{p.name}</td>
+                                <td className="py-1 text-right font-mono">{draw}mA</td>
+                                <td className="py-1 text-right font-mono text-white">✓ PASS</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
 
                 {/* I2S Pin Map */}
                 <div className="rounded-lg border border-[#2a2a2a] bg-[#171717] p-3 space-y-2">

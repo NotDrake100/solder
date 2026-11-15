@@ -382,14 +382,23 @@ export function App() {
                           failedRound: data.round || 1,
                           failedEvidence: data.evidence || chk.evidence,
                         };
-                      } else if (data.status === 'pass') {
+                      } else if (data.status === 'skipped' || data.skipped) {
+                        return {
+                          ...chk,
+                          status: 'skipped',
+                          skipped: true,
+                          evidence: data.evidence || chk.evidence,
+                          durationMs: data.durationMs !== undefined ? data.durationMs : chk.durationMs,
+                        };
+                      } else if (data.status === 'pass' || data.status === 'healed') {
                         // If this check previously had a failure / heal, DO NOT overwrite with plain pass!
                         if (
                           chk.status === 'fail' ||
                           chk.status === 'fixing' ||
                           chk.status === 'healed' ||
                           chk.healInfo ||
-                          chk.failedEvidence
+                          chk.failedEvidence ||
+                          data.status === 'healed'
                         ) {
                           return {
                             ...chk,

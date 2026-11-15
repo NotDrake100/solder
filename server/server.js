@@ -207,6 +207,44 @@ export function createServer() {
         return;
       }
 
+      // 6b. POST /api/build/:id/snapshot (for OG image)
+      const postSnapshotMatch = pathname.match(/^\/api\/build\/([a-zA-Z0-9_-]+)\/snapshot$/);
+      if (req.method === 'POST' && postSnapshotMatch) {
+        const id = postSnapshotMatch[1];
+        const body = await parseBody(req);
+        if (body.imageBase64) {
+          const base64Data = body.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+          const buildsDir = path.resolve(__dirname, 'data/builds');
+          if (!fs.existsSync(buildsDir)) fs.mkdirSync(buildsDir, { recursive: true });
+          fs.writeFileSync(path.join(buildsDir, `${id}.png`), Buffer.from(base64Data, 'base64'));
+        }
+        sendJson(res, 200, { success: true });
+        return;
+      }
+
+      // 6c. GET /api/build/:id/og-image.png
+      const getOgImageMatch = pathname.match(/^\/api\/build\/([a-zA-Z0-9_-]+)\/og-image\.png$/);
+      if (req.method === 'GET' && getOgImageMatch) {
+        const id = getOgImageMatch[1];
+        const imagePath = path.resolve(__dirname, `data/builds/${id}.png`);
+        if (fs.existsSync(imagePath)) {
+          setCorsHeaders(res);
+          res.writeHead(200, { 'Content-Type': 'image/png' });
+          fs.createReadStream(imagePath).pipe(res);
+          return;
+        }
+        // Fallback to landing-shot.png
+        const fallbackPath = path.resolve(__dirname, '../web/public/landing-shot.png');
+        if (fs.existsSync(fallbackPath)) {
+          setCorsHeaders(res);
+          res.writeHead(200, { 'Content-Type': 'image/png' });
+          fs.createReadStream(fallbackPath).pipe(res);
+          return;
+        }
+        sendError(res, 404, 'OG image not available');
+        return;
+      }
+
       // 7. POST /api/fix
       if (req.method === 'POST' && pathname === '/api/fix') {
         const body = await parseBody(req);
@@ -245,6 +283,37 @@ export function createServer() {
         const visionResult = await handleVisionDetect(body, clientIp);
         sendJson(res, 200, visionResult);
         return;
+      }
+
+      // QA-FEATURES-SHARE: Server-rendered head meta tags for /b/:id permalinks
+      const permalinkMatch = pathname.match(/^\/b\/([a-zA-Z0-9_-]+)$/);
+      if (req.method === 'GET' && permalinkMatch) {
+        const id = permalinkMatch[1];
+        const build = getBuildById(id);
+        const indexPath = path.join(DIST_DIR, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          let html = fs.readFileSync(indexPath, 'utf-8');
+          if (build) {
+            const title = `${build.name || 'Build'} – Solder`;
+            const desc = build.tagline || build.summary || `Verified hardware build with ${build.parts?.length || 0} parts and custom 3D case.`;
+            const ogImg = `/api/build/${id}/og-image.png`;
+            const metaBlock = `
+    <title>${title}</title>
+    <meta name="description" content="${desc}" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${desc}" />
+    <meta property="og:image" content="${ogImg}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${desc}" />
+    <meta name="twitter:image" content="${ogImg}" />`;
+            html = html.replace(/<title>.*?<\/title>/i, metaBlock);
+          }
+          setCorsHeaders(res);
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(html);
+          return;
+        }
       }
 
       // Serve static frontend from web/dist with SPA fallback for deploy

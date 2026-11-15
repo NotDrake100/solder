@@ -341,9 +341,9 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                       {isRunning && (
                         <Loader2 className="w-3 h-3 text-[#a3a3a3] animate-spin" />
                       )}
-                      {!isSkipped && chk.durationMs ? (
+                      {!isSkipped && chk.durationMs !== undefined && chk.durationMs !== null ? (
                         <span className="mono text-[11px] text-[#666]">
-                          {chk.durationMs}ms
+                          {Math.max(1, chk.durationMs)}ms
                         </span>
                       ) : null}
                     </div>
@@ -403,32 +403,56 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
         </div>
       )}
 
-      {/* Summary Row (QA-R4 #1: while running, show "Running checks… 2/6" in grey with no check mark and no price) */}
+      {/* Summary Row (QA-R4 #1 + QA-R10 #3 & #4: 2 lines max on mobile, en-IN format) */}
       {!isDone ? (
-        <div className="h-sum flex items-center gap-2 text-xs text-[#888888] pt-1">
+        <div className="h-sum flex items-center gap-2 text-xs text-[#888888] pt-1 font-mono text-[11px]">
           <Loader2 className="w-3 h-3 animate-spin text-[#888888]" />
           <span>Running checks… {passedCount}/{totalExecutable}</span>
         </div>
       ) : (
-        <div className="h-sum flex items-center gap-1.5 text-xs text-[#a3a3a3] pt-1">
-          <span className="check text-white font-bold">✓</span>
-          <span className="font-medium text-[#f5f5f5]">
-            {passedCount}/{totalExecutable} checks passed
-          </span>
-          {skippedCount > 0 && (
-            <>
+        <div className="h-sum pt-1 font-mono text-[11px] text-[#a3a3a3]">
+          {/* Desktop single line */}
+          <div className="hidden sm:flex items-center gap-1.5">
+            <span className="check text-white font-bold select-none">✓</span>
+            <span className="font-medium text-[#f5f5f5]">
+              {passedCount}/{totalExecutable} passed
+            </span>
+            {skippedCount > 0 && (
+              <>
+                <span className="sep text-[#555]">·</span>
+                <span className="text-[#888]">{skippedCount} skipped</span>
+              </>
+            )}
+            <span className="sep text-[#555]">·</span>
+            <span>
+              {selfHealCount} {selfHealCount === 1 ? 'self-heal' : 'self-heals'}
+            </span>
+            <span className="sep text-[#555]">·</span>
+            <span className="text-[#888]">{timeDisplay}</span>
+            <span className="sep text-[#555]">·</span>
+            <span className="text-[#f5f5f5]">Rs {Number(costInr).toLocaleString('en-IN')}</span>
+          </div>
+
+          {/* Mobile clean 2-line layout (max 2 lines) */}
+          <div className="sm:hidden flex flex-col gap-0.5 leading-snug">
+            <div className="flex items-center gap-1.5">
+              <span className="check text-white font-bold select-none">✓</span>
+              <span className="font-medium text-[#f5f5f5]">{passedCount}/{totalExecutable} passed</span>
+              {skippedCount > 0 && (
+                <>
+                  <span className="sep text-[#555]">·</span>
+                  <span className="text-[#888]">{skippedCount} skipped</span>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-[#888] ml-3.5">
+              <span>{selfHealCount} {selfHealCount === 1 ? 'self-heal' : 'self-heals'}</span>
               <span className="sep text-[#555]">·</span>
-              <span className="text-[#888]">{skippedCount} skipped</span>
-            </>
-          )}
-          <span className="sep text-[#555]">·</span>
-          <span>
-            {selfHealCount} {selfHealCount === 1 ? 'self-heal' : 'self-heals'}
-          </span>
-          <span className="sep text-[#555]">·</span>
-          <span className="mono text-[#888]">{timeDisplay}</span>
-          <span className="sep text-[#555]">·</span>
-          <span className="mono text-[#f5f5f5]">Rs {costInr}</span>
+              <span>{timeDisplay}</span>
+              <span className="sep text-[#555]">·</span>
+              <span className="text-[#f5f5f5]">Rs {Number(costInr).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
         </div>
       )}
     </div>
