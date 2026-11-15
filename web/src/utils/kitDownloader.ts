@@ -14,16 +14,22 @@ export function generateWiringCsv(build: any): string {
 
 export function generateBomCsv(build: any): string {
   let csv = 'part,qty,est_price_inr,robu_link,amazon_link\n';
+  let total = 0;
   (build.parts || []).forEach((p: any) => {
     const name = `"${p.name || p.id}"`;
     const qty = p.qty || 1;
     const offers = getOffersForPart(p);
-    const price = offers ? getCheapestInStockPrice(offers) : (p.priceInr || '');
+    const cheapest = offers ? getCheapestInStockPrice(offers) : null;
+    const price = cheapest !== null ? cheapest : (p.priceInr || 0);
+    if (!p.owned) {
+      total += price * qty;
+    }
     const search = getSearchLinks(p.name || p.id);
     const robuUrl = offers?.[0]?.url || search.robu;
     const amazonUrl = search.amazon;
-    csv += `${name},${qty},${price || ''},"${robuUrl}","${amazonUrl}"\n`;
+    csv += `${name},${qty},${price},"${robuUrl}","${amazonUrl}"\n`;
   });
+  csv += `"Total Kit",,${Math.round(total)},,\n`;
   return csv;
 }
 

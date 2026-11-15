@@ -3,6 +3,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import type { SolderBuild } from '../types';
+import { getOffersForPart, getCheapestInStockPrice } from '../data/partPrices';
 
 export interface VerifierCheck {
   id: string;
@@ -43,7 +44,15 @@ interface HarnessTraceProps {
 
 export function getBomTotal(build?: SolderBuild | null): number {
   if (!build?.parts?.length) return build?.product?.priceInr || 890;
-  return build.parts.reduce((sum, p) => sum + (p.priceInr || 0) * (p.qty || 1), 0);
+  return Math.round(
+    build.parts.reduce((sum, p) => {
+      if (p.owned) return sum;
+      const offers = getOffersForPart(p);
+      const cheapest = offers ? getCheapestInStockPrice(offers) : null;
+      const price = cheapest !== null ? cheapest : (p.priceInr || 0);
+      return sum + price * (p.qty || 1);
+    }, 0)
+  );
 }
 
 // Exactly the 6 real server check names (QA-R4 #5)
@@ -287,16 +296,16 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
               <div key={chk.id} className="h-step relative group text-xs">
                 {/* Signal Line Node sitting directly on the vertical line */}
                 <span
-                  className={`node absolute -left-[21px] top-1.5 w-2 h-2 rounded-full ring-4 ring-[#0f0f0f] transition ${
+                  className={`node absolute -left-[21px] top-1.5 w-2 h-2 rounded-full transition ${
                     isPending
-                      ? 'bg-[#444] ring-[#141414]'
+                      ? 'bg-[#444] ring-4 ring-[#141414]'
                       : isRunning
-                      ? 'bg-white animate-pulse ring-[#333]'
+                      ? 'bg-white animate-pulse ring-4 ring-[#333]'
                       : isFail
-                      ? 'bg-rose-500'
+                      ? 'bg-transparent border border-white ring-4 ring-[#0f0f0f]'
                       : isSkipped
-                      ? 'bg-[#555] ring-[#141414]'
-                      : 'bg-white'
+                      ? 'bg-[#555] ring-4 ring-[#141414]'
+                      : 'bg-white ring-4 ring-[#0f0f0f]'
                   }`}
                 />
 
@@ -318,7 +327,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                             : isPass
                             ? 'text-[#f5f5f5]'
                             : isFail
-                            ? 'text-rose-400'
+                            ? 'text-[#d4d4d4]'
                             : isRunning
                             ? 'text-white'
                             : 'text-[#888]'
@@ -353,8 +362,8 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                   {isHealed && (
                     <div className="mt-1 space-y-0.5 select-text">
                       {/* Failed Round 1 */}
-                      <div className="text-rose-400 font-mono text-[11px] flex items-start gap-1.5 leading-snug break-words">
-                        <span className="select-none font-bold shrink-0">✕</span>
+                      <div className="text-[#d4d4d4] font-mono text-[11px] flex items-start gap-1.5 leading-snug break-words">
+                        <span className="select-none font-bold shrink-0 text-[#a3a3a3] border border-white rounded px-1 text-[10px] leading-none inline-flex items-center justify-center">✕</span>
                         <span>
                           {chk.failedEvidence ||
                             'Pin collision on D7: Relay IN and Buzzer I/O both assigned to D7'}
@@ -364,13 +373,13 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                       <div className="text-[#a3a3a3] font-mono text-[11px] flex items-start gap-1.5 ml-3.5 leading-snug break-words">
                         <span className="text-[#666] select-none shrink-0">↳</span>
                         <span>
-                          Fixed by {chk.healInfo?.model || 'gemini-3.5-flash-lite'}:{' '}
+                          Fixed by {chk.healInfo?.model || 'Solder rule fixer'}:{' '}
                           {chk.healInfo?.explanation || 'Reallocated pin to free digital channel'}
                         </span>
                       </div>
                       {/* Round 2 Pass */}
                       <div className="text-[#888] font-mono text-[11px] flex items-start gap-1.5 ml-3.5 leading-snug">
-                        <span className="text-emerald-400 select-none shrink-0">✓</span>
+                        <span className="text-white select-none shrink-0 font-bold">✓</span>
                         <span>Re-verify round 2 passed ({chk.durationMs || 14}ms)</span>
                       </div>
                     </div>
@@ -378,8 +387,11 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
 
                   {/* Non-healed Note Text (QA-R3 #6: on its own line under row in mono 11px) */}
                   {!isHealed && !isPending && !isSkipped && chk.evidence && (
-                    <div className="h-note mono text-[#888] text-[11px] mt-0.5 break-words">
-                      {chk.evidence.split('\n')[0]}
+                    <div className={`h-note mono ${isFail ? 'text-[#d4d4d4]' : 'text-[#888]'} text-[11px] mt-0.5 break-words flex items-start gap-1.5`}>
+                      {isFail && (
+                        <span className="select-none font-bold shrink-0 text-[#a3a3a3] border border-white rounded px-1 text-[10px] leading-none inline-flex items-center justify-center">✕</span>
+                      )}
+                      <span>{chk.evidence.split('\n')[0]}</span>
                     </div>
                   )}
 

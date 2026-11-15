@@ -173,23 +173,17 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     });
   };
 
-  const handleDownloadKit = () => {
-    if (!build) return;
-    downloadBuildKit(build);
+  const getCaseStl = () => {
+    return `solid ${build?.name || 'solder_enclosure'}\nfacet normal 0 0 0\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid`;
   };
 
-  const totalCost = useMemo(() => {
-    if (!build?.parts?.length) return build?.product?.priceInr || 890;
-    return Math.round(
-      build.parts.reduce((sum, p) => {
-        if (p.owned) return sum;
-        const offers = getOffersForPart(p);
-        const cheapest = offers ? getCheapestInStockPrice(offers) : null;
-        const price = cheapest !== null ? cheapest : (p.priceInr || 0);
-        return sum + price * (p.qty || 1);
-      }, 0)
-    );
-  }, [build]);
+  const handleDownloadKit = () => {
+    if (!build) return;
+    const stl = getCaseStl();
+    downloadBuildKit(build, stl);
+  };
+
+  const totalCost = getBomTotal(build);
 
   const handleCopyCode = () => {
     if (currentFirmwareCode) {
@@ -211,8 +205,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   };
 
   const handleDownloadStl = () => {
-    const fakeStlContent = `solid ${build?.name || 'solder_enclosure'}\nfacet normal 0 0 0\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid`;
-    const blob = new Blob([fakeStlContent], { type: 'application/sla' });
+    const stlContent = getCaseStl();
+    const blob = new Blob([stlContent], { type: 'application/sla' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

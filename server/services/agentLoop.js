@@ -91,12 +91,16 @@ export async function runAgentLoop(buildData, emit) {
   await sleep(300);
 
   // 4. Firmware Agent Stage
+  const isPi = (currentBuild.board || '').toLowerCase().includes('rpi') || (currentBuild.code?.filename || '').endsWith('.py');
+  const fwDesc = isPi
+    ? `Python script (${currentBuild.code?.filename || 'main.py'})`
+    : `Arduino C++ sketch (${currentBuild.code?.filename || 'sketch.ino'})`;
   emit({
     step: 'firmware',
     stage: 'firmware',
     label: 'Firmware Agent',
     status: 'success',
-    detail: `Synthesized Arduino C++ sketch (${currentBuild.code?.filename || 'sketch.ino'}) with non-blocking timing loop`,
+    detail: `Synthesized ${fwDesc} with non-blocking timing loop`,
     code: currentBuild.code,
     timestamp: timestamp(),
   });
@@ -323,9 +327,10 @@ export async function runAgentLoop(buildData, emit) {
         maxPartZ = Math.max(maxPartZ, (item.z || 0) + dims[2]);
       }
       const wallMm = Math.max(currentBuild.case?.wallMm || 2.0, 2.2);
-      const reqW = Math.max(currentBuild.case?.outerMm?.[0] || 120, Math.ceil(maxPartX + wallMm * 2 + 10));
-      const reqL = Math.max(currentBuild.case?.outerMm?.[1] || 80, Math.ceil(maxPartY + wallMm * 2 + 10));
-      const reqH = Math.max(currentBuild.case?.outerMm?.[2] || 40, Math.ceil(maxPartZ + wallMm * 2 + 6));
+      const clearance = 2 * 2.2;
+      const reqW = Math.ceil(maxPartX + wallMm * 2 + clearance);
+      const reqL = Math.ceil(maxPartY + wallMm * 2 + clearance);
+      const reqH = Math.ceil(maxPartZ + wallMm * 2 + clearance);
       currentBuild.case = {
         ...(currentBuild.case || {}),
         outerMm: [reqW, reqL, reqH],

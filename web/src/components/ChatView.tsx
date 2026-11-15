@@ -585,7 +585,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
                       onClick={() => handleRate(msg.id, 'down')}
                       className={`p-1.5 rounded-md hover:bg-[#1f1f1f] transition cursor-pointer ${
                         ratings[msg.id] === 'down'
-                          ? 'text-rose-500'
+                          ? 'text-white'
                           : 'hover:text-[#f5f5f5] text-[#666]'
                       }`}
                       title="Poor response"

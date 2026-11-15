@@ -3,6 +3,7 @@ import { X, ShoppingBag, Box, Check, Copy, ExternalLink, QrCode, Sparkles, Downl
 import type { SolderBuild } from '../types';
 import { downloadBuildKit } from '../utils/kitDownloader';
 import { getOffersForPart, getCheapestInStockPrice } from '../data/partPrices';
+import { getBomTotal } from './HarnessTrace';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -19,18 +20,11 @@ export const OrderModal: React.FC<OrderModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const grandTotal = Math.round(
-    build.parts.reduce((sum, p) => {
-      if (p.owned) return sum;
-      const offers = getOffersForPart(p);
-      const cheapest = offers ? getCheapestInStockPrice(offers) : null;
-      const price = cheapest !== null ? cheapest : (p.priceInr || 0);
-      return sum + price * (p.qty || 1);
-    }, 0)
-  );
+  const grandTotal = getBomTotal(build);
 
   const handleDownload = () => {
-    downloadBuildKit(build);
+    const stl = `solid ${build?.name || 'solder_enclosure'}\nfacet normal 0 0 0\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid`;
+    downloadBuildKit(build, stl);
   };
 
   return (
