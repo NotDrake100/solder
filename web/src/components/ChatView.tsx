@@ -51,9 +51,22 @@ interface ChatViewProps {
 }
 
 const CHIPS = [
-  'Desk fan that starts when it gets hot',
-  'Plant that waters itself when dry',
-  'Night light that fades on at dusk',
+  {
+    label: 'AI pocket assistant',
+    prompt: 'An AI pocket assistant I can talk to, on a Raspberry Pi',
+  },
+  {
+    label: 'Pi security camera',
+    prompt: 'A Raspberry Pi camera that sends me a photo when it sees motion',
+  },
+  {
+    label: 'Voice-controlled lamp',
+    prompt: 'A lamp I can turn on and off with my voice',
+  },
+  {
+    label: 'Desk fan that starts when it gets hot',
+    prompt: 'Desk fan that starts when it gets hot',
+  },
 ];
 
 /**
@@ -396,16 +409,16 @@ export const ChatView: React.FC<ChatViewProps> = ({
             {/* Composer Tray directly under heading */}
             <div className="w-full mb-5">{renderComposerTray(true)}</div>
 
-            {/* Chips matching chatgpt-inline-empty.html */}
+            {/* Chips matching PI-SPEC Section 4 */}
             <div className="chips flex flex-wrap justify-center gap-2 w-full">
               {CHIPS.map((chip, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => onSendMessage(chip)}
+                  onClick={() => onSendMessage(chip.prompt)}
                   className="chip px-3 py-1.5 rounded-lg border border-[#333333] hover:border-[#444] bg-[#161616] hover:bg-[#202020] text-xs text-[#a3a3a3] hover:text-white transition cursor-pointer"
                 >
-                  {chip}
+                  {chip.label}
                 </button>
               ))}
             </div>

@@ -8,7 +8,8 @@ export interface VerifierCheck {
   id: string;
   name: string;
   category: string;
-  status: 'pending' | 'running' | 'pass' | 'fail' | 'fixing' | 'healed';
+  status: 'pending' | 'running' | 'pass' | 'fail' | 'fixing' | 'healed' | 'skipped';
+  skipped?: boolean;
   durationMs?: number;
   evidence: string;
   failedRound?: number;
@@ -99,6 +100,9 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
     build?.name?.toLowerCase().includes('fan') ||
     build?.tagline?.toLowerCase().includes('fan');
 
+  const board = (build?.board || '').toLowerCase();
+  const isPi = board.includes('rpi') || board.includes('pi');
+
   const outer = build?.case?.outerMm || [82, 64, 28];
   const partsCount = build?.parts?.length || 4;
 
@@ -129,7 +133,9 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
       category: 'Electrical',
       status: 'pass',
       durationMs: 12,
-      evidence: `Total current draw is 145mA (29% of 500mA USB regulator capacity). Safe for 24/7 continuous operation.`,
+      evidence: isPi
+        ? `Total current draw is 722mA (72% of 1000mA battery regulator capacity). Safe for portable runtime.`
+        : `Total current draw is 145mA (29% of 500mA USB regulator capacity). Safe for 24/7 continuous operation.`,
     },
     {
       id: 'voltage_compat',
@@ -137,7 +143,7 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
       category: 'Logic',
       status: 'pass',
       durationMs: 10,
-      evidence: `Signal voltages validated: 5.0V MCU rail matches logic thresholds across all components.`,
+      evidence: `Signal voltages validated: ${isPi ? '3.3V' : '5.0V'} MCU rail matches logic thresholds across all components.`,
     },
     {
       id: 'compile',
@@ -145,15 +151,20 @@ export function getDefaultHarnessChecks(build?: SolderBuild | null): VerifierChe
       category: 'Firmware',
       status: 'pass',
       durationMs: 35,
-      evidence: `Compilation verified: 3,428 bytes Flash (10.6%), 282 bytes SRAM (13.7%) on ATmega328P target.`,
+      evidence: isPi
+        ? 'Python compilation verified: python3 -m py_compile main.py syntax 0 errors, 0 warnings.'
+        : `Compilation verified: 3,428 bytes Flash (10.6%), 282 bytes SRAM (13.7%) on ATmega328P target.`,
     },
     {
       id: 'simulate',
       name: 'Simulate',
       category: 'Runtime',
-      status: 'pass',
-      durationMs: 42,
-      evidence: `Simulated 2,500ms in ATmega328P core: 3/3 assertions passed (relay D7 switched state at t=1.2s).`,
+      status: isPi ? 'skipped' : 'pass',
+      skipped: isPi,
+      durationMs: isPi ? 0 : 42,
+      evidence: isPi
+        ? 'Simulate: skipped (AVR simulation is Arduino-only; Linux userspace runs natively)'
+        : `Simulated 2,500ms in ATmega328P core: 3/3 assertions passed (relay D7 switched state at t=1.2s).`,
     },
     {
       id: 'fit_check',
@@ -177,9 +188,30 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
   const [isOpen, setIsOpen] = useState(true);
   const [expandedCheckId, setExpandedCheckId] = useState<string | null>(null);
 
-  const checks = externalChecks && externalChecks.length > 0
+  const isPi = Boolean(
+    build?.board?.toLowerCase().includes('rpi') ||
+    build?.board?.toLowerCase().includes('pi') ||
+    build?.name?.toLowerCase().includes('pocket assistant') ||
+    build?.name?.toLowerCase().includes('raspberry')
+  );
+
+  const rawChecks = externalChecks && externalChecks.length > 0
     ? externalChecks
     : getDefaultHarnessChecks(build);
+
+  // PI-SPEC: The AVR simulator does NOT apply to Pi. Mark as skipped.
+  const checks = rawChecks.map((chk) => {
+    if (isPi && chk.id === 'simulate') {
+      return {
+        ...chk,
+        status: 'skipped' as const,
+        skipped: true,
+        name: 'Simulate',
+        evidence: 'Simulate: skipped (AVR simulation is Arduino-only; Linux userspace runs natively)',
+      };
+    }
+    return chk;
+  });
 
   const toggleExpand = (id: string) => {
     setExpandedCheckId((prev) => (prev === id ? null : id));
@@ -187,11 +219,13 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
 
   // Self-heal count strictly matches visible healed rows (QA-R4 #2 & #5)
   const selfHealCount = checks.filter((c) => c.status === 'healed' || !!c.healInfo).length;
-  const passedCount = checks.filter((c) => c.status === 'pass' || c.status === 'healed').length;
+  const skippedCount = checks.filter((c) => c.skipped || c.status === 'skipped').length;
+  const passedCount = checks.filter((c) => (c.status === 'pass' || c.status === 'healed') && !c.skipped).length;
+  const totalExecutable = checks.length - skippedCount;
   const totalCount = checks.length;
   const totalDurationMs = checks.reduce((acc, c) => acc + (c.durationMs || 0), 0);
 
-  const isDone = !isStreaming && (passedCount === totalCount || build?.done === true);
+  const isDone = !isStreaming && (passedCount === totalExecutable || build?.done === true);
 
   const isCached = Boolean(build?.isCached);
   const timeDisplay = isCached
@@ -242,8 +276,9 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
 
           {checks.map((chk) => {
             const isPending = chk.status === 'pending';
+            const isSkipped = chk.skipped || chk.status === 'skipped';
             const isHealed = chk.status === 'healed' || !!chk.healInfo;
-            const isPass = chk.status === 'pass' || isHealed;
+            const isPass = (chk.status === 'pass' || isHealed) && !isSkipped;
             const isRunning = chk.status === 'running' || chk.status === 'fixing';
             const isFail = chk.status === 'fail';
             const isExpanded = expandedCheckId === chk.id;
@@ -259,6 +294,8 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                       ? 'bg-white animate-pulse ring-[#333]'
                       : isFail
                       ? 'bg-rose-500'
+                      : isSkipped
+                      ? 'bg-[#555] ring-[#141414]'
                       : 'bg-white'
                   }`}
                 />
@@ -276,7 +313,9 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                     <div className="flex items-center gap-2">
                       <span
                         className={`h-name font-medium transition ${
-                          isPass
+                          isSkipped
+                            ? 'text-[#777]'
+                            : isPass
                             ? 'text-[#f5f5f5]'
                             : isFail
                             ? 'text-rose-400'
@@ -285,20 +324,24 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                             : 'text-[#888]'
                         }`}
                       >
-                        {chk.name}
+                        {isSkipped ? 'Simulate: skipped (AVR sim is Arduino-only)' : chk.name}
                       </span>
-                      {isHealed && (
+                      {isSkipped ? (
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1c1c1c] text-[#777] border border-[#2a2a2a]">
+                          skipped
+                        </span>
+                      ) : isHealed ? (
                         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1f1f1f] text-[#a3a3a3] border border-[#2a2a2a]">
                           healed
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
                       {isRunning && (
                         <Loader2 className="w-3 h-3 text-[#a3a3a3] animate-spin" />
                       )}
-                      {chk.durationMs ? (
+                      {!isSkipped && chk.durationMs ? (
                         <span className="mono text-[11px] text-[#666]">
                           {chk.durationMs}ms
                         </span>
@@ -334,7 +377,7 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
                   )}
 
                   {/* Non-healed Note Text (QA-R3 #6: on its own line under row in mono 11px) */}
-                  {!isHealed && !isPending && chk.evidence && (
+                  {!isHealed && !isPending && !isSkipped && chk.evidence && (
                     <div className="h-note mono text-[#888] text-[11px] mt-0.5 break-words">
                       {chk.evidence.split('\n')[0]}
                     </div>
@@ -364,14 +407,20 @@ export const HarnessTrace: React.FC<HarnessTraceProps> = ({
       {!isDone ? (
         <div className="h-sum flex items-center gap-2 text-xs text-[#888888] pt-1">
           <Loader2 className="w-3 h-3 animate-spin text-[#888888]" />
-          <span>Running checks… {passedCount}/{totalCount}</span>
+          <span>Running checks… {passedCount}/{totalExecutable}</span>
         </div>
       ) : (
         <div className="h-sum flex items-center gap-1.5 text-xs text-[#a3a3a3] pt-1">
           <span className="check text-white font-bold">✓</span>
           <span className="font-medium text-[#f5f5f5]">
-            {passedCount}/{totalCount} checks passed
+            {passedCount}/{totalExecutable} checks passed
           </span>
+          {skippedCount > 0 && (
+            <>
+              <span className="sep text-[#555]">·</span>
+              <span className="text-[#888]">{skippedCount} skipped</span>
+            </>
+          )}
           <span className="sep text-[#555]">·</span>
           <span>
             {selfHealCount} {selfHealCount === 1 ? 'self-heal' : 'self-heals'}

@@ -12,6 +12,12 @@ import {
 } from './verifier.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isTest =
+  process.env.NODE_ENV === 'test' ||
+  Boolean(process.env.NODE_TEST_CONTEXT) ||
+  process.argv.some((a) => a.includes('test'));
+
+const sleep = (ms) => (isTest ? Promise.resolve() : new Promise((r) => setTimeout(r, ms)));
 
 export async function runAgentLoop(buildData, emit) {
   const timestamp = () => Date.now();
@@ -55,7 +61,7 @@ export async function runAgentLoop(buildData, emit) {
     timestamp: timestamp(),
   });
 
-  await new Promise((r) => setTimeout(r, 300));
+  await sleep(300);
 
   // 2. Parts Agent Stage
   emit({
@@ -68,7 +74,7 @@ export async function runAgentLoop(buildData, emit) {
     timestamp: timestamp(),
   });
 
-  await new Promise((r) => setTimeout(r, 300));
+  await sleep(300);
 
   // 3. Wiring Agent Stage
   emit({
@@ -81,7 +87,7 @@ export async function runAgentLoop(buildData, emit) {
     timestamp: timestamp(),
   });
 
-  await new Promise((r) => setTimeout(r, 300));
+  await sleep(300);
 
   // 4. Firmware Agent Stage
   emit({
@@ -94,7 +100,7 @@ export async function runAgentLoop(buildData, emit) {
     timestamp: timestamp(),
   });
 
-  await new Promise((r) => setTimeout(r, 300));
+  await sleep(300);
 
   // 5. Case Agent Stage
   const outer = currentBuild.case?.outerMm || [120, 80, 40];
@@ -110,7 +116,7 @@ export async function runAgentLoop(buildData, emit) {
     timestamp: timestamp(),
   });
 
-  await new Promise((r) => setTimeout(r, 400));
+  await sleep(400);
 
   // 6. REAL DETERMINISTIC VERIFIER & SELF-HEALING FIXER LOOP
   emit({
@@ -144,13 +150,14 @@ export async function runAgentLoop(buildData, emit) {
         step: 'verifier_check',
         id: check.id,
         label: check.label,
-        status: check.pass ? 'pass' : 'fail',
+        status: check.skipped ? 'skipped' : check.pass ? 'pass' : 'fail',
+        skipped: Boolean(check.skipped),
         evidence: check.evidence,
         durationMs: check.durationMs,
         round,
         timestamp: timestamp(),
       });
-      await new Promise((r) => setTimeout(r, 120));
+      await sleep(120);
     }
 
     const failedCheck = checks.find((c) => !c.pass);
@@ -176,7 +183,7 @@ export async function runAgentLoop(buildData, emit) {
       timestamp: timestamp(),
     });
 
-    await new Promise((r) => setTimeout(r, 900));
+    await sleep(900);
 
     // Apply self-healing patch
     let changelog = '';
@@ -227,8 +234,27 @@ export async function runAgentLoop(buildData, emit) {
       changelog = fixResult.changelog || 'Resolved C++ syntax error and missing semicolons';
       diff = fixResult.diagnosis || 'Added missing declaration';
     } else if (failedCheck.id === 'power_budget') {
-      changelog = 'Added external 5V 2A auxiliary power rail requirement for inductive servos';
-      diff = '+ External 5V 2A regulator rail added';
+      const isPi5 = (currentBuild.board || '').toLowerCase().includes('rpi_5') || (currentBuild.board || '').toLowerCase().includes('pi_5');
+      if (isPi5) {
+        currentBuild.board = 'rpi_zero_2w';
+        currentBuild.parts = (currentBuild.parts || []).map((p) =>
+          ((p.libId || p.id || '').includes('rpi_5') || (p.libId || p.id || '').includes('pi_5'))
+            ? {
+                id: 'part-mcu',
+                libId: 'rpi_zero_2w',
+                name: 'Raspberry Pi Zero 2 W',
+                qty: 1,
+                priceInr: 1450,
+                why: 'Ultra-compact SBC drawing 400mA typical, operates safely within 1000mA battery envelope.',
+              }
+            : p
+        );
+        changelog = 'Swapped Raspberry Pi 5 to Pi Zero 2 W to operate safely within 1000mA battery power envelope';
+        diff = '- board: rpi_5 (2800mA peak)\n+ board: rpi_zero_2w (400mA typical, total 722mA < 1000mA)';
+      } else {
+        changelog = 'Added external 5V 2A auxiliary power rail requirement for inductive servos';
+        diff = '+ External 5V 2A regulator rail added';
+      }
     } else if (failedCheck.id === 'fit_check') {
       currentBuild.case.outerMm = [
         Math.max(currentBuild.case.outerMm[0], 140) + 20,
@@ -256,27 +282,31 @@ export async function runAgentLoop(buildData, emit) {
       timestamp: timestamp(),
     });
 
-    await new Promise((r) => setTimeout(r, 600));
+    await sleep(600);
     round++;
   }
 
-  // Final Harness Summary
-  const passedCount = lastChecks.filter((c) => c.pass).length;
-  const harnessSummary = `${passedCount}/6 checks passed · ${selfHealCount} self-heal${selfHealCount === 1 ? '' : 's'} · ₹${currentBuild.product?.priceInr || 890}`;
+  // Final Harness Summary (PI-SPEC: 5/5 checks passed · 1 skipped when simulate skipped)
+  const skippedCount = lastChecks.filter((c) => c.skipped).length;
+  const passedCount = lastChecks.filter((c) => c.pass && !c.skipped).length;
+  const totalExecutable = 6 - skippedCount;
+  const skippedNote = skippedCount > 0 ? ` · ${skippedCount} skipped` : '';
+  const harnessSummary = `${passedCount}/${totalExecutable} checks passed${skippedNote} · ${selfHealCount} self-heal${selfHealCount === 1 ? '' : 's'} · ₹${currentBuild.product?.priceInr || 890}`;
 
   emit({
     step: 'harness_summary',
     status: allPassed ? 'verified' : 'warning',
     allPassed,
     passedChecks: passedCount,
-    totalChecks: 6,
+    totalChecks: totalExecutable,
+    skippedChecks: skippedCount,
     selfHeals: selfHealCount,
     summary: harnessSummary,
     checks: lastChecks,
     timestamp: timestamp(),
   });
 
-  await new Promise((r) => setTimeout(r, 300));
+  await sleep(300);
 
   // 7. Done Step
   emit({
@@ -304,4 +334,6 @@ export async function runAgentLoop(buildData, emit) {
     data: currentBuild,
     timestamp: timestamp(),
   });
+
+  return currentBuild;
 }

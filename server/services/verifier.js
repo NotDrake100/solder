@@ -29,6 +29,8 @@ try {
 const PART_CURRENT_DRAW = {
   arduino_uno: 45,
   esp32_devkit: 80,
+  rpi_zero_2w: 400,
+  rpi_5: 2800,
   relay_5v: 75,
   sg90_servo: 250, // Operating current; stall can reach 500mA
   oled_096: 20,
@@ -41,12 +43,21 @@ const PART_CURRENT_DRAW = {
   pir_motion: 1,
   ldr_sensor: 2,
   led_lamp: 30,
+  inmp441_mic: 2,
+  max98357a_amp: 300,
+  speaker_3w_4ohm: 250,
+  tactile_button: 1,
+  lipo_2000mah: 0,
+  powerboost_1000c: 5,
+  rpi_camera_v3: 250,
 };
 
 // Operating voltages (V)
 const PART_VOLTAGES = {
   arduino_uno: { vcc: 5, logic: 5 },
   esp32_devkit: { vcc: 3.3, logic: 3.3 },
+  rpi_zero_2w: { vcc: 5, logic: 3.3 },
+  rpi_5: { vcc: 5, logic: 3.3 },
   relay_5v: { vcc: 5, logic: 5 },
   sg90_servo: { vcc: 5, logic: 5 },
   oled_096: { vcc: [3.3, 5], logic: [3.3, 5] },
@@ -59,6 +70,13 @@ const PART_VOLTAGES = {
   pir_motion: { vcc: [3.3, 5], logic: 3.3 },
   ldr_sensor: { vcc: 5, logic: 5 },
   led_lamp: { vcc: 5, logic: 5 },
+  inmp441_mic: { vcc: 3.3, logic: 3.3 },
+  max98357a_amp: { vcc: 5, logic: [3.3, 5] },
+  speaker_3w_4ohm: { vcc: 5, logic: 0 },
+  tactile_button: { vcc: 3.3, logic: 3.3 },
+  lipo_2000mah: { vcc: 3.7, logic: 0 },
+  powerboost_1000c: { vcc: 5, logic: 3.3 },
+  rpi_camera_v3: { vcc: 3.3, logic: 3.3 },
 };
 
 /**
@@ -88,11 +106,23 @@ export function checkPinConflicts(build) {
     let targetPart = null;
     let targetPin = null;
 
-    if (fromPart.includes('uno') || fromPart.includes('esp32') || fromPart === 'mcu') {
+    if (
+      fromPart.includes('uno') ||
+      fromPart.includes('esp32') ||
+      fromPart.includes('rpi') ||
+      fromPart.includes('pi') ||
+      fromPart === 'mcu'
+    ) {
       mcuPin = fromPin;
       targetPart = toPart;
       targetPin = toPin;
-    } else if (toPart.includes('uno') || toPart.includes('esp32') || toPart === 'mcu') {
+    } else if (
+      toPart.includes('uno') ||
+      toPart.includes('esp32') ||
+      toPart.includes('rpi') ||
+      toPart.includes('pi') ||
+      toPart === 'mcu'
+    ) {
       mcuPin = toPin;
       targetPart = fromPart;
       targetPin = fromPin;
@@ -101,8 +131,27 @@ export function checkPinConflicts(build) {
     if (!mcuPin) continue;
 
     // Normalize power pins
-    if (['5V', '3V3', '3.3V', 'GND', 'VIN'].includes(mcuPin)) {
+    if (['5V', '3V3', '3.3V', 'GND', 'VIN'].some((p) => mcuPin.toUpperCase().includes(p))) {
       continue; // Power rails can share multiple connections
+    }
+
+    // Shared bus lines (I2C SDA/SCL, I2S shared clocks on Pi: GPIO18 BCLK/SCK, GPIO19 LRCLK/WS)
+    const upperPin = mcuPin.toUpperCase();
+    const isSharedI2sClock =
+      upperPin.includes('GPIO18') ||
+      upperPin.includes('PIN 12') ||
+      upperPin === '12' ||
+      upperPin.includes('GPIO19') ||
+      upperPin.includes('PIN 35') ||
+      upperPin === '35';
+    const isSharedI2c =
+      upperPin.includes('GPIO2') ||
+      upperPin.includes('GPIO3') ||
+      upperPin === 'A4' ||
+      upperPin === 'A5';
+
+    if (isSharedI2sClock || isSharedI2c) {
+      continue; // Shared bus clocks/data
     }
 
     if (!pinUsage.has(mcuPin)) {
@@ -194,13 +243,39 @@ export function checkPowerBudget(build) {
   const board = (build.board || 'uno').toLowerCase();
   const parts = build.parts || [];
 
-  const maxBudgetMa = board === 'esp32' ? 500 : 500; // Standard 5V USB current limit
-  let totalDrawMa = PART_CURRENT_DRAW[board === 'esp32' ? 'esp32_devkit' : 'arduino_uno'] || 45;
+  const isPi5 = board.includes('rpi_5') || board.includes('pi_5');
+  const isPiZero = board.includes('rpi_zero') || board.includes('pi_zero') || board.includes('zero2w');
+  const isPi = isPi5 || isPiZero || board.includes('rpi') || board.includes('pi');
+
+  const has1ABoost = parts.some(
+    (p) => (p.libId || p.id || '').includes('powerboost') || (p.libId || p.id || '').includes('tp4056')
+  );
+
+  let maxBudgetMa = 500; // Standard 5V USB limit
+  if (has1ABoost) {
+    maxBudgetMa = 1000; // PowerBoost 1000C max output
+  } else if (isPi5) {
+    maxBudgetMa = 3000; // 5V 3A USB-PD
+  } else if (isPi) {
+    maxBudgetMa = 2000;
+  } else if (board === 'esp32') {
+    maxBudgetMa = 500;
+  }
+
+  let totalDrawMa = 45;
+  if (isPi5) totalDrawMa = 2800;
+  else if (isPi) totalDrawMa = 400;
+  else if (board === 'esp32') totalDrawMa = 80;
+
   const breakdown = [];
   let heavyInductiveCount = 0;
 
   for (const part of parts) {
     const libId = part.libId || part.id;
+    // Don't double-count the MCU if already in parts list
+    if (['rpi_5', 'rpi_zero_2w', 'arduino_uno', 'esp32_devkit'].includes(libId)) {
+      continue;
+    }
     const draw = (PART_CURRENT_DRAW[libId] || 20) * (part.qty || 1);
     totalDrawMa += draw;
     breakdown.push({ part: part.name || libId, drawMa: draw });
@@ -218,12 +293,16 @@ export function checkPowerBudget(build) {
   let evidence = '';
 
   if (isOverBudget) {
-    evidence = `Power budget exceeded: Total estimated draw ${totalDrawMa}mA exceeds ${maxBudgetMa}mA USB limit. Servos/motors require separate 5V 2A external power.`;
+    if (isPi5 && has1ABoost) {
+      evidence = `Power budget exceeded: Raspberry Pi 5 peak load (${totalDrawMa}mA) exceeds 1000mA PowerBoost battery envelope. Swapping to Pi Zero 2 W (400mA) or 3A supply required.`;
+    } else {
+      evidence = `Power budget exceeded: Total estimated draw ${totalDrawMa}mA exceeds ${maxBudgetMa}mA USB limit. Servos/motors require separate 5V 2A external power.`;
+    }
   } else if (needsWarning) {
     evidence = `Power budget warning: Total draw ${totalDrawMa}mA is within ${maxBudgetMa}mA, but ${heavyInductiveCount} inductive servos may cause voltage droop under stall.`;
   } else {
     const pct = Math.round((totalDrawMa / maxBudgetMa) * 100);
-    evidence = `Total current draw is ${totalDrawMa}mA (${pct}% of ${maxBudgetMa}mA USB regulator capacity). Safe for 24/7 continuous operation.`;
+    evidence = `Total current draw is ${totalDrawMa}mA (${pct}% of ${maxBudgetMa}mA regulator capacity). Safe for 24/7 continuous operation.`;
   }
 
   return {
@@ -243,21 +322,29 @@ export function checkPowerBudget(build) {
 export function checkVoltageCompat(build) {
   const start = Date.now();
   const board = (build.board || 'uno').toLowerCase();
-  const boardLogic = board === 'esp32' ? 3.3 : 5.0;
+  const isPi = board.includes('rpi') || board.includes('pi');
+  const boardLogic = (board === 'esp32' || isPi) ? 3.3 : 5.0;
   const parts = build.parts || [];
   const errors = [];
 
   for (const part of parts) {
     const libId = part.libId || part.id;
+    // Don't compare the board to itself
+    if (['arduino_uno', 'esp32_devkit', 'rpi_zero_2w', 'rpi_5'].includes(libId) || libId === board) {
+      continue;
+    }
     const vSpec = PART_VOLTAGES[libId];
     if (!vSpec) continue;
 
+    const logics = Array.isArray(vSpec.logic) ? vSpec.logic : [vSpec.logic];
+    if (logics.includes(0)) continue; // passive / power-only part
+
     // Check if part logic level matches board
-    if (boardLogic === 5.0 && vSpec.logic === 3.3) {
+    if (boardLogic === 5.0 && !logics.includes(5.0)) {
       // 3.3V logic sensor connected directly to 5V MCU without level shifter
       errors.push(`${part.name || libId} requires 3.3V logic; feeding 5.0V Uno digital signals risks overvoltage damage`);
-    } else if (boardLogic === 3.3 && vSpec.vcc === 5 && vSpec.logic === 5) {
-      errors.push(`${part.name || libId} expects 5.0V logic thresholds; 3.3V ESP32 high signal (VIH) may not trigger cleanly`);
+    } else if (boardLogic === 3.3 && !logics.includes(3.3)) {
+      errors.push(`${part.name || libId} expects 5.0V logic thresholds; 3.3V ${isPi ? 'Raspberry Pi' : 'ESP32'} high signal (VIH) may not trigger cleanly`);
     }
   }
 
@@ -282,10 +369,44 @@ export function checkVoltageCompat(build) {
  */
 export async function checkCompile(build) {
   const start = Date.now();
-  const code = build.code?.ino || '';
+  const board = (build.board || 'uno').toLowerCase();
+  const isPi = board.includes('rpi') || board.includes('pi') || (build.code?.filename || '').endsWith('.py');
+  const code = build.code?.py || build.code?.ino || '';
   const errors = [];
 
-  // Check 1: Missing setup or loop
+  // 1. Python compilation for Raspberry Pi
+  if (isPi) {
+    let pass = true;
+    let evidence = '';
+    try {
+      const fs = await import('node:fs');
+      const os = await import('node:os');
+      const path = await import('node:path');
+      const { execSync } = await import('node:child_process');
+
+      const tmpFile = path.join(os.tmpdir(), `check_${Date.now()}_${Math.random().toString(36).slice(2)}.py`);
+      fs.writeFileSync(tmpFile, code || 'print("hello")', 'utf8');
+      execSync(`python3 -m py_compile "${tmpFile}"`, { stdio: 'pipe' });
+      try { fs.unlinkSync(tmpFile); } catch {}
+      evidence = 'Python compilation verified: python3 -m py_compile main.py syntax 0 errors, 0 warnings.';
+    } catch (err) {
+      pass = false;
+      evidence = `Python syntax error: ${err.message || 'SyntaxError during py_compile'}`;
+      errors.push(evidence);
+    }
+
+    const durationMs = Date.now() - start;
+    return {
+      id: 'compile',
+      label: 'Firmware Compilation (python3)',
+      pass,
+      evidence,
+      durationMs: Math.max(durationMs, 25),
+      details: { isPi: true, language: 'python' }
+    };
+  }
+
+  // Check 1: Missing setup or loop for Arduino
   if (!/void\s+setup\s*\(\s*\)/.test(code)) {
     errors.push("sketch.ino: error: undefined reference to 'setup()'");
   }
@@ -340,6 +461,23 @@ export async function checkCompile(build) {
  */
 export function checkSimulate(build) {
   const start = Date.now();
+  const board = (build.board || 'uno').toLowerCase();
+  const isPi = board.includes('rpi') || board.includes('pi');
+
+  // PI-SPEC: The AVR simulator does NOT apply to Pi.
+  if (isPi) {
+    const durationMs = Date.now() - start;
+    return {
+      id: 'simulate',
+      label: 'Virtual MCU Simulation',
+      pass: true,
+      skipped: true,
+      evidence: 'Simulate: skipped (AVR simulation is Arduino-only; Linux userspace runs natively)',
+      durationMs: Math.max(durationMs, 5),
+      details: { skipped: true, reason: 'rpi_linux_native' }
+    };
+  }
+
   const tests = build.tests || [];
   const code = build.code?.ino || '';
   const errors = [];

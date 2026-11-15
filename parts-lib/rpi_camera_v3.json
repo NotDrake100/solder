@@ -1,0 +1,20 @@
+{
+  "id": "rpi_camera_v3",
+  "aliases": ["pi_cam", "camera_v3", "imx708", "rpi_cam"],
+  "name": "Raspberry Pi Camera Module 3 (12MP)",
+  "category": "sensor",
+  "description": "High-resolution camera board powered by Sony IMX708 with autofocus, HDR support, and CSI ribbon interface.",
+  "dimensions": {
+    "width": 25.0,
+    "length": 24.0,
+    "height": 11.5
+  },
+  "pins": [
+    { "name": "CSI", "type": "spi", "description": "15-pin / 22-pin MIPI CSI-2 Camera Interface Ribbon", "voltage": 3.3 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 }
+  ],
+  "priceInr": 2100,
+  "operatingVoltage": 3.3,
+  "currentDrawMa": 250,
+  "color": "#18181b"
+}

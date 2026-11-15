@@ -31,6 +31,17 @@ export const PART_DIMENSIONS: Record<string, { width: number; length: number; he
   ldr_sensor: { width: 14.0, length: 32.0, height: 8.5 },
   ldr: { width: 14.0, length: 32.0, height: 8.5 },
   light_sensor: { width: 14.0, length: 32.0, height: 8.5 },
+  rpi_zero_2w: { width: 30.0, length: 65.0, height: 5.2 },
+  rpi_zero: { width: 30.0, length: 65.0, height: 5.2 },
+  rpi_5: { width: 56.0, length: 85.0, height: 17.0 },
+  speaker_3w_4ohm: { width: 40.0, length: 40.0, height: 18.0 },
+  speaker: { width: 40.0, length: 40.0, height: 18.0 },
+  powerboost_1000c: { width: 23.0, length: 36.0, height: 7.0 },
+  inmp441_mic: { width: 14.0, length: 14.0, height: 3.5 },
+  max98357a_amp: { width: 18.0, length: 19.0, height: 3.5 },
+  lipo_2000mah: { width: 35.0, length: 60.0, height: 8.0 },
+  tactile_button: { width: 12.0, length: 12.0, height: 7.5 },
+  rpi_camera_v3: { width: 25.0, length: 24.0, height: 11.5 },
 };
 
 export function getPartDimensions(libId: string): { width: number; length: number; height: number } {
@@ -857,6 +868,87 @@ export function buildLdrLightSensorMesh(materials: MaterialLibrary): THREE.Group
 }
 
 /**
+ * Builds detailed procedural 3D model for Raspberry Pi Zero 2 W
+ */
+export function buildRpiZeroMesh(materials: MaterialLibrary): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'rpi_zero_2w';
+
+  // 1. PCB (30 x 65 x 1.4 mm)
+  const pcbGeom = new THREE.BoxGeometry(30, 65, 1.4);
+  const pcb = new THREE.Mesh(pcbGeom, materials.pcbUno);
+  pcb.position.set(0, 0, 0.7);
+  pcb.castShadow = true;
+  group.add(pcb);
+
+  // 2. RP3A0 SiP / CPU shield can (12 x 12 x 1.2 mm)
+  const cpuGeom = new THREE.BoxGeometry(12, 12, 1.2);
+  const cpu = new THREE.Mesh(cpuGeom, materials.metalShield);
+  cpu.position.set(0, 0, 1.4 + 0.6);
+  cpu.castShadow = true;
+  group.add(cpu);
+
+  // 3. 40-pin GPIO header along the side (5 x 51 x 3.5 mm)
+  const headerGeom = new THREE.BoxGeometry(5, 51, 3.5);
+  const header = new THREE.Mesh(headerGeom, materials.plasticBlack);
+  header.position.set(-11, 0, 1.4 + 1.75);
+  group.add(header);
+
+  // 4. Dual Micro-USB connectors (power + data)
+  for (const yOffset of [-15, -4]) {
+    const usbGeom = new THREE.BoxGeometry(7, 5.5, 2.8);
+    const usb = new THREE.Mesh(usbGeom, materials.metalSilver);
+    usb.position.set(12, yOffset, 1.4 + 1.4);
+    group.add(usb);
+  }
+
+  // 5. Mini-HDMI connector
+  const hdmiGeom = new THREE.BoxGeometry(7, 11, 3.0);
+  const hdmi = new THREE.Mesh(hdmiGeom, materials.metalSilver);
+  hdmi.position.set(12, 16, 1.4 + 1.5);
+  group.add(hdmi);
+
+  // 6. MicroSD slot
+  const sdGeom = new THREE.BoxGeometry(12, 14, 1.2);
+  const sd = new THREE.Mesh(sdGeom, materials.metalSilver);
+  sd.position.set(0, -30, 1.4 + 0.6);
+  group.add(sd);
+
+  return group;
+}
+
+/**
+ * Builds detailed procedural 3D model for 40mm 3W Mini Speaker
+ */
+export function buildSpeakerMesh(materials: MaterialLibrary): THREE.Group {
+  const group = new THREE.Group();
+  group.name = 'speaker_3w_4ohm';
+
+  // 1. Metal rim / basket
+  const rimGeom = new THREE.CylinderGeometry(20, 17, 4, 32);
+  const rim = new THREE.Mesh(rimGeom, materials.metalSilver);
+  rim.rotation.x = Math.PI / 2;
+  rim.position.set(0, 0, 16);
+  group.add(rim);
+
+  // 2. Speaker cone (dark paper/poly cone)
+  const coneGeom = new THREE.CylinderGeometry(18, 8, 12, 32);
+  const cone = new THREE.Mesh(coneGeom, materials.plasticBlack);
+  cone.rotation.x = Math.PI / 2;
+  cone.position.set(0, 0, 9);
+  group.add(cone);
+
+  // 3. Magnet base
+  const magnetGeom = new THREE.CylinderGeometry(11, 11, 6, 32);
+  const magnet = new THREE.Mesh(magnetGeom, materials.metalShield);
+  magnet.rotation.x = Math.PI / 2;
+  magnet.position.set(0, 0, 3);
+  group.add(magnet);
+
+  return group;
+}
+
+/**
  * Builds generic fallback module with clean aesthetic for any unrecognized part
  */
 export function buildGenericModuleMesh(
@@ -914,7 +1006,11 @@ export function createPartMesh(
 
   let meshGroup: THREE.Group;
 
-  if (libId.includes('uno') || libId.includes('arduino')) {
+  if (libId.includes('rpi') || libId.includes('zero') || libId.includes('raspberry') || libId.includes('pi_5')) {
+    meshGroup = buildRpiZeroMesh(materials);
+  } else if (libId.includes('speaker') || libId.includes('audio_3w')) {
+    meshGroup = buildSpeakerMesh(materials);
+  } else if (libId.includes('uno') || libId.includes('arduino')) {
     meshGroup = buildArduinoUnoMesh(materials);
   } else if (libId.includes('esp32') || libId.includes('nodemcu')) {
     meshGroup = buildEsp32Mesh(materials);

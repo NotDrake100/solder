@@ -54,6 +54,8 @@ const partIds = [
   'pir_motion',
   'led_lamp',
   'ldr_sensor',
+  'rpi_zero_2w',
+  'speaker_3w_4ohm',
   'unknown_sensor_module', // tests generic fallback
 ];
 

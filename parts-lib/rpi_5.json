@@ -1,0 +1,34 @@
+{
+  "id": "rpi_5",
+  "aliases": ["pi_5", "raspberry_pi_5", "rpi5"],
+  "name": "Raspberry Pi 5 (4GB)",
+  "category": "mcu",
+  "description": "High-performance SBC with 2.4GHz quad-core Arm Cortex-A76, 4GB RAM, dual 4Kp60 HDMI, PCIe 2.0.",
+  "dimensions": {
+    "width": 56.0,
+    "length": 85.0,
+    "height": 17.0,
+    "mountingHoles": [
+      { "x": 3.5, "y": 3.5, "diameter": 2.75 },
+      { "x": 3.5, "y": 81.5, "diameter": 2.75 },
+      { "x": 52.5, "y": 3.5, "diameter": 2.75 },
+      { "x": 52.5, "y": 81.5, "diameter": 2.75 }
+    ]
+  },
+  "pins": [
+    { "name": "3V3", "type": "power", "description": "3.3V DC Power Rail", "voltage": 3.3 },
+    { "name": "5V", "type": "power", "description": "5V DC Power Rail (requires 5V 5A PD)", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 },
+    { "name": "GPIO2", "type": "i2c", "description": "I2C SDA (Pin 3)", "voltage": 3.3 },
+    { "name": "GPIO3", "type": "i2c", "description": "I2C SCL (Pin 5)", "voltage": 3.3 },
+    { "name": "GPIO17", "type": "digital", "description": "Push Button Trigger (Pin 11)", "voltage": 3.3 },
+    { "name": "GPIO18", "type": "pwm", "description": "I2S BCLK (Pin 12)", "voltage": 3.3 },
+    { "name": "GPIO19", "type": "digital", "description": "I2S LRCLK (Pin 35)", "voltage": 3.3 },
+    { "name": "GPIO20", "type": "digital", "description": "I2S DIN (Pin 38)", "voltage": 3.3 },
+    { "name": "GPIO21", "type": "digital", "description": "I2S DOUT (Pin 40)", "voltage": 3.3 }
+  ],
+  "priceInr": 5400,
+  "operatingVoltage": 5.0,
+  "currentDrawMa": 2800,
+  "color": "#1f2937"
+}

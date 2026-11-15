@@ -1,0 +1,20 @@
+{
+  "id": "speaker_3w_4ohm",
+  "aliases": ["speaker", "speaker_3w", "mini_speaker"],
+  "name": "Mini Speaker 4Ω 3W (40mm)",
+  "category": "actuator",
+  "description": "Compact dynamic full-range voice speaker driver for embedded voice synthesis and audio playback.",
+  "dimensions": {
+    "width": 40.0,
+    "length": 40.0,
+    "height": 18.0
+  },
+  "pins": [
+    { "name": "+", "type": "analog", "description": "Audio Signal Positive Lead", "voltage": 5.0 },
+    { "name": "-", "type": "ground", "description": "Audio Signal Negative Lead", "voltage": 0.0 }
+  ],
+  "priceInr": 110,
+  "operatingVoltage": 5.0,
+  "currentDrawMa": 250,
+  "color": "#18181b"
+}

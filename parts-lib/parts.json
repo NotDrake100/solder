@@ -672,7 +672,7 @@
     ],
     "name": "DHT11 Digital Temperature & Humidity Sensor",
     "category": "sensor",
-    "description": "Composite digital sensor providing calibrated temperature (0-50\u00b0C \u00b12\u00b0C) and relative humidity (20-90% RH \u00b15%).",
+    "description": "Composite digital sensor providing calibrated temperature (0-50°C ±2°C) and relative humidity (20-90% RH ±5%).",
     "dimensions": {
       "width": 12,
       "length": 15.5,
@@ -897,7 +897,7 @@
       {
         "name": "TRIG",
         "type": "digital",
-        "description": "Trigger Input: 10\u00b5s TTL pulse to start measurement",
+        "description": "Trigger Input: 10µs TTL pulse to start measurement",
         "voltage": 5
       },
       {
@@ -930,21 +930,21 @@
     "category": "sensor",
     "description": "Pyroelectric infrared motion detector module with dome fresnel lens and digital TTL trigger output.",
     "dimensions": {
-      "width": 24.0,
-      "length": 32.0,
-      "height": 18.0,
-      "domeDiameter": 22.0,
-      "domeHeight": 10.0,
+      "width": 24,
+      "length": 32,
+      "height": 18,
+      "domeDiameter": 22,
+      "domeHeight": 10,
       "mountingHoles": [
         {
-          "x": 2.0,
-          "y": 2.0,
-          "diameter": 2.0
+          "x": 2,
+          "y": 2,
+          "diameter": 2
         },
         {
-          "x": 30.0,
-          "y": 2.0,
-          "diameter": 2.0
+          "x": 30,
+          "y": 2,
+          "diameter": 2
         }
       ]
     },
@@ -953,7 +953,7 @@
         "name": "VCC",
         "type": "power",
         "description": "5V Power supply",
-        "voltage": 5.0
+        "voltage": 5
       },
       {
         "name": "OUT",
@@ -965,11 +965,11 @@
         "name": "GND",
         "type": "ground",
         "description": "Ground Reference",
-        "voltage": 0.0
+        "voltage": 0
       }
     ],
     "priceInr": 85,
-    "operatingVoltage": 5.0,
+    "operatingVoltage": 5,
     "color": "#FFFFFF"
   },
   {
@@ -984,15 +984,15 @@
     "category": "actuator",
     "description": "High-intensity diffused LED lamp breakout module with built-in current limiting resistor.",
     "dimensions": {
-      "width": 15.0,
-      "length": 25.0,
-      "height": 12.0,
-      "domeDiameter": 10.0,
-      "domeHeight": 8.0,
+      "width": 15,
+      "length": 25,
+      "height": 12,
+      "domeDiameter": 10,
+      "domeHeight": 8,
       "mountingHoles": [
         {
-          "x": 2.0,
-          "y": 2.0,
+          "x": 2,
+          "y": 2,
           "diameter": 2.5
         }
       ]
@@ -1002,23 +1002,23 @@
         "name": "SIG",
         "type": "digital",
         "description": "Digital/PWM Control Signal",
-        "voltage": 5.0
+        "voltage": 5
       },
       {
         "name": "VCC",
         "type": "power",
         "description": "5V Power Supply",
-        "voltage": 5.0
+        "voltage": 5
       },
       {
         "name": "GND",
         "type": "ground",
         "description": "Ground Reference",
-        "voltage": 0.0
+        "voltage": 0
       }
     ],
     "priceInr": 45,
-    "operatingVoltage": 5.0,
+    "operatingVoltage": 5,
     "color": "#FFD54F"
   },
   {
@@ -1033,14 +1033,14 @@
     "category": "sensor",
     "description": "Cadmium sulfide (CdS) photoresistor sensor module with LM393 comparator providing analog illumination voltage and digital darkness trigger.",
     "dimensions": {
-      "width": 14.0,
-      "length": 32.0,
+      "width": 14,
+      "length": 32,
       "height": 8.5,
       "mountingHoles": [
         {
-          "x": 16.0,
+          "x": 16,
           "y": 2.5,
-          "diameter": 3.0
+          "diameter": 3
         }
       ]
     },
@@ -1049,29 +1049,552 @@
         "name": "VCC",
         "type": "power",
         "description": "3.3V - 5V Power Supply",
-        "voltage": 5.0
+        "voltage": 5
       },
       {
         "name": "GND",
         "type": "ground",
         "description": "Ground Reference",
-        "voltage": 0.0
+        "voltage": 0
       },
       {
         "name": "DO",
         "type": "digital",
         "description": "Digital Output (Active LOW on dark)",
-        "voltage": 5.0
+        "voltage": 5
       },
       {
         "name": "AO",
         "type": "analog",
         "description": "Analog Output Voltage proportional to lux",
-        "voltage": 5.0
+        "voltage": 5
       }
     ],
     "priceInr": 65,
-    "operatingVoltage": 5.0,
+    "operatingVoltage": 5,
     "color": "#37474F"
+  },
+  {
+    "id": "rpi_zero_2w",
+    "aliases": [
+      "pi_zero",
+      "rpi_zero",
+      "raspberry_pi_zero_2w",
+      "pizero2w",
+      "zero2w"
+    ],
+    "name": "Raspberry Pi Zero 2 W",
+    "category": "mcu",
+    "description": "Quad-core 64-bit ARM Cortex-A53 @ 1GHz with 512MB RAM, WiFi, Bluetooth, and 40-pin GPIO header.",
+    "dimensions": {
+      "width": 30,
+      "length": 65,
+      "height": 5.2,
+      "mountingHoles": [
+        {
+          "x": 3.5,
+          "y": 3.5,
+          "diameter": 2.75
+        },
+        {
+          "x": 3.5,
+          "y": 61.5,
+          "diameter": 2.75
+        },
+        {
+          "x": 26.5,
+          "y": 3.5,
+          "diameter": 2.75
+        },
+        {
+          "x": 26.5,
+          "y": 61.5,
+          "diameter": 2.75
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "3V3",
+        "type": "power",
+        "description": "3.3V DC Power Rail",
+        "voltage": 3.3
+      },
+      {
+        "name": "5V",
+        "type": "power",
+        "description": "5V DC Power Rail",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      },
+      {
+        "name": "GPIO2",
+        "type": "i2c",
+        "description": "I2C SDA (Pin 3)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO3",
+        "type": "i2c",
+        "description": "I2C SCL (Pin 5)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO4",
+        "type": "digital",
+        "description": "General Purpose GPIO (Pin 7)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO17",
+        "type": "digital",
+        "description": "Push Button Trigger (Pin 11)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO18",
+        "type": "pwm",
+        "description": "I2S BCLK / Bit Clock (Pin 12)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO19",
+        "type": "digital",
+        "description": "I2S LRCLK / Word Select (Pin 35)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO20",
+        "type": "digital",
+        "description": "I2S DIN / Mic Data (Pin 38)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO21",
+        "type": "digital",
+        "description": "I2S DOUT / Amp Data (Pin 40)",
+        "voltage": 3.3
+      }
+    ],
+    "priceInr": 1450,
+    "operatingVoltage": 5,
+    "currentDrawMa": 400,
+    "color": "#1f2937"
+  },
+  {
+    "id": "rpi_5",
+    "aliases": [
+      "pi_5",
+      "raspberry_pi_5",
+      "rpi5"
+    ],
+    "name": "Raspberry Pi 5 (4GB)",
+    "category": "mcu",
+    "description": "High-performance SBC with 2.4GHz quad-core Arm Cortex-A76, 4GB RAM, dual 4Kp60 HDMI, PCIe 2.0.",
+    "dimensions": {
+      "width": 56,
+      "length": 85,
+      "height": 17,
+      "mountingHoles": [
+        {
+          "x": 3.5,
+          "y": 3.5,
+          "diameter": 2.75
+        },
+        {
+          "x": 3.5,
+          "y": 81.5,
+          "diameter": 2.75
+        },
+        {
+          "x": 52.5,
+          "y": 3.5,
+          "diameter": 2.75
+        },
+        {
+          "x": 52.5,
+          "y": 81.5,
+          "diameter": 2.75
+        }
+      ]
+    },
+    "pins": [
+      {
+        "name": "3V3",
+        "type": "power",
+        "description": "3.3V DC Power Rail",
+        "voltage": 3.3
+      },
+      {
+        "name": "5V",
+        "type": "power",
+        "description": "5V DC Power Rail (requires 5V 5A PD)",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      },
+      {
+        "name": "GPIO2",
+        "type": "i2c",
+        "description": "I2C SDA (Pin 3)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO3",
+        "type": "i2c",
+        "description": "I2C SCL (Pin 5)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO17",
+        "type": "digital",
+        "description": "Push Button Trigger (Pin 11)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO18",
+        "type": "pwm",
+        "description": "I2S BCLK (Pin 12)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO19",
+        "type": "digital",
+        "description": "I2S LRCLK (Pin 35)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO20",
+        "type": "digital",
+        "description": "I2S DIN (Pin 38)",
+        "voltage": 3.3
+      },
+      {
+        "name": "GPIO21",
+        "type": "digital",
+        "description": "I2S DOUT (Pin 40)",
+        "voltage": 3.3
+      }
+    ],
+    "priceInr": 5400,
+    "operatingVoltage": 5,
+    "currentDrawMa": 2800,
+    "color": "#1f2937"
+  },
+  {
+    "id": "inmp441_mic",
+    "aliases": [
+      "inmp441",
+      "i2s_mic",
+      "mems_mic"
+    ],
+    "name": "INMP441 I2S MEMS Microphone",
+    "category": "sensor",
+    "description": "High precision omnidirectional digital microphone module with I2S digital output for embedded audio capture.",
+    "dimensions": {
+      "width": 14,
+      "length": 14,
+      "height": 3
+    },
+    "pins": [
+      {
+        "name": "SCK",
+        "type": "digital",
+        "description": "I2S Serial Data Clock",
+        "voltage": 3.3
+      },
+      {
+        "name": "WS",
+        "type": "digital",
+        "description": "I2S Word Select / Left-Right Clock",
+        "voltage": 3.3
+      },
+      {
+        "name": "SD",
+        "type": "digital",
+        "description": "I2S Serial Data Output",
+        "voltage": 3.3
+      },
+      {
+        "name": "L/R",
+        "type": "digital",
+        "description": "Channel Select (Low=Left, High=Right)",
+        "voltage": 3.3
+      },
+      {
+        "name": "VDD",
+        "type": "power",
+        "description": "3.3V Power Supply",
+        "voltage": 3.3
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 180,
+    "operatingVoltage": 3.3,
+    "currentDrawMa": 2,
+    "color": "#3f3f46"
+  },
+  {
+    "id": "max98357a_amp",
+    "aliases": [
+      "max98357a",
+      "i2s_amp",
+      "max98357"
+    ],
+    "name": "MAX98357A I2S 3W D-Class Audio Amplifier",
+    "category": "actuator",
+    "description": "Filterless Class-D amplifier with integrated I2S DAC, delivering 3.2W into 4-ohm loads.",
+    "dimensions": {
+      "width": 18,
+      "length": 19,
+      "height": 3.5
+    },
+    "pins": [
+      {
+        "name": "BCLK",
+        "type": "digital",
+        "description": "I2S Bit Clock Line",
+        "voltage": 3.3
+      },
+      {
+        "name": "LRC",
+        "type": "digital",
+        "description": "I2S Left-Right Frame Clock Line",
+        "voltage": 3.3
+      },
+      {
+        "name": "DIN",
+        "type": "digital",
+        "description": "I2S Digital Audio Data Input Line",
+        "voltage": 3.3
+      },
+      {
+        "name": "GAIN",
+        "type": "digital",
+        "description": "Gain Configuration Pin (12dB / 15dB)",
+        "voltage": 3.3
+      },
+      {
+        "name": "SD",
+        "type": "digital",
+        "description": "Shutdown and Channel Select",
+        "voltage": 3.3
+      },
+      {
+        "name": "VIN",
+        "type": "power",
+        "description": "5V Power Supply Input",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 220,
+    "operatingVoltage": 5,
+    "currentDrawMa": 300,
+    "color": "#3f3f46"
+  },
+  {
+    "id": "speaker_3w_4ohm",
+    "aliases": [
+      "speaker",
+      "speaker_3w",
+      "mini_speaker"
+    ],
+    "name": "Mini Speaker 4Ω 3W (40mm)",
+    "category": "actuator",
+    "description": "Compact dynamic full-range voice speaker driver for embedded voice synthesis and audio playback.",
+    "dimensions": {
+      "width": 40,
+      "length": 40,
+      "height": 18
+    },
+    "pins": [
+      {
+        "name": "+",
+        "type": "analog",
+        "description": "Audio Signal Positive Lead",
+        "voltage": 5
+      },
+      {
+        "name": "-",
+        "type": "ground",
+        "description": "Audio Signal Negative Lead",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 110,
+    "operatingVoltage": 5,
+    "currentDrawMa": 250,
+    "color": "#18181b"
+  },
+  {
+    "id": "tactile_button",
+    "aliases": [
+      "button",
+      "push_button",
+      "button_12mm",
+      "push_button_tactile"
+    ],
+    "name": "12mm Tactile Push Button",
+    "category": "sensor",
+    "description": "Momentary SPST tactile push-to-make button switch with integrated pull-up.",
+    "dimensions": {
+      "width": 12,
+      "length": 12,
+      "height": 7.5
+    },
+    "pins": [
+      {
+        "name": "PIN1",
+        "type": "digital",
+        "description": "Switch Terminal 1",
+        "voltage": 3.3
+      },
+      {
+        "name": "PIN2",
+        "type": "ground",
+        "description": "Switch Terminal 2 (Ground reference)",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 15,
+    "operatingVoltage": 3.3,
+    "currentDrawMa": 1,
+    "color": "#27272a"
+  },
+  {
+    "id": "lipo_2000mah",
+    "aliases": [
+      "lipo",
+      "lipo_battery_2000mah",
+      "battery_lipo"
+    ],
+    "name": "3.7V 2000mAh LiPo Cell",
+    "category": "power",
+    "description": "Rechargeable Lithium-ion Polymer single cell with integrated protection circuit (PCM) and JST-PH connector.",
+    "dimensions": {
+      "width": 35,
+      "length": 60,
+      "height": 8
+    },
+    "pins": [
+      {
+        "name": "VBAT",
+        "type": "power",
+        "description": "Battery Positive Voltage (3.7V nominal, 4.2V peak)",
+        "voltage": 3.7
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Battery Negative Ground Lead",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 380,
+    "operatingVoltage": 3.7,
+    "currentDrawMa": 0,
+    "color": "#71717a"
+  },
+  {
+    "id": "powerboost_1000c",
+    "aliases": [
+      "powerboost",
+      "tp4056_boost",
+      "boost_charger_1a"
+    ],
+    "name": "PowerBoost 1000C Charger / 5V 1A Boost",
+    "category": "power",
+    "description": "DC-DC step-up boost converter with integrated LiPo battery charger, delivering regulated 5.2V @ up to 1000mA.",
+    "dimensions": {
+      "width": 23,
+      "length": 36,
+      "height": 7
+    },
+    "pins": [
+      {
+        "name": "5V",
+        "type": "power",
+        "description": "Boosted 5V Output Supply (1000mA max)",
+        "voltage": 5
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Common Ground Reference",
+        "voltage": 0
+      },
+      {
+        "name": "VBAT",
+        "type": "power",
+        "description": "LiPo Battery Input",
+        "voltage": 3.7
+      },
+      {
+        "name": "LBO",
+        "type": "digital",
+        "description": "Low Battery Indicator Output (Active Low)",
+        "voltage": 3.3
+      }
+    ],
+    "priceInr": 450,
+    "operatingVoltage": 5,
+    "maxOutputMa": 1000,
+    "currentDrawMa": 5,
+    "color": "#3f3f46"
+  },
+  {
+    "id": "rpi_camera_v3",
+    "aliases": [
+      "pi_cam",
+      "camera_v3",
+      "imx708",
+      "rpi_cam"
+    ],
+    "name": "Raspberry Pi Camera Module 3 (12MP)",
+    "category": "sensor",
+    "description": "High-resolution camera board powered by Sony IMX708 with autofocus, HDR support, and CSI ribbon interface.",
+    "dimensions": {
+      "width": 25,
+      "length": 24,
+      "height": 11.5
+    },
+    "pins": [
+      {
+        "name": "CSI",
+        "type": "spi",
+        "description": "15-pin / 22-pin MIPI CSI-2 Camera Interface Ribbon",
+        "voltage": 3.3
+      },
+      {
+        "name": "GND",
+        "type": "ground",
+        "description": "Ground Reference",
+        "voltage": 0
+      }
+    ],
+    "priceInr": 2100,
+    "operatingVoltage": 3.3,
+    "currentDrawMa": 250,
+    "color": "#18181b"
   }
 ]

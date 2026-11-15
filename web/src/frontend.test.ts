@@ -80,6 +80,26 @@ import { LandingPage } from './components/LandingPage.tsx';
 assert(typeof LandingPage === 'function', 'LandingPage component exists and exported');
 console.log('   ✓ Minimal Landing Page component verified.');
 
+// 8. Verify PI-SPEC: Raspberry Pi Harness & Skipped Simulate
+console.log('8. Testing PI-SPEC: Raspberry Pi builds & skipped simulation in harness...');
+const piBuildChecks = getDefaultHarnessChecks({
+  id: 'ai-assistant',
+  name: 'AI Pocket Assistant',
+  board: 'rpi_zero_2w',
+  parts: [{ id: 'rpi_zero_2w', libId: 'rpi_zero_2w' }],
+} as any);
+
+const piSimCheck = piBuildChecks.find((c) => c.id === 'simulate');
+assert(piSimCheck?.status === 'skipped', 'Raspberry Pi simulation check must have status skipped');
+assert(piSimCheck?.skipped === true, 'Raspberry Pi simulation check must have skipped: true');
+assert(piSimCheck?.evidence.includes('Simulate: skipped'), 'Pi simulation check must state Simulate: skipped');
+assert(piSimCheck?.evidence.includes('Arduino-only'), 'Pi simulation evidence mentions Arduino-only');
+
+const piCompileCheck = piBuildChecks.find((c) => c.id === 'compile');
+assert(piCompileCheck?.evidence.includes('python3'), 'Pi compile check evidence mentions python3');
+
+console.log('   ✓ Raspberry Pi skipped simulation and python compile verified.');
+
 console.log('\n========================================');
 console.log('ALL FRONTEND TEST SUITES PASSED (100%)');
 console.log('========================================');

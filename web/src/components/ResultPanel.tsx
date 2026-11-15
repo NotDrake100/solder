@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Cpu,
@@ -58,6 +58,27 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   const [burstCount, setBurstCount] = useState(0);
   const [copiedCode, setCopiedCode] = useState(false);
   const [materialTheme, setMaterialTheme] = useState<'acrylic' | 'pla' | 'dark'>('acrylic');
+  const [piFirmwareMode, setPiFirmwareMode] = useState<'on-device' | 'cloud' | 'setup'>('on-device');
+
+  const isPi = Boolean(
+    build?.board?.toLowerCase().includes('rpi') ||
+    build?.board?.toLowerCase().includes('pi') ||
+    build?.code?.filename?.endsWith('.py') ||
+    build?.code?.onDevicePy
+  );
+
+  const currentFirmwareCode = useMemo(() => {
+    if (!isPi) return build?.code?.ino || '// No firmware sketch';
+    if (piFirmwareMode === 'cloud') return build?.code?.cloudPy || build?.code?.py || build?.code?.ino || '';
+    if (piFirmwareMode === 'setup') return build?.code?.setupSh || '#!/usr/bin/env bash\nsudo apt update\n';
+    return build?.code?.onDevicePy || build?.code?.py || build?.code?.ino || '';
+  }, [build, isPi, piFirmwareMode]);
+
+  const currentFirmwareFilename = useMemo(() => {
+    if (!isPi) return build?.code?.filename || 'sketch.ino';
+    if (piFirmwareMode === 'setup') return 'setup.sh';
+    return 'main.py';
+  }, [build, isPi, piFirmwareMode]);
 
   // Signature burst reveal animation when a new build loads
   useEffect(() => {
@@ -71,20 +92,20 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   const totalCost = getBomTotal(build);
 
   const handleCopyCode = () => {
-    if (build?.code?.ino) {
-      navigator.clipboard.writeText(build.code.ino);
+    if (currentFirmwareCode) {
+      navigator.clipboard.writeText(currentFirmwareCode);
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 2000);
     }
   };
 
   const handleDownloadCode = () => {
-    if (!build?.code?.ino) return;
-    const blob = new Blob([build.code.ino], { type: 'text/plain' });
+    if (!currentFirmwareCode) return;
+    const blob = new Blob([currentFirmwareCode], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = build.code.filename || `${build.id}.ino`;
+    a.download = currentFirmwareFilename;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -320,10 +341,49 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
         {/* TAB 5: Firmware Code */}
         {activeTab === 'firmware' && (
-          <div className="p-3 max-h-[380px] flex flex-col select-text">
+          <div className="p-3 max-h-[420px] flex flex-col select-text">
+            {/* Pi Mode Switcher Toggle (PI-SPEC Section 2) */}
+            {isPi && (
+              <div className="flex items-center gap-1 pb-2.5 mb-2 border-b border-[#262626] overflow-x-auto text-xs whitespace-nowrap scrollbar-none">
+                <button
+                  type="button"
+                  onClick={() => setPiFirmwareMode('on-device')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-mono transition cursor-pointer ${
+                    piFirmwareMode === 'on-device'
+                      ? 'bg-white text-black font-semibold'
+                      : 'bg-[#1a1a1a] text-[#888] hover:text-white border border-[#2a2a2a]'
+                  }`}
+                >
+                  On-device (whisper + llama)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPiFirmwareMode('cloud')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-mono transition cursor-pointer ${
+                    piFirmwareMode === 'cloud'
+                      ? 'bg-white text-black font-semibold'
+                      : 'bg-[#1a1a1a] text-[#888] hover:text-white border border-[#2a2a2a]'
+                  }`}
+                >
+                  Cloud API (.env)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPiFirmwareMode('setup')}
+                  className={`px-2.5 py-1 rounded text-[11px] font-mono transition cursor-pointer ${
+                    piFirmwareMode === 'setup'
+                      ? 'bg-white text-black font-semibold'
+                      : 'bg-[#1a1a1a] text-[#888] hover:text-white border border-[#2a2a2a]'
+                  }`}
+                >
+                  setup.sh (ALSA / I2S)
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center justify-between pb-2 border-b border-[#262626] text-xs">
               <span className="mono text-[#888]">
-                {build.code?.filename || 'sketch.ino'}
+                {currentFirmwareFilename}
               </span>
               <div className="flex items-center gap-1.5">
                 <button
@@ -348,7 +408,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             </div>
 
             <pre className="mt-2 p-3 rounded-lg bg-[#0f0f0f] border border-[#222222] overflow-x-auto text-[#e5e5e5] font-mono text-[11.5px] leading-relaxed flex-1 select-text">
-              <code>{build.code?.ino || '// No firmware sketch'}</code>
+              <code>{currentFirmwareCode || '// No firmware sketch'}</code>
             </pre>
           </div>
         )}

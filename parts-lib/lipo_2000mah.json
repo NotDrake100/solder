@@ -1,0 +1,20 @@
+{
+  "id": "lipo_2000mah",
+  "aliases": ["lipo", "lipo_battery_2000mah", "battery_lipo"],
+  "name": "3.7V 2000mAh LiPo Cell",
+  "category": "power",
+  "description": "Rechargeable Lithium-ion Polymer single cell with integrated protection circuit (PCM) and JST-PH connector.",
+  "dimensions": {
+    "width": 35.0,
+    "length": 60.0,
+    "height": 8.0
+  },
+  "pins": [
+    { "name": "VBAT", "type": "power", "description": "Battery Positive Voltage (3.7V nominal, 4.2V peak)", "voltage": 3.7 },
+    { "name": "GND", "type": "ground", "description": "Battery Negative Ground Lead", "voltage": 0.0 }
+  ],
+  "priceInr": 380,
+  "operatingVoltage": 3.7,
+  "currentDrawMa": 0,
+  "color": "#71717a"
+}

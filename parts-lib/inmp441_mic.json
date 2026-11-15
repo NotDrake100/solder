@@ -1,0 +1,24 @@
+{
+  "id": "inmp441_mic",
+  "aliases": ["inmp441", "i2s_mic", "mems_mic"],
+  "name": "INMP441 I2S MEMS Microphone",
+  "category": "sensor",
+  "description": "High precision omnidirectional digital microphone module with I2S digital output for embedded audio capture.",
+  "dimensions": {
+    "width": 14.0,
+    "length": 14.0,
+    "height": 3.0
+  },
+  "pins": [
+    { "name": "SCK", "type": "digital", "description": "I2S Serial Data Clock", "voltage": 3.3 },
+    { "name": "WS", "type": "digital", "description": "I2S Word Select / Left-Right Clock", "voltage": 3.3 },
+    { "name": "SD", "type": "digital", "description": "I2S Serial Data Output", "voltage": 3.3 },
+    { "name": "L/R", "type": "digital", "description": "Channel Select (Low=Left, High=Right)", "voltage": 3.3 },
+    { "name": "VDD", "type": "power", "description": "3.3V Power Supply", "voltage": 3.3 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 }
+  ],
+  "priceInr": 180,
+  "operatingVoltage": 3.3,
+  "currentDrawMa": 2,
+  "color": "#3f3f46"
+}

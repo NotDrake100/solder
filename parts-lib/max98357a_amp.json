@@ -1,0 +1,25 @@
+{
+  "id": "max98357a_amp",
+  "aliases": ["max98357a", "i2s_amp", "max98357"],
+  "name": "MAX98357A I2S 3W D-Class Audio Amplifier",
+  "category": "actuator",
+  "description": "Filterless Class-D amplifier with integrated I2S DAC, delivering 3.2W into 4-ohm loads.",
+  "dimensions": {
+    "width": 18.0,
+    "length": 19.0,
+    "height": 3.5
+  },
+  "pins": [
+    { "name": "BCLK", "type": "digital", "description": "I2S Bit Clock Line", "voltage": 3.3 },
+    { "name": "LRC", "type": "digital", "description": "I2S Left-Right Frame Clock Line", "voltage": 3.3 },
+    { "name": "DIN", "type": "digital", "description": "I2S Digital Audio Data Input Line", "voltage": 3.3 },
+    { "name": "GAIN", "type": "digital", "description": "Gain Configuration Pin (12dB / 15dB)", "voltage": 3.3 },
+    { "name": "SD", "type": "digital", "description": "Shutdown and Channel Select", "voltage": 3.3 },
+    { "name": "VIN", "type": "power", "description": "5V Power Supply Input", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 }
+  ],
+  "priceInr": 220,
+  "operatingVoltage": 5.0,
+  "currentDrawMa": 300,
+  "color": "#3f3f46"
+}

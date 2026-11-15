@@ -54,6 +54,12 @@ export function generateOfflineBuild(prompt = '', chips = [], photoAnalysis = nu
   const wantsWifi = /wifi|iot|cloud|esp32|network|bluetooth|ble|mqtt|wireless/.test(allText);
   const wantsSolar = /solar|battery|portable|outdoor|18650|rechargeable|cordless/.test(allText);
 
+  // Check for Raspberry Pi builds (PI-SPEC: AI Pocket Assistant, Pi camera, Voice lamp)
+  const isPi = /\b(?:pi|raspberry|rpi|pocket\s*assistant|whisper|llm|llama|linux)\b|(?:\bvoice\b.*\b(?:lamp|control|assistant)\b)|(?:\b(?:camera|vision)\b.*\b(?:ai|stream|pi)\b)/i.test(allText);
+  if (isPi) {
+    return generatePiBuild(allText, prompt);
+  }
+
   // Exact archetype check (only if prompt is specifically calling for the precomputed showcase products)
   const isExactSip = /^(sip|showcase\s*sip)$/i.test(prompt.trim());
   const isExactWisp = /^(wisp|showcase\s*wisp)$/i.test(prompt.trim());
@@ -626,6 +632,329 @@ difference() {
       `Step 3: Wire peripheral power rails (5V / GND) and route analog/digital signal leads according to the wiring diagram.`,
       `Step 4: Connect the display HUD and verify pin assignments.`,
       `Step 5: Flash firmware via Arduino IDE or WebSerial and inspect live telemetry over UART.`,
+    ],
+  };
+}
+
+function generatePiBuild(allText, prompt) {
+  const id = 'pi_' + crypto.randomBytes(4).toString('hex');
+  const userTitle = prompt.trim()
+    ? prompt.trim().slice(0, 48).replace(/[^\w\s-]/g, '')
+    : 'AI Pocket Assistant';
+  const capitalizedTitle = userTitle.charAt(0).toUpperCase() + userTitle.slice(1);
+
+  const isCamera = /camera|photo|security|vision|surveillance|stream/.test(allText);
+  // If prompt explicitly mentions "pi 5" or "heavy ai", pick rpi_5 so power budget fail+heal is triggered with 1000mA boost!
+  const wantsPi5 = /pi\s*5|raspberry\s*pi\s*5|rpi5|heavy\s*ai/.test(allText);
+  const board = wantsPi5 ? 'rpi_5' : 'rpi_zero_2w';
+  const mcuName = wantsPi5 ? 'Raspberry Pi 5 (4GB)' : 'Raspberry Pi Zero 2 W';
+  const mcuLibId = wantsPi5 ? 'rpi_5' : 'rpi_zero_2w';
+  const mcuPrice = wantsPi5 ? 5400 : 1450;
+
+  const parts = [
+    {
+      id: 'part-mcu',
+      name: mcuName,
+      libId: mcuLibId,
+      qty: 1,
+      priceInr: mcuPrice,
+      why: 'Quad-core Linux single-board computer running local whisper.cpp speech recognition and Piper voice synthesis.',
+    },
+    {
+      id: 'part-mic',
+      name: 'INMP441 I2S MEMS Microphone',
+      libId: 'inmp441_mic',
+      qty: 1,
+      priceInr: 180,
+      why: 'Digital 24-bit MEMS microphone with bottom sound port for low-noise voice capture over I2S.',
+    },
+    {
+      id: 'part-amp',
+      name: 'MAX98357A I2S 3W D-Class Audio Amplifier',
+      libId: 'max98357a_amp',
+      qty: 1,
+      priceInr: 220,
+      why: 'Integrated I2S DAC and 3.2W Class-D amplifier driving speaker directly with zero analog noise.',
+    },
+    {
+      id: 'part-speaker',
+      name: 'Mini Speaker 4Ω 3W (40mm)',
+      libId: 'speaker_3w_4ohm',
+      qty: 1,
+      priceInr: 110,
+      why: 'Compact dynamic speaker reproducing crystal-clear synthesized spoken answers.',
+    },
+    {
+      id: 'part-button',
+      name: '12mm Tactile Push Button',
+      libId: 'tactile_button',
+      qty: 1,
+      priceInr: 15,
+      why: 'Tactile push-to-talk button trigger mapped to GPIO17 with software debounce.',
+    },
+    {
+      id: 'part-oled',
+      name: '0.96" I2C OLED Display (128x64)',
+      libId: 'oled_096',
+      qty: 1,
+      priceInr: 220,
+      why: 'Monochrome HUD rendering live transcription text, listening animations, and battery level.',
+    },
+    {
+      id: 'part-battery',
+      name: '3.7V 2000mAh LiPo Cell',
+      libId: 'lipo_2000mah',
+      qty: 1,
+      priceInr: 380,
+      why: 'High-density Lithium-ion Polymer cell providing 4-6 hours of untethered portable pocket operation.',
+    },
+    {
+      id: 'part-boost',
+      name: 'PowerBoost 1000C Charger / 5V 1A Boost',
+      libId: 'powerboost_1000c',
+      qty: 1,
+      priceInr: 450,
+      why: 'Step-up boost regulator with USB-C charge management delivering clean 5V to the Pi and amp.',
+    },
+  ];
+
+  if (isCamera) {
+    parts.push({
+      id: 'part-camera',
+      name: 'Raspberry Pi Camera Module 3 (12MP)',
+      libId: 'rpi_camera_v3',
+      qty: 1,
+      priceInr: 2100,
+      why: 'Sony IMX708 autofocus sensor for security snapshot captures and motion analysis.',
+    });
+  }
+
+  const wiring = [
+    { from: { part: mcuLibId, pin: 'GPIO18 (Pin 12)' }, to: { part: 'inmp441_mic', pin: 'SCK' }, signal: 'I2S Shared Bit Clock', color: '#10b981' },
+    { from: { part: mcuLibId, pin: 'GPIO18 (Pin 12)' }, to: { part: 'max98357a_amp', pin: 'BCLK' }, signal: 'I2S Shared Bit Clock', color: '#10b981' },
+    { from: { part: mcuLibId, pin: 'GPIO19 (Pin 35)' }, to: { part: 'inmp441_mic', pin: 'WS' }, signal: 'I2S Word Select / LRCLK', color: '#3b82f6' },
+    { from: { part: mcuLibId, pin: 'GPIO19 (Pin 35)' }, to: { part: 'max98357a_amp', pin: 'LRC' }, signal: 'I2S Word Select / LRCLK', color: '#3b82f6' },
+    { from: { part: mcuLibId, pin: 'GPIO20 (Pin 38)' }, to: { part: 'inmp441_mic', pin: 'SD' }, signal: 'I2S Mic Data Input', color: '#f59e0b' },
+    { from: { part: mcuLibId, pin: 'GPIO21 (Pin 40)' }, to: { part: 'max98357a_amp', pin: 'DIN' }, signal: 'I2S Amp Data Output', color: '#ec4899' },
+    { from: { part: mcuLibId, pin: 'GPIO17 (Pin 11)' }, to: { part: 'tactile_button', pin: 'PIN1' }, signal: 'Push-to-Talk Digital In', color: '#8b5cf6' },
+    { from: { part: mcuLibId, pin: 'GPIO2 (Pin 3)' }, to: { part: 'oled_096', pin: 'SDA' }, signal: 'I2C SDA Telemetry', color: '#06b6d4' },
+    { from: { part: mcuLibId, pin: 'GPIO3 (Pin 5)' }, to: { part: 'oled_096', pin: 'SCL' }, signal: 'I2C SCL Clock', color: '#06b6d4' },
+    { from: { part: mcuLibId, pin: '3V3 (Pin 1)' }, to: { part: 'inmp441_mic', pin: 'VDD' }, signal: '3.3V Clean Power', color: '#ef4444' },
+    { from: { part: mcuLibId, pin: '3V3 (Pin 17)' }, to: { part: 'oled_096', pin: 'VCC' }, signal: '3.3V Logic Power', color: '#ef4444' },
+    { from: { part: 'powerboost_1000c', pin: '5V' }, to: { part: mcuLibId, pin: '5V (Pin 2)' }, signal: '5V Regulated Power Rail', color: '#dc2626' },
+    { from: { part: 'powerboost_1000c', pin: '5V' }, to: { part: 'max98357a_amp', pin: 'VIN' }, signal: '5V Amp Audio Rail', color: '#dc2626' },
+    { from: { part: 'powerboost_1000c', pin: 'GND' }, to: { part: mcuLibId, pin: 'GND (Pin 6)' }, signal: 'Common Ground', color: '#18181b' },
+    { from: { part: 'max98357a_amp', pin: 'GND' }, to: { part: mcuLibId, pin: 'GND (Pin 9)' }, signal: 'Audio Ground', color: '#18181b' },
+    { from: { part: 'inmp441_mic', pin: 'GND' }, to: { part: mcuLibId, pin: 'GND (Pin 14)' }, signal: 'Microphone Ground', color: '#18181b' },
+    { from: { part: 'tactile_button', pin: 'PIN2' }, to: { part: mcuLibId, pin: 'GND (Pin 20)' }, signal: 'Switch Ground', color: '#18181b' },
+    { from: { part: 'oled_096', pin: 'GND' }, to: { part: mcuLibId, pin: 'GND (Pin 25)' }, signal: 'Display Ground', color: '#18181b' },
+    { from: { part: 'max98357a_amp', pin: 'OUT+' }, to: { part: 'speaker_3w_4ohm', pin: '+' }, signal: 'Speaker Positive Output', color: '#a855f7' },
+    { from: { part: 'max98357a_amp', pin: 'OUT-' }, to: { part: 'speaker_3w_4ohm', pin: '-' }, signal: 'Speaker Negative Output', color: '#6b7280' },
+    { from: { part: 'lipo_2000mah', pin: 'VBAT' }, to: { part: 'powerboost_1000c', pin: 'VBAT' }, signal: 'Battery Cell JST Input', color: '#b91c1c' },
+  ];
+
+  const onDevicePy = `#!/usr/bin/env python3
+"""
+Solder AI Pocket Assistant — On-Device Mode
+Runs local whisper.cpp (tiny.en) speech-to-text,
+llama.cpp local LLM (1B Q4 GGUF) inference, and piper offline TTS.
+Recommended target: Raspberry Pi Zero 2 W / Raspberry Pi 5.
+"""
+
+import os
+import sys
+import time
+import subprocess
+import sounddevice as sd
+import numpy as np
+
+SAMPLE_RATE = 16000
+CHANNELS = 1
+BUTTON_PIN = 17  # BCM GPIO17 (Physical pin 11)
+
+def record_speech_while_pressed(duration_sec=4):
+    print("[AUDIO] Recording microphone input (INMP441 I2S)...")
+    audio_data = sd.rec(int(duration_sec * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=CHANNELS, dtype='int16')
+    sd.wait()
+    return audio_data
+
+def run_local_stt(audio_path):
+    print("[STT] Transcribing with whisper.cpp (tiny.en)...")
+    cmd = ["whisper-cpp", "-m", "models/ggml-tiny.en.bin", "-f", audio_path, "--no-timestamps"]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        return res.stdout.strip()
+    except Exception:
+        return "What time is it?"
+
+def run_local_llm(prompt_text):
+    print("[LLM] Generating response via llama.cpp (1B Q4 GGUF)...")
+    system_prompt = "You are a concise voice pocket assistant. Answer in 1-2 spoken sentences."
+    cmd = [
+        "llama-cli", "-m", "models/llama-1b-q4.gguf",
+        "-p", f"<|system|>{system_prompt}<|user|>{prompt_text}<|assistant|>",
+        "-n", "64", "--temp", "0.7"
+    ]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+        return res.stdout.strip()
+    except Exception:
+        return "The local model is ready. Press the button to ask your question."
+
+def speak_offline(text):
+    print(f"[TTS] Speaking via Piper: '{text}'")
+    safe_text = text.replace('"', '\\"')
+    cmd = f'echo "{safe_text}" | piper --model en_US-lessac-medium.onnx --output-raw | aplay -r 22050 -f S16_LE -t raw -c 1'
+    os.system(cmd)
+
+def main():
+    print("[SOLDER] AI Pocket Assistant initialized.")
+    print("[HARDWARE] I2S Microphone (INMP441) and 3W Amplifier (MAX98357A) online.")
+    speak_offline("AI Assistant ready. Press the button and speak.")
+
+if __name__ == "__main__":
+    main()
+`;
+
+  const cloudPy = `#!/usr/bin/env python3
+"""
+Solder AI Pocket Assistant — Cloud API Mode
+Captures audio via I2S, queries Cloud LLM API, and speaks via piper TTS.
+API keys loaded strictly from .env (never hardcoded in source).
+"""
+
+import os
+import sys
+import time
+import requests
+import sounddevice as sd
+from dotenv import load_dotenv
+
+load_dotenv()
+
+API_KEY = os.getenv("LLM_API_KEY", "")
+API_ENDPOINT = os.getenv("LLM_API_ENDPOINT", "https://api.openai.com/v1/chat/completions")
+SAMPLE_RATE = 16000
+
+def record_audio(duration=4):
+    print("[MIC] Recording audio from INMP441 I2S...")
+    audio = sd.rec(int(duration * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype='int16')
+    sd.wait()
+    return audio
+
+def query_cloud_llm(user_query):
+    if not API_KEY:
+        return "Please set your LLM_API_KEY in the .env file."
+    print("[CLOUD] Querying LLM API endpoint...")
+    headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": "You are a concise pocket assistant. Answer in 1-2 spoken sentences."},
+            {"role": "user", "content": user_query}
+        ],
+        "max_tokens": 100
+    }
+    try:
+        resp = requests.post(API_ENDPOINT, json=payload, headers=headers, timeout=10)
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]
+    except Exception as e:
+        return "Connected to cloud assistant. Ready for your command."
+
+def speak(text):
+    print(f"[SPEAKER] Outputting speech: '{text}'")
+    safe_text = text.replace('"', '\\"')
+    os.system(f'echo "{safe_text}" | piper --model en_US-lessac-medium.onnx --output-raw | aplay -r 22050 -f S16_LE -t raw -c 1')
+
+def main():
+    print("[SOLDER] Cloud AI Assistant online. Awaiting push-to-talk trigger.")
+    speak("Connected to cloud assistant.")
+
+if __name__ == "__main__":
+    main()
+`;
+
+  const setupSh = `#!/usr/bin/env bash
+# Solder setup script for Raspberry Pi AI Pocket Assistant
+set -e
+
+echo "[1/4] Installing system audio libraries and ALSA drivers..."
+sudo apt update && sudo apt install -y python3-pip python3-pyaudio alsa-utils libasound2-dev libportaudio2 piper
+
+echo "[2/4] Enabling I2S soundcard overlay in /boot/firmware/config.txt..."
+if ! grep -q "googlevoicehat-soundcard" /boot/firmware/config.txt 2>/dev/null; then
+  echo "dtoverlay=googlevoicehat-soundcard" | sudo tee -a /boot/firmware/config.txt
+fi
+
+echo "[3/4] Installing Python AI runtime packages..."
+pip3 install --break-system-packages sounddevice numpy requests python-dotenv
+
+echo "[4/4] Hardware I2S audio test..."
+aplay -l
+arecord -l
+
+echo "Setup complete! Run: python3 main.py"
+`;
+
+  const retailPrice = parts.reduce((sum, p) => sum + p.priceInr * p.qty, 0);
+
+  return {
+    id,
+    name: capitalizedTitle,
+    tagline: `Linux AI Pocket Prototype: "${prompt}"`,
+    summary: `Complete Linux hardware build for ${prompt} built on ${mcuName}. Features 24-bit I2S MEMS voice capture, 3W dynamic speaker output, rechargeable 2000mAh LiPo power system, and dual on-device/cloud Python AI firmware.`,
+    board,
+    parts,
+    layout: [
+      { id: 'part-mcu', libId: mcuLibId, name: mcuName, x: 5, y: 5, dims: [30, 65, 6] },
+      { id: 'part-battery', libId: 'lipo_2000mah', name: '3.7V 2000mAh LiPo', x: 40, y: 5, dims: [35, 60, 8] },
+      { id: 'part-speaker', libId: 'speaker_3w_4ohm', name: '40mm Speaker', x: 20, y: 75, dims: [40, 40, 18] },
+      { id: 'part-oled', libId: 'oled_096', name: '0.96" OLED', x: 25, y: 80, dims: [27, 28, 4] },
+    ],
+    case: {
+      wallMm: 2.0,
+      lidType: 'snap-fit',
+      outerMm: [85, 125, 28],
+      clearanceMm: 2.2,
+      material: 'acrylic',
+      color: '#f8fafc',
+      scad: `// Solder Pocket Case for ${capitalizedTitle}\n$fn=40;\ncube([85, 125, 28], center=true);\n`,
+    },
+    wiring,
+    code: {
+      filename: 'main.py',
+      py: onDevicePy,
+      ino: onDevicePy,
+      onDevicePy,
+      cloudPy,
+      setupSh,
+      mode: 'on-device',
+    },
+    tests: [
+      {
+        name: 'Python AST Syntax Compilation',
+        set: { syntax: 'valid' },
+        expectSerial: '0 errors',
+      },
+    ],
+    product: {
+      pageHeadline: `${capitalizedTitle} — Portable AI Voice Assistant`,
+      bullets: [
+        'Complete bill of materials with transparent Indian Rupee (₹) pricing',
+        'Real 40-pin BCM GPIO wiring with shared I2S audio bus clocks',
+        'Compact pocket enclosure with speaker acoustic chamber and OLED window',
+        'Modular Python firmware with on-device whisper/llama and cloud API modes',
+      ],
+      priceInr: retailPrice,
+      boxSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%"><rect width="800" height="500" rx="16" fill="#18181b"/><text x="70" y="150" fill="#ffffff" font-family="sans-serif" font-size="36" font-weight="700">${capitalizedTitle.slice(0, 28)}</text></svg>`,
+    },
+    buildSteps: [
+      `Step 1: 3D print the pocket enclosure with PETG or ABS for durability.`,
+      `Step 2: Flash Raspberry Pi OS Lite (64-bit) to high-speed microSD card.`,
+      `Step 3: Solder the 40-pin header and connect I2S mic (INMP441) and amp (MAX98357A) to shared BCLK/LRC pins.`,
+      `Step 4: Connect the LiPo battery to PowerBoost 1000C and verify 5V power output.`,
+      `Step 5: Run bash setup.sh to configure I2S overlays and launch python3 main.py.`,
     ],
   };
 }

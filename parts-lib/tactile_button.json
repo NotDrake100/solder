@@ -1,0 +1,20 @@
+{
+  "id": "tactile_button",
+  "aliases": ["button", "push_button", "button_12mm", "push_button_tactile"],
+  "name": "12mm Tactile Push Button",
+  "category": "sensor",
+  "description": "Momentary SPST tactile push-to-make button switch with integrated pull-up.",
+  "dimensions": {
+    "width": 12.0,
+    "length": 12.0,
+    "height": 7.5
+  },
+  "pins": [
+    { "name": "PIN1", "type": "digital", "description": "Switch Terminal 1", "voltage": 3.3 },
+    { "name": "PIN2", "type": "ground", "description": "Switch Terminal 2 (Ground reference)", "voltage": 0.0 }
+  ],
+  "priceInr": 15,
+  "operatingVoltage": 3.3,
+  "currentDrawMa": 1,
+  "color": "#27272a"
+}

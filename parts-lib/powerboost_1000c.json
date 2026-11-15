@@ -1,0 +1,23 @@
+{
+  "id": "powerboost_1000c",
+  "aliases": ["powerboost", "tp4056_boost", "boost_charger_1a"],
+  "name": "PowerBoost 1000C Charger / 5V 1A Boost",
+  "category": "power",
+  "description": "DC-DC step-up boost converter with integrated LiPo battery charger, delivering regulated 5.2V @ up to 1000mA.",
+  "dimensions": {
+    "width": 23.0,
+    "length": 36.0,
+    "height": 7.0
+  },
+  "pins": [
+    { "name": "5V", "type": "power", "description": "Boosted 5V Output Supply (1000mA max)", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Common Ground Reference", "voltage": 0.0 },
+    { "name": "VBAT", "type": "power", "description": "LiPo Battery Input", "voltage": 3.7 },
+    { "name": "LBO", "type": "digital", "description": "Low Battery Indicator Output (Active Low)", "voltage": 3.3 }
+  ],
+  "priceInr": 450,
+  "operatingVoltage": 5.0,
+  "maxOutputMa": 1000,
+  "currentDrawMa": 5,
+  "color": "#3f3f46"
+}

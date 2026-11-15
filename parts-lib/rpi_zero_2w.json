@@ -1,0 +1,35 @@
+{
+  "id": "rpi_zero_2w",
+  "aliases": ["pi_zero", "rpi_zero", "raspberry_pi_zero_2w", "pizero2w", "zero2w"],
+  "name": "Raspberry Pi Zero 2 W",
+  "category": "mcu",
+  "description": "Quad-core 64-bit ARM Cortex-A53 @ 1GHz with 512MB RAM, WiFi, Bluetooth, and 40-pin GPIO header.",
+  "dimensions": {
+    "width": 30.0,
+    "length": 65.0,
+    "height": 5.2,
+    "mountingHoles": [
+      { "x": 3.5, "y": 3.5, "diameter": 2.75 },
+      { "x": 3.5, "y": 61.5, "diameter": 2.75 },
+      { "x": 26.5, "y": 3.5, "diameter": 2.75 },
+      { "x": 26.5, "y": 61.5, "diameter": 2.75 }
+    ]
+  },
+  "pins": [
+    { "name": "3V3", "type": "power", "description": "3.3V DC Power Rail", "voltage": 3.3 },
+    { "name": "5V", "type": "power", "description": "5V DC Power Rail", "voltage": 5.0 },
+    { "name": "GND", "type": "ground", "description": "Ground Reference", "voltage": 0.0 },
+    { "name": "GPIO2", "type": "i2c", "description": "I2C SDA (Pin 3)", "voltage": 3.3 },
+    { "name": "GPIO3", "type": "i2c", "description": "I2C SCL (Pin 5)", "voltage": 3.3 },
+    { "name": "GPIO4", "type": "digital", "description": "General Purpose GPIO (Pin 7)", "voltage": 3.3 },
+    { "name": "GPIO17", "type": "digital", "description": "Push Button Trigger (Pin 11)", "voltage": 3.3 },
+    { "name": "GPIO18", "type": "pwm", "description": "I2S BCLK / Bit Clock (Pin 12)", "voltage": 3.3 },
+    { "name": "GPIO19", "type": "digital", "description": "I2S LRCLK / Word Select (Pin 35)", "voltage": 3.3 },
+    { "name": "GPIO20", "type": "digital", "description": "I2S DIN / Mic Data (Pin 38)", "voltage": 3.3 },
+    { "name": "GPIO21", "type": "digital", "description": "I2S DOUT / Amp Data (Pin 40)", "voltage": 3.3 }
+  ],
+  "priceInr": 1450,
+  "operatingVoltage": 5.0,
+  "currentDrawMa": 400,
+  "color": "#1f2937"
+}
