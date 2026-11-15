@@ -9,16 +9,14 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-interface DetectionBox {
+interface TrackedMarker {
   id: string;
   label: string;
-  box_2d: [number, number, number, number]; // [ymin, xmin, ymax, xmax] 0-1000
   confidence: number;
-  // Current animated box in viewport percentages
-  currentY: number;
-  currentX: number;
-  currentH: number;
-  currentW: number;
+  x: number; // percentage 0-100
+  y: number; // percentage 0-100
+  missCount: number;
+  nudgeY?: number;
 }
 
 interface LiveCameraModalProps {
@@ -38,12 +36,11 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const intervalRef = useRef<any>(null);
-  const animFrameRef = useRef<number | null>(null);
 
   const [hasCameraError, setHasCameraError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
-  const [trackedBoxes, setTrackedBoxes] = useState<DetectionBox[]>([]);
+  const [trackedMarkers, setTrackedMarkers] = useState<TrackedMarker[]>([]);
   const [accumulatedParts, setAccumulatedParts] = useState<Map<string, number>>(new Map());
   const [sessionRemaining, setSessionRemaining] = useState(40);
 
@@ -86,11 +83,13 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
         if (!mounted) return;
         console.warn('Camera stream error:', err);
         setHasCameraError(true);
-        setErrorMessage(
-          err.name === 'NotAllowedError'
-            ? 'Camera permission denied. Allow camera access or take a photo below.'
-            : 'Live video not accessible on this connection. Take a photo instead.'
-        );
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          setErrorMessage('Camera access is blocked. Allow it in your browser settings, or upload a photo.');
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          setErrorMessage('No camera found on this device.');
+        } else {
+          setErrorMessage('Live video not accessible on this connection. Take a photo instead.');
+        }
       }
     }
 
@@ -103,7 +102,6 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
         streamRef.current = null;
       }
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, [isOpen]);
 
@@ -194,15 +192,15 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
     };
   }, [isOpen, hasCameraError]);
 
-  // 3. Update tracked bounding boxes with IoU matching
+  // 3. Update tracked markers with proximity/label matching and chip collision avoidance
   const updateDetections = (
     newDetections: Array<{ label: string; box_2d: [number, number, number, number]; confidence: number }>
   ) => {
-    // Add to running accumulated parts list
+    // Add confident detections to running accumulated parts list
     setAccumulatedParts((prev) => {
       const updated = new Map(prev);
       newDetections.forEach((d) => {
-        if (d.confidence >= 0.75) {
+        if (d.confidence >= 0.6) {
           const cleanLabel = d.label.trim();
           if (!updated.has(cleanLabel)) {
             updated.set(cleanLabel, 1);
@@ -212,81 +210,94 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
       return updated;
     });
 
-    // Match boxes by IoU to prevent flickering labels
-    setTrackedBoxes((prevTracked) => {
-      return newDetections.map((det, idx) => {
+    setTrackedMarkers((prevTracked) => {
+      // Map detections to center points (percentages 0-100)
+      const mapped = newDetections.map((det) => {
         const [ymin, xmin, ymax, xmax] = det.box_2d;
-        const targetY = ymin / 10; // convert 0-1000 to %
-        const targetX = xmin / 10;
-        const targetH = (ymax - ymin) / 10;
-        const targetW = (xmax - xmin) / 10;
-
-        // Find existing match by label or proximity
-        const existing = prevTracked.find(
-          (p) => p.label.toLowerCase() === det.label.toLowerCase() || Math.abs(p.currentX - targetX) < 15
-        );
-
-        if (existing) {
-          return {
-            id: existing.id,
-            label: det.label,
-            box_2d: det.box_2d,
-            confidence: det.confidence,
-            currentY: existing.currentY,
-            currentX: existing.currentX,
-            currentH: existing.currentH,
-            currentW: existing.currentW,
-          };
-        }
-
+        const centerX = (xmin + xmax) / 20; // 0-1000 -> 0-100%
+        const centerY = (ymin + ymax) / 20;
         return {
-          id: `det-${idx}-${Date.now()}`,
           label: det.label,
-          box_2d: det.box_2d,
           confidence: det.confidence,
-          currentY: targetY,
-          currentX: targetX,
-          currentH: targetH,
-          currentW: targetW,
+          x: Math.max(5, Math.min(95, centerX)),
+          y: Math.max(5, Math.min(95, centerY)),
         };
       });
+
+      const nextMarkers: TrackedMarker[] = [];
+      const usedIndices = new Set<number>();
+
+      // Match existing markers with closest new detection
+      prevTracked.forEach((marker) => {
+        let bestDist = Infinity;
+        let bestIdx = -1;
+
+        mapped.forEach((det, idx) => {
+          if (usedIndices.has(idx)) return;
+          const dist = Math.hypot(marker.x - det.x, marker.y - det.y);
+          const sameLabel = marker.label.toLowerCase() === det.label.toLowerCase();
+          const threshold = sameLabel ? 32 : 18;
+          if (dist < threshold && dist < bestDist) {
+            bestDist = dist;
+            bestIdx = idx;
+          }
+        });
+
+        if (bestIdx >= 0) {
+          usedIndices.add(bestIdx);
+          const match = mapped[bestIdx];
+          nextMarkers.push({
+            id: marker.id,
+            label: match.label,
+            confidence: match.confidence,
+            x: match.x,
+            y: match.y,
+            missCount: 0,
+          });
+        } else {
+          // Missed scan: keep if < 2 missed scans, prune after 2 missed scans
+          if (marker.missCount < 2) {
+            nextMarkers.push({
+              ...marker,
+              missCount: marker.missCount + 1,
+            });
+          }
+        }
+      });
+
+      // Add unmatched new detections as fresh markers
+      mapped.forEach((det, idx) => {
+        if (!usedIndices.has(idx)) {
+          nextMarkers.push({
+            id: `marker-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+            label: det.label,
+            confidence: det.confidence,
+            x: det.x,
+            y: det.y,
+            missCount: 0,
+          });
+        }
+      });
+
+      // Collision avoidance for confident label chips (nudge vertically if colliding)
+      const confident = nextMarkers.filter((m) => m.confidence >= 0.6);
+      confident.sort((a, b) => a.y - b.y);
+
+      for (let i = 0; i < confident.length; i++) {
+        confident[i].nudgeY = 0;
+        for (let j = 0; j < i; j++) {
+          const m1 = confident[j];
+          const m2 = confident[i];
+          const sameSide = (m1.x > 70) === (m2.x > 70);
+          if (sameSide && Math.abs(m1.y - m2.y) < 7) {
+            m2.nudgeY = (m1.nudgeY || 0) + 26;
+          }
+        }
+      }
+
+      return nextMarkers;
     });
   };
-
-  // 4. Smooth lerp animation for bounding boxes
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor;
-
-    const tick = () => {
-      setTrackedBoxes((prev) =>
-        prev.map((box) => {
-          const [ymin, xmin, ymax, xmax] = box.box_2d;
-          const targetY = ymin / 10;
-          const targetX = xmin / 10;
-          const targetH = (ymax - ymin) / 10;
-          const targetW = (xmax - xmin) / 10;
-
-          return {
-            ...box,
-            currentY: lerp(box.currentY, targetY, 0.25),
-            currentX: lerp(box.currentX, targetX, 0.25),
-            currentH: lerp(box.currentH, targetH, 0.25),
-            currentW: lerp(box.currentW, targetW, 0.25),
-          };
-        })
-      );
-
-      animFrameRef.current = requestAnimationFrame(tick);
-    };
-
-    animFrameRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -388,32 +399,63 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
               className="w-full h-full object-cover"
             />
 
-            {/* Tracking Overlay (matches camera-tracking-ref.jpg) */}
-            <div className="absolute inset-0 pointer-events-none">
-              {trackedBoxes.map((box) => {
-                const clampedW = Math.max(8, Math.min(box.currentW, 94));
-                const clampedH = Math.max(8, Math.min(box.currentH, 94));
-                const clampedX = Math.max(2, Math.min(box.currentX, 98 - clampedW));
-                const clampedY = Math.max(2, Math.min(box.currentY, 98 - clampedH));
+            {/* Tracking Overlay with Center Markers & Side Chips (QA-CAMERA-MARKERS) */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {trackedMarkers.map((marker) => {
+                const isHighConf = marker.confidence >= 0.6;
+                const isLeft = marker.x > 70;
 
                 return (
                   <div
-                    key={box.id}
-                    className="absolute border-2 border-white rounded-[12px] transition-all duration-300 ease-out shadow-[0_0_15px_rgba(255,255,255,0.25)]"
+                    key={marker.id}
+                    className="absolute transition-all duration-350 ease-out select-none pointer-events-none"
                     style={{
-                      top: `${clampedY}%`,
-                      left: `${clampedX}%`,
-                      height: `${clampedH}%`,
-                      width: `${clampedW}%`,
+                      left: `${marker.x}%`,
+                      top: `${marker.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      opacity: marker.missCount > 0 ? 0.35 : 1,
                     }}
                   >
-                    {/* Floating White Pill Label Chip INSIDE Top-Left of Box */}
-                    <div className="absolute top-1.5 left-1.5 bg-white text-black text-[11px] font-semibold tracking-tight px-2 py-0.5 rounded-md shadow-md flex items-center gap-1 whitespace-nowrap select-none">
-                      <span>{box.label}</span>
-                      <span className="text-[9.5px] font-mono opacity-60">
-                        {Math.round(box.confidence * 100)}%
-                      </span>
-                    </div>
+                    {isHighConf ? (
+                      /* High-confidence (>= 0.6): Hollow rounded square (40px, 10px radius) + tiny centre triangle + side label chip */
+                      <div className="relative flex items-center justify-center">
+                        {/* 40px rounded square */}
+                        <div className="w-10 h-10 rounded-[10px] border-2 border-white bg-black/35 backdrop-blur-[2px] flex items-center justify-center shadow-[0_0_12px_rgba(255,255,255,0.25)]">
+                          {/* Tiny 8px white triangle glyph in centre */}
+                          <svg width="8" height="8" viewBox="0 0 8 8" className="fill-white shrink-0">
+                            <polygon points="4,1 7,7 1,7" />
+                          </svg>
+                        </div>
+
+                        {/* Side label chip with 1px hairline */}
+                        <div
+                          className={`absolute top-1/2 -translate-y-1/2 flex items-center ${
+                            isLeft ? 'right-full flex-row-reverse pr-1' : 'left-full flex-row pl-1'
+                          }`}
+                          style={{
+                            marginTop: `${marker.nudgeY || 0}px`,
+                            transition: 'margin-top 200ms ease-out',
+                          }}
+                        >
+                          {/* 1px hairline connector */}
+                          <div className="w-2.5 h-[1px] bg-white/60 shrink-0" />
+                          {/* White label chip */}
+                          <div className="bg-white text-black text-[12px] font-semibold tracking-tight px-2 py-0.5 rounded-[6px] shadow-lg flex items-center gap-1.5 whitespace-nowrap ml-1 mr-1">
+                            <span>{marker.label}</span>
+                            <span className="text-[10px] font-mono opacity-60">
+                              {Math.round(marker.confidence * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Low-confidence (< 0.6): Just tiny faint white triangle glyph on its own */
+                      <div className="w-3 h-3 flex items-center justify-center opacity-40">
+                        <svg width="8" height="8" viewBox="0 0 8 8" className="fill-white">
+                          <polygon points="4,1 7,7 1,7" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -430,56 +472,58 @@ export const LiveCameraModal: React.FC<LiveCameraModalProps> = ({
         )}
       </div>
 
-      {/* Bottom Sheet: Running "Parts found" list that grows as you pan */}
-      <div className="shrink-0 p-4 bg-[#141414] border-t border-[#262626] z-20 space-y-3">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-white">Parts found</span>
-            <span className="text-[11px] font-mono text-[#888]">
-              ({totalFoundCount})
-            </span>
-          </div>
-
-          <div className="text-[11px] text-[#666]">
-            Pan slowly across your desk
-          </div>
-        </div>
-
-        {/* Found Parts horizontal chip list */}
-        <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none min-h-[34px]">
-          {foundItemsArray.length === 0 ? (
-            <div className="text-xs text-[#666] italic flex items-center gap-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#888]" />
-              <span>Scanning for Arduino, sensors, relays...</span>
-            </div>
-          ) : (
-            foundItemsArray.map(([label]) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#202020] border border-[#333] text-xs font-medium text-white shrink-0 animate-fadeIn"
-              >
-                <Check className="w-3 h-3 text-white" />
-                <span>{label}</span>
+      {/* Bottom Sheet: Running "Parts found" list (hidden when camera has error per QA-BREAK B5) */}
+      {!hasCameraError && (
+        <div className="shrink-0 p-4 bg-[#141414] border-t border-[#262626] z-20 space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-white">Parts found</span>
+              <span className="text-[11px] font-mono text-[#888]">
+                ({totalFoundCount})
               </span>
-            ))
-          )}
-        </div>
+            </div>
 
-        {/* Action Button: "Use these parts" */}
-        <div className="pt-1 flex items-center gap-2">
-          <button
-            onClick={handleUsePartsClick}
-            disabled={foundItemsArray.length === 0}
-            className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs transition flex items-center justify-center cursor-pointer ${
-              foundItemsArray.length > 0
-                ? 'bg-white text-black hover:bg-neutral-200 shadow-lg'
-                : 'bg-[#242424] text-[#666] cursor-not-allowed opacity-60'
-            }`}
-          >
-            <span>Use these parts ({totalFoundCount})</span>
-          </button>
+            <div className="text-[11px] text-[#666]">
+              Pan slowly across your desk
+            </div>
+          </div>
+
+          {/* Found Parts horizontal chip list */}
+          <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none min-h-[34px]">
+            {foundItemsArray.length === 0 ? (
+              <div className="text-xs text-[#666] italic flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#888]" />
+                <span>Scanning for Arduino, sensors, relays...</span>
+              </div>
+            ) : (
+              foundItemsArray.map(([label]) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#202020] border border-[#333] text-xs font-medium text-white shrink-0 animate-fadeIn"
+                >
+                  <Check className="w-3 h-3 text-white" />
+                  <span>{label}</span>
+                </span>
+              ))
+            )}
+          </div>
+
+          {/* Action Button: "Use these parts" */}
+          <div className="pt-1 flex items-center gap-2">
+            <button
+              onClick={handleUsePartsClick}
+              disabled={foundItemsArray.length === 0}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold text-xs transition flex items-center justify-center cursor-pointer ${
+                foundItemsArray.length > 0
+                  ? 'bg-white text-black hover:bg-neutral-200 shadow-lg'
+                  : 'bg-[#242424] text-[#666] cursor-not-allowed opacity-60'
+              }`}
+            >
+              <span>Use these parts ({totalFoundCount})</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
