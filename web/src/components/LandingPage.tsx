@@ -1,23 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ArrowRight, Check } from 'lucide-react';
 import { SolderLogo } from './SolderLogo';
-import { SHOWCASE_BUILDS } from '../data/showcases';
-import { getBomTotal } from './HarnessTrace';
+import { ProductThumbnail } from './ProductThumbnails';
 
-function formatBoard(board?: string): string {
-  if (!board) return 'Arduino Uno';
-  const b = board.toLowerCase();
-  if (b.includes('esp32')) return 'ESP32';
-  if (b.includes('uno')) return 'Arduino Uno';
-  if (b.includes('rpi') || b.includes('pi')) return 'Raspberry Pi';
-  return board;
-}
-
-const FEATURED_BUILDS = [
-  SHOWCASE_BUILDS.sip,
-  SHOWCASE_BUILDS.wisp,
-  SHOWCASE_BUILDS.hasp,
-  SHOWCASE_BUILDS.eave,
+const SHOWCASE_PRODUCTS = [
+  { id: 'pocket-ai', label: 'Pi pocket AI assistant' },
+  { id: 'sip', label: 'Plant monitor' },
+  { id: 'wisp', label: 'Smart lamp' },
+  { id: 'eave', label: 'Weather station' },
+  { id: 'robot-car', label: 'Robot car' },
+  { id: 'hasp', label: 'Smart lock' },
+  { id: 'desk-fan', label: 'Desk fan' },
+  { id: 'macro-pad', label: 'Macro keypad' },
 ];
 
 interface LandingPageProps {
@@ -106,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
           </div>
         </section>
 
-        {/* SECTION 2: FEATURED BUILDS (4 plain cards, responsive 2 cols phone, 4 desktop) */}
+        {/* SECTION 2: SHOWCASE GALLERY (8 visual cards, NO text inside cards) */}
         <section className="w-full py-16 sm:py-24 border-t border-[#1f1f1f]">
           <div className="mb-10 text-left">
             <h2 className="text-2xl sm:text-[36px] font-semibold tracking-tight text-white">
@@ -118,36 +112,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {FEATURED_BUILDS.map((build) => {
-              const price = getBomTotal(build);
-              return (
-                <a
-                  key={build.id}
-                  href={`/b/${build.id}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onTryIt(build.id);
-                  }}
-                  className="group p-4 sm:p-5 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#444] hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between text-left no-underline"
-                >
-                  <div>
-                    <div className="text-[10px] sm:text-[11px] font-mono text-[#888] uppercase tracking-wider mb-2">
-                      {formatBoard(build.board)}
-                    </div>
-                    <h3 className="text-base sm:text-lg font-medium text-white transition mb-2 leading-snug">
-                      {build.name}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-[#8e8e8e] leading-relaxed mb-4 sm:mb-6 line-clamp-2">
-                      {build.tagline || build.summary}
-                    </p>
-                  </div>
-                  <div className="pt-3 sm:pt-4 border-t border-[#202020] text-xs font-mono text-[#a3a3a3] flex items-center justify-between gap-1">
-                    <span>{build.parts?.length || 0} parts</span>
-                    <span>Rs {price.toLocaleString('en-IN')}</span>
-                  </div>
-                </a>
-              );
-            })}
+            {SHOWCASE_PRODUCTS.map((product) => (
+              <a
+                key={product.id}
+                href={`/b/${product.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onTryIt(product.id);
+                }}
+                aria-label={product.label}
+                title={product.label}
+                className="group relative p-4 sm:p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#555] hover:-translate-y-1 transition-all duration-200 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden"
+              >
+                <ProductThumbnail
+                  id={product.id}
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                />
+              </a>
+            ))}
           </div>
         </section>
 

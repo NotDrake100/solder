@@ -5,6 +5,9 @@ import sipRaw from '../../../showcase/sip.json';
 import wispRaw from '../../../showcase/wisp.json';
 import haspRaw from '../../../showcase/hasp.json';
 import eaveRaw from '../../../showcase/eave.json';
+import pocketAiRaw from '../../../showcase/pocket-ai.json';
+import robotCarRaw from '../../../showcase/robot-car.json';
+import macroPadRaw from '../../../showcase/macro-pad.json';
 
 export const DESK_FAN_BUILD: SolderBuild = {
   id: 'desk-fan',
@@ -159,11 +162,14 @@ void loop() {
 };
 
 export const SHOWCASE_BUILDS: Record<string, SolderBuild> = {
+  'pocket-ai': pocketAiRaw as unknown as SolderBuild,
   sip: sipRaw as unknown as SolderBuild,
   wisp: wispRaw as unknown as SolderBuild,
-  hasp: haspRaw as unknown as SolderBuild,
   eave: eaveRaw as unknown as SolderBuild,
+  'robot-car': robotCarRaw as unknown as SolderBuild,
+  hasp: haspRaw as unknown as SolderBuild,
   'desk-fan': DESK_FAN_BUILD,
+  'macro-pad': macroPadRaw as unknown as SolderBuild,
 };
 
 export const SHOWCASE_PILLS = [
