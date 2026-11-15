@@ -765,12 +765,23 @@ export function App() {
     });
   };
 
+  // Scope overflow:hidden to /app only; let landing page / scroll normally
+  useEffect(() => {
+    if (view === 'landing') {
+      document.documentElement.style.overflow = 'auto';
+      document.body.style.overflow = 'auto';
+    } else {
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
+  }, [view]);
+
   if (view === 'landing') {
     return <LandingPage onTryIt={handleGoToApp} />;
   }
 
   return (
-    <div className="app flex h-screen w-full bg-[#0f0f0f] text-[#f5f5f5] font-sans overflow-hidden">
+    <div className="app app-shell flex h-screen w-full bg-[#0f0f0f] text-[#f5f5f5] font-sans overflow-hidden">
       {/* Desktop Slim Sidebar (232px) */}
       <Sidebar
         isOpen={isSidebarOpen}
