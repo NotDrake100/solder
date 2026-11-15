@@ -68,3 +68,23 @@
 .animate-fadeIn {
   animation: fadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Staggered entrance for showcase gallery (transform and opacity only, zero layout shift) */
+@keyframes galleryEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-gallery-entrance {
+  animation: galleryEntrance 350ms ease forwards;
+}
+
+.card-hover-gpu {
+  transition: transform 200ms ease, border-color 200ms ease;
+}

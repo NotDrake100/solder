@@ -9,7 +9,7 @@ const SHOWCASE_PRODUCTS = [
   { id: 'wisp', label: 'Smart lamp' },
   { id: 'eave', label: 'Weather station' },
   { id: 'robot-car', label: 'Robot car' },
-  { id: 'hasp', label: 'Smart lock' },
+  { id: 'hasp', label: 'Doorbell' },
   { id: 'desk-fan', label: 'Desk fan' },
   { id: 'macro-pad', label: 'Macro keypad' },
 ];
@@ -77,8 +77,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </button>
 
-          {/* HERO DEMO VIDEO (max-width 1100px, 16px radius, 1px #262626 border) */}
-          <div className="w-full max-w-[1100px] rounded-2xl overflow-hidden border border-[#262626] bg-[#121212] shadow-2xl relative">
+          {/* HERO DEMO VIDEO (reserved 16:9 aspect-video from first paint, no CLS) */}
+          <div className="w-full max-w-[1100px] aspect-video relative rounded-2xl overflow-hidden border border-[#262626] bg-[#121212] shadow-2xl">
             <video
               ref={videoRef}
               autoPlay
@@ -86,14 +86,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
               loop
               playsInline
               poster="/demo-poster.jpg"
-              className="w-full h-auto block rounded-2xl"
+              className="absolute inset-0 w-full h-full object-cover rounded-2xl"
             >
               <source src="/demo-loop.mp4" type="video/mp4" />
               <source src="/demo-loop.webm" type="video/webm" />
               <img
                 src="/demo-poster.jpg"
                 alt="Solder finished build preview"
-                className="w-full h-auto object-cover rounded-2xl"
+                className="absolute inset-0 w-full h-full object-cover rounded-2xl"
                 loading="lazy"
               />
             </video>
@@ -112,7 +112,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-            {SHOWCASE_PRODUCTS.map((product) => (
+            {SHOWCASE_PRODUCTS.map((product, index) => (
               <a
                 key={product.id}
                 href={`/b/${product.id}`}
@@ -122,11 +122,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
                 }}
                 aria-label={product.label}
                 title={product.label}
-                className="group relative p-4 sm:p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#555] hover:-translate-y-1 transition-all duration-200 cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden"
+                style={{
+                  animationDelay: `${index * 50}ms`,
+                  opacity: 0,
+                }}
+                className="group relative p-4 sm:p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#555] hover:-translate-y-1 card-hover-gpu transform-gpu animate-gallery-entrance cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden"
               >
                 <ProductThumbnail
                   id={product.id}
-                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full object-contain transform-gpu transition-transform duration-300 group-hover:scale-105"
                 />
               </a>
             ))}

@@ -442,58 +442,77 @@ export const ProductThumbnail: React.FC<ProductThumbnailProps> = ({ id, classNam
           aria-hidden="true"
         >
           <defs>
-            <linearGradient id="lock-front" x1="60" y1="80" x2="140" y2="150" gradientUnits="userSpaceOnUse">
+            <linearGradient id="doorbell-front" x1="80" y1="30" x2="160" y2="150" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#27272a" />
-              <stop offset="100%" stopColor="#141416" />
+              <stop offset="50%" stopColor="#18181b" />
+              <stop offset="100%" stopColor="#09090b" />
             </linearGradient>
-            <linearGradient id="deadbolt" x1="140" y1="100" x2="200" y2="120" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="50%" stopColor="#a1a1aa" />
-              <stop offset="100%" stopColor="#3f3f46" />
-            </linearGradient>
+            <radialGradient id="chime-glow" cx="120" cy="115" r="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
+              <stop offset="40%" stopColor="#a1a1aa" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#18181b" stopOpacity="0" />
+            </radialGradient>
           </defs>
 
-          {/* Shadow */}
-          <ellipse cx="120" cy="154" rx="65" ry="14" fill="#000" opacity="0.45" filter="blur(6px)" />
+          {/* Wall mount drop shadow */}
+          <ellipse cx="120" cy="154" rx="55" ry="14" fill="#000000" opacity="0.45" filter="blur(6px)" />
 
-          {/* Lock Enclosure Right Wall */}
-          <polygon points="135,116 175,88 175,124 135,152" fill="#141416" stroke="#3f3f46" strokeWidth="1" />
-          {/* Lock Enclosure Top Face */}
-          <polygon points="95,50 175,88 135,116 55,78" fill="#27272a" stroke="#52525b" strokeWidth="1.2" />
-          <polyline points="56,77 95,51 174,87" stroke="#ffffff" strokeWidth="1" strokeOpacity="0.4" />
-          {/* Lock Enclosure Front Keypad Face */}
-          <polygon points="55,78 135,116 135,152 55,114" fill="url(#lock-front)" stroke="#52525b" strokeWidth="1.2" />
+          {/* Wall Backplate Bracket (Isometric depth) */}
+          <path
+            d="M86,40 C86,34 92,30 98,30 L142,30 C148,30 154,34 154,40 L154,140 C154,146 148,150 142,150 L98,150 C92,150 86,146 86,140 Z"
+            fill="#141416"
+            stroke="#3f3f46"
+            strokeWidth="1"
+          />
 
-          {/* Motorized Solid Steel Deadbolt projecting from Right Wall */}
-          <polygon points="155,108 195,88 195,100 155,120" fill="url(#deadbolt)" stroke="#ffffff" strokeWidth="1" />
-          <ellipse cx="195" cy="94" rx="4" ry="6" fill="#e4e4e7" stroke="#ffffff" strokeWidth="0.8" />
+          {/* Doorbell Body (Sleek chamfered front fascia) */}
+          <path
+            d="M92,34 C92,30 96,26 102,26 L138,26 C144,26 148,30 148,34 L148,136 C148,142 144,146 138,146 L102,146 C96,146 92,142 92,136 Z"
+            fill="url(#doorbell-front)"
+            stroke="#52525b"
+            strokeWidth="1.2"
+          />
 
-          {/* Biometric Circular Fingerprint Scanner Ring */}
-          <ellipse cx="78" cy="92" rx="10" ry="6" fill="#09090b" stroke="#ffffff" strokeWidth="1.2" />
-          {/* Fingerprint concentric ridges */}
-          <ellipse cx="78" cy="92" rx="6" ry="3.5" stroke="#71717a" strokeWidth="0.8" fill="none" />
-          <ellipse cx="78" cy="92" rx="3" ry="1.8" stroke="#a1a1aa" strokeWidth="0.8" fill="none" />
+          {/* Top Edge Highlight */}
+          <path
+            d="M93,34 C93,31 97,27 102,27 L138,27 C143,27 147,31 147,34"
+            stroke="#ffffff"
+            strokeWidth="1"
+            strokeOpacity="0.45"
+            strokeLinecap="round"
+          />
 
-          {/* Numeric Keypad Matrix (3x4 tactile buttons) */}
-          {/* Row 1 */}
-          <polygon points="98,92 104,89 104,95 98,98" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          <polygon points="108,97 114,94 114,100 108,103" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          <polygon points="118,102 124,99 124,105 118,108" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          {/* Row 2 */}
-          <polygon points="98,102 104,99 104,105 98,108" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          <polygon points="108,107 114,104 114,110 108,113" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          <polygon points="118,112 124,109 124,115 118,118" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          {/* Row 3 */}
-          <polygon points="98,112 104,109 104,115 98,118" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          <polygon points="108,117 114,114 114,120 108,123" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          <polygon points="118,122 124,119 124,125 118,128" fill="#3f3f46" stroke="#ffffff" strokeWidth="0.6" />
-          {/* Row 4 (Enter / 0 / Clear) */}
-          <polygon points="108,127 114,124 114,130 108,133" fill="#ffffff" stroke="#ffffff" strokeWidth="0.6" />
+          {/* Upper Camera Lens / Motion Optical Sensor */}
+          <circle cx="120" cy="52" r="10" fill="#09090b" stroke="#3f3f46" strokeWidth="1" />
+          <circle cx="120" cy="52" r="6" fill="#000000" stroke="#71717a" strokeWidth="0.8" />
+          <circle cx="118" cy="50" r="1.8" fill="#ffffff" />
+          <circle cx="120" cy="38" r="1.5" fill="#ffffff" />
 
-          {/* Corner Countersunk Security Screws */}
-          <circle cx="62" cy="84" r="1.5" fill="#71717a" stroke="#000" strokeWidth="0.5" />
-          <circle cx="62" cy="110" r="1.5" fill="#71717a" stroke="#000" strokeWidth="0.5" />
-          <circle cx="128" cy="146" r="1.5" fill="#71717a" stroke="#000" strokeWidth="0.5" />
+          {/* Chime Speaker Acoustic Slits (for buzzer chime) */}
+          <line x1="108" y1="72" x2="132" y2="72" stroke="#3f3f46" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="104" y1="77" x2="136" y2="77" stroke="#3f3f46" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="108" y1="82" x2="132" y2="82" stroke="#3f3f46" strokeWidth="1.5" strokeLinecap="round" />
+
+          {/* Glowing Aura around Chime Button */}
+          <circle cx="120" cy="114" r="24" fill="url(#chime-glow)" />
+
+          {/* Iconic Doorbell Push Button with Illuminated Halo Ring */}
+          <circle cx="120" cy="114" r="18" fill="#09090b" stroke="#ffffff" strokeWidth="1.5" />
+          <circle cx="120" cy="114" r="14" fill="#27272a" stroke="#71717a" strokeWidth="0.8" />
+
+          {/* Bell Icon engraved inside button */}
+          <path
+            d="M120,105 C116.5,105 114,108 114,112 L113,117 L127,117 L126,112 C126,108 123.5,105 120,105 Z"
+            fill="#ffffff"
+          />
+          <circle cx="120" cy="119.5" r="1.5" fill="#ffffff" />
+          <circle cx="120" cy="103.5" r="1" fill="#ffffff" />
+
+          {/* Acoustic Chime Tone Wave Arcs radiating from button */}
+          <path d="M144,106 A15,15 0 0,1 144,122" stroke="#a1a1aa" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+          <path d="M150,100 A24,24 0 0,1 150,128" stroke="#71717a" strokeWidth="1" strokeLinecap="round" fill="none" />
+          <path d="M96,106 A15,15 0 0,0 96,122" stroke="#a1a1aa" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+          <path d="M90,100 A24,24 0 0,0 90,128" stroke="#71717a" strokeWidth="1" strokeLinecap="round" fill="none" />
         </svg>
       );
 
