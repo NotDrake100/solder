@@ -871,12 +871,15 @@ export function buildLdrLightSensorMesh(materials: MaterialLibrary): THREE.Group
  * Builds detailed procedural 3D model for Raspberry Pi Zero 2 W
  * Crisp 65x30x5 dark board with header strip
  */
-export function buildRpiZeroMesh(materials: MaterialLibrary): THREE.Group {
+export function buildRpiZeroMesh(materials: MaterialLibrary, isLandscape = false): THREE.Group {
   const group = new THREE.Group();
   group.name = 'rpi_zero_2w';
 
-  // 1. Dark board (65 x 30 x 5 mm)
-  const pcbGeom = new THREE.BoxGeometry(65, 30, 4.5);
+  const w = isLandscape ? 65 : 30;
+  const l = isLandscape ? 30 : 65;
+
+  // 1. Dark board
+  const pcbGeom = new THREE.BoxGeometry(w, l, 4.5);
   const pcbMat = new THREE.MeshStandardMaterial({
     color: 0x18181b,
     roughness: 0.5,
@@ -887,15 +890,17 @@ export function buildRpiZeroMesh(materials: MaterialLibrary): THREE.Group {
   pcb.castShadow = true;
   group.add(pcb);
 
-  // 2. 40-pin GPIO header strip along the edge (51 x 5 x 3.5 mm)
-  const headerGeom = new THREE.BoxGeometry(51, 5, 3.5);
+  // 2. 40-pin GPIO header strip along the edge
+  const headerGeom = isLandscape
+    ? new THREE.BoxGeometry(51, 5, 3.5)
+    : new THREE.BoxGeometry(5, 51, 3.5);
   const headerMat = new THREE.MeshStandardMaterial({
     color: 0x09090b,
     roughness: 0.7,
     metalness: 0.1,
   });
   const header = new THREE.Mesh(headerGeom, headerMat);
-  header.position.set(0, 11, 4.5 + 1.75);
+  header.position.set(isLandscape ? 0 : -11, isLandscape ? 11 : 0, 4.5 + 1.75);
   group.add(header);
 
   // 3. CPU chip shield (12 x 12 x 1.5 mm)
@@ -906,22 +911,24 @@ export function buildRpiZeroMesh(materials: MaterialLibrary): THREE.Group {
     metalness: 0.5,
   });
   const cpu = new THREE.Mesh(cpuGeom, cpuMat);
-  cpu.position.set(-8, -4, 4.5 + 0.75);
+  cpu.position.set(isLandscape ? -8 : 4, isLandscape ? -4 : -8, 4.5 + 0.75);
   group.add(cpu);
 
   // 4. Connectors (USB / HDMI)
-  const usbGeom = new THREE.BoxGeometry(8, 6, 2.8);
+  const usbGeom = isLandscape
+    ? new THREE.BoxGeometry(8, 6, 2.8)
+    : new THREE.BoxGeometry(6, 8, 2.8);
   const usbMat = new THREE.MeshStandardMaterial({
     color: 0xa1a1aa,
     roughness: 0.25,
     metalness: 0.8,
   });
   const usb1 = new THREE.Mesh(usbGeom, usbMat);
-  usb1.position.set(12, -10, 4.5 + 1.4);
+  usb1.position.set(isLandscape ? 12 : 10, isLandscape ? -10 : -12, 4.5 + 1.4);
   group.add(usb1);
 
   const usb2 = new THREE.Mesh(usbGeom, usbMat);
-  usb2.position.set(24, -10, 4.5 + 1.4);
+  usb2.position.set(isLandscape ? 24 : 10, isLandscape ? -10 : 12, 4.5 + 1.4);
   group.add(usb2);
 
   return group;
@@ -1167,8 +1174,13 @@ export function createPartMesh(
 
   let meshGroup: THREE.Group;
 
+  const isLandscape = Boolean(
+    (item.dims && item.dims[0] > item.dims[1]) ||
+    (item.dimensions && item.dimensions.width > item.dimensions.length)
+  );
+
   if (libId.includes('rpi') || libId.includes('zero') || libId.includes('raspberry') || libId.includes('pi_5')) {
-    meshGroup = buildRpiZeroMesh(materials);
+    meshGroup = buildRpiZeroMesh(materials, isLandscape);
   } else if (libId.includes('speaker') || libId.includes('audio_3w')) {
     meshGroup = buildSpeakerMesh(materials);
   } else if (libId.includes('lipo') || libId.includes('battery_2000') || libId.includes('cell')) {
@@ -1228,18 +1240,46 @@ export function createPartMesh(
     }
   });
 
-  // Calculate position in scene coordinates
-  const dims = getPartDimensions(item.libId);
+  // Calculate position in scene coordinates with strict clamping inside inner walls
+  const itemDims = item.dims
+    ? { width: Number(item.dims[0]) || 30, length: Number(item.dims[1]) || 30, height: Number(item.dims[2]) || 10 }
+    : getPartDimensions(item.libId);
+
+  const dims = {
+    width: Number(item.dimensions?.width) || itemDims.width,
+    length: Number(item.dimensions?.length) || itemDims.length,
+    height: Number(item.dimensions?.height) || itemDims.height,
+  };
+
   let posX = Number(item.x) || 0;
   let posY = Number(item.y) || 0;
   let posZ = item.z !== undefined ? Number(item.z) : wallMm;
 
   if (enclosureDims && Array.isArray(enclosureDims) && enclosureDims.length >= 2) {
-    const [w, d] = enclosureDims;
-    // If coordinates are inside the [0, w] and [0, d] box (corner-based layout)
+    const [w, d, h] = enclosureDims;
+    const innerW = w - 2 * wallMm;
+    const innerD = d - 2 * wallMm;
+    const innerH = (h || 25) - 2 * wallMm;
+
+    // Strict clamping so every part footprint stays 100% inside inner walls
     if (posX >= 0 && posY >= 0) {
-      posX = -w / 2 + wallMm + posX + (dims.width || 30) / 2;
-      posY = -d / 2 + wallMm + posY + (dims.length || 30) / 2;
+      const maxX = Math.max(0, innerW - dims.width);
+      const maxY = Math.max(0, innerD - dims.length);
+      const maxZ = Math.max(0, innerH - dims.height);
+
+      const clampedX = Math.max(0, Math.min(posX, maxX));
+      const clampedY = Math.max(0, Math.min(posY, maxY));
+      const clampedZ = Math.max(0, Math.min(posZ, maxZ));
+
+      posX = -w / 2 + wallMm + clampedX + dims.width / 2;
+      posY = -d / 2 + wallMm + clampedY + dims.length / 2;
+      posZ = clampedZ;
+    } else {
+      // Center-based coordinates clamping
+      const maxHalfX = Math.max(0, innerW / 2 - dims.width / 2);
+      const maxHalfY = Math.max(0, innerD / 2 - dims.length / 2);
+      posX = Math.max(-maxHalfX, Math.min(posX, maxHalfX));
+      posY = Math.max(-maxHalfY, Math.min(posY, maxHalfY));
     }
   }
 

@@ -932,7 +932,7 @@ echo "Setup complete! Run: python3 main.py"
     parts,
     layout: [
       { id: 'part-battery', libId: 'lipo_2000mah', name: '3.7V 2000mAh LiPo', x: 2, y: 6, z: 0, dims: [34, 52, 7] },
-      { id: 'part-mcu', libId: mcuLibId, name: mcuName, x: 2, y: 6, z: 8, dims: [65, 30, 5] },
+      { id: 'part-mcu', libId: mcuLibId, name: mcuName, x: 2, y: 6, z: 8, dims: [30, 65, 5] },
       { id: 'part-speaker', libId: 'speaker_3w_4ohm', name: '40mm Speaker', x: 12, y: 62, z: 0, dims: [40, 40, 6] },
       { id: 'part-oled', libId: 'oled_096', name: '0.96" OLED', x: 2, y: 38, z: 13, dims: [27, 27, 4] },
       { id: 'part-mic', libId: 'inmp441_mic', name: 'INMP441 Mic', x: 44, y: 38, z: 2, dims: [14, 14, 3] },

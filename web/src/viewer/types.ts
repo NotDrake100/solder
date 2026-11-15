@@ -22,6 +22,7 @@ export interface PartLayoutItem {
   rotX?: number;
   rotY?: number;
   color?: string;
+  dims?: [number, number, number];
   dimensions?: {
     width: number;
     length: number;

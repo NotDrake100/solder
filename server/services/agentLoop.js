@@ -30,10 +30,16 @@ export function packPiPocketLayout(build) {
 
   if (!isPi) return build;
 
+  const wallMm = build.case?.wallMm || 2.0;
+  const outerMm = [70, 110, 25];
+  const innerW = outerMm[0] - 2 * wallMm; // 66mm
+  const innerL = outerMm[1] - 2 * wallMm; // 106mm
+  const innerH = outerMm[2] - 2 * wallMm; // 21mm
+
   const packedMap = {
     lipo_2000mah: { x: 2, y: 6, z: 0, dims: [34, 52, 7] },
-    rpi_zero_2w: { x: 2, y: 6, z: 8, dims: [65, 30, 5] },
-    rpi_5: { x: 2, y: 6, z: 8, dims: [65, 30, 5] },
+    rpi_zero_2w: { x: 2, y: 6, z: 8, dims: [30, 65, 5] },
+    rpi_5: { x: 2, y: 6, z: 8, dims: [30, 65, 5] },
     speaker_3w_4ohm: { x: 12, y: 62, z: 0, dims: [40, 40, 6] },
     oled_096: { x: 2, y: 38, z: 13, dims: [27, 27, 4] },
     inmp441_mic: { x: 44, y: 38, z: 2, dims: [14, 14, 3] },
@@ -56,16 +62,25 @@ export function packPiPocketLayout(build) {
       (libId.includes('rpi') || libId.includes('zero') ? packedMap.rpi_zero_2w : null) ||
       (libId.includes('boost') || libId.includes('mt3608') ? packedMap.mt3608 : null);
 
-    if (packed) {
-      return { ...item, ...packed };
-    }
-    return item;
+    const merged = packed ? { ...item, ...packed } : item;
+    const w = merged.dims ? merged.dims[0] : 30;
+    const l = merged.dims ? merged.dims[1] : 30;
+    const h = merged.dims ? merged.dims[2] : 10;
+    const maxX = Math.max(0, innerW - w);
+    const maxY = Math.max(0, innerL - l);
+    const maxZ = Math.max(0, innerH - h);
+
+    return {
+      ...merged,
+      x: Math.max(0, Math.min(merged.x !== undefined ? merged.x : 0, maxX)),
+      y: Math.max(0, Math.min(merged.y !== undefined ? merged.y : 0, maxY)),
+      z: Math.max(0, Math.min(merged.z !== undefined ? merged.z : 0, maxZ)),
+    };
   });
 
-  const wallMm = build.case?.wallMm || 2.0;
   build.case = {
     ...(build.case || {}),
-    outerMm: [70, 110, 25],
+    outerMm,
     wallMm,
   };
 
