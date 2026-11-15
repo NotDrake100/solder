@@ -8,14 +8,18 @@
 # Stage 1: Build Frontend Assets (Vite + React + Tailwind)
 # ------------------------------------------------------------------------------
 FROM node:20-bookworm-slim AS web-builder
-WORKDIR /app/web
+WORKDIR /app
 
 # Install frontend dependencies
-COPY web/package*.json ./
-RUN npm ci --prefer-offline || npm install
+COPY web/package*.json ./web/
+RUN cd web && (npm ci --prefer-offline || npm install)
 
-# Copy frontend source and build production bundle
-COPY web/ ./
+# Vite/tsc import repo-root siblings: ../../../showcase and ../../../sim
+COPY web/ ./web/
+COPY showcase/ ./showcase/
+COPY sim/ ./sim/
+
+WORKDIR /app/web
 RUN npm run build
 
 # ------------------------------------------------------------------------------

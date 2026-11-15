@@ -88,3 +88,7 @@
 .card-hover-gpu {
   transition: transform 200ms ease, border-color 200ms ease;
 }
+
+.card-hover-gpu:hover {
+  transform: translateY(-4px);
+}

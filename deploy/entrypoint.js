@@ -33,46 +33,80 @@ const MIME_TYPES = {
   '.woff2': 'font/woff2',
   '.ttf': 'font/ttf',
   '.webp': 'image/webp',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mov': 'video/quicktime',
+  '.wasm': 'application/wasm',
 };
 
 // Create the backend API server handler
 const apiServer = createApiServer();
 
+function sendFile(req, res, filePath, contentType) {
+  const stat = fs.statSync(filePath);
+  const totalSize = stat.size;
+  const rangeHeader = req.headers?.range;
+
+  if (rangeHeader && typeof rangeHeader === 'string' && rangeHeader.startsWith('bytes=')) {
+    const parts = rangeHeader.replace(/bytes=/, '').split('-');
+    const start = parts[0] ? parseInt(parts[0], 10) : 0;
+    const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+
+    if (Number.isNaN(start) || Number.isNaN(end) || start >= totalSize || end >= totalSize || start > end) {
+      res.writeHead(416, {
+        'Content-Range': `bytes */${totalSize}`,
+        'Accept-Ranges': 'bytes',
+      });
+      res.end();
+      return;
+    }
+
+    const chunkSize = end - start + 1;
+    res.writeHead(206, {
+      'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunkSize,
+      'Content-Type': contentType,
+    });
+    if (req.method === 'HEAD') {
+      res.end();
+      return;
+    }
+    fs.createReadStream(filePath, { start, end }).pipe(res);
+    return;
+  }
+
+  res.writeHead(200, {
+    'Content-Type': contentType,
+    'Content-Length': totalSize,
+    'Accept-Ranges': 'bytes',
+  });
+  if (req.method === 'HEAD') {
+    res.end();
+    return;
+  }
+  fs.createReadStream(filePath).pipe(res);
+}
+
 function serveStatic(req, res, pathname) {
   if (!fs.existsSync(DIST_DIR)) {
-    // If web/dist is not present, fall through or return basic info
     return false;
   }
 
-  // Normalize path
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
   let filePath = path.join(DIST_DIR, safePath);
 
-  // Check if file exists directly
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
     const ext = path.extname(filePath).toLowerCase();
     const mime = MIME_TYPES[ext] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': mime });
-    fs.createReadStream(filePath).pipe(res);
+    sendFile(req, res, filePath, mime);
     return true;
   }
 
-  // If root or directory, try index.html
-  if (pathname === '/' || pathname === '') {
+  if (pathname === '/' || pathname === '' || (!pathname.startsWith('/api') && !path.extname(pathname))) {
     const indexHtml = path.join(DIST_DIR, 'index.html');
     if (fs.existsSync(indexHtml)) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      fs.createReadStream(indexHtml).pipe(res);
-      return true;
-    }
-  }
-
-  // SPA fallback for HTML requests (not API or asset paths)
-  if (!pathname.startsWith('/api') && !path.extname(pathname)) {
-    const indexHtml = path.join(DIST_DIR, 'index.html');
-    if (fs.existsSync(indexHtml)) {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      fs.createReadStream(indexHtml).pipe(res);
+      sendFile(req, res, indexHtml, 'text/html; charset=utf-8');
       return true;
     }
   }

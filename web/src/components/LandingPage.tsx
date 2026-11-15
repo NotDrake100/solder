@@ -122,16 +122,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onTryIt }) => {
                 }}
                 aria-label={product.label}
                 title={product.label}
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                  opacity: 0,
-                }}
-                className="group relative p-4 sm:p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#555] hover:-translate-y-1 card-hover-gpu transform-gpu animate-gallery-entrance cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden"
+                className="group relative p-4 sm:p-6 rounded-xl border border-[#262626] bg-[#121212] hover:border-[#555] hover:-translate-y-1 card-hover-gpu transform-gpu cursor-pointer flex items-center justify-center aspect-[4/3] overflow-hidden"
               >
-                <ProductThumbnail
-                  id={product.id}
-                  className="w-full h-full object-contain transform-gpu transition-transform duration-300 group-hover:scale-105"
-                />
+                <div
+                  style={{
+                    animationDelay: `${index * 50}ms`,
+                    opacity: 0,
+                  }}
+                  className="w-full h-full flex items-center justify-center animate-gallery-entrance"
+                >
+                  <ProductThumbnail
+                    id={product.id}
+                    className="w-full h-full object-contain transform-gpu transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
               </a>
             ))}
           </div>
