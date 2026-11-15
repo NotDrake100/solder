@@ -676,12 +676,24 @@ export function App() {
 
     // Stage 5: Simulation & Case
     await new Promise((r) => setTimeout(r, 300));
+    const isPi = Boolean(
+      targetBuild.board?.toLowerCase().includes('rpi') ||
+      targetBuild.board?.toLowerCase().includes('pi')
+    );
     setMessages((prev) =>
       prev.map((m) => {
         if (m.id !== msgId) return m;
         const checks = (m.harnessChecks || []).map((c) =>
           c.id === 'simulate'
-            ? { ...c, status: 'pass' as const, durationMs: 42 }
+            ? (isPi
+                ? {
+                    ...c,
+                    status: 'skipped' as const,
+                    skipped: true,
+                    durationMs: 0,
+                    evidence: 'Simulate: skipped (AVR simulation is Arduino-only; Linux userspace runs natively)',
+                  }
+                : { ...c, status: 'pass' as const, durationMs: 42 })
             : c.id === 'fit_check'
             ? { ...c, status: 'running' as const }
             : c
