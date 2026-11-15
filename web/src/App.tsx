@@ -112,9 +112,13 @@ export function App() {
   }, []);
 
   // Navigation handlers
-  const handleGoToApp = () => {
-    window.history.pushState(null, '', '/app');
-    setView('app');
+  const handleGoToApp = (buildId?: string) => {
+    if (buildId) {
+      handleSelectBuild(buildId);
+    } else {
+      window.history.pushState(null, '', '/app');
+      setView('app');
+    }
   };
 
   const handleGoHome = () => {
